@@ -1,0 +1,6 @@
+{
+  "crons": [
+    { "path": "/api/cron/expire-rides", "schedule": "*/30 * * * *" },
+    { "path": "/api/cron/purge-chats", "schedule": "0 * * * *" }
+  ]
+}

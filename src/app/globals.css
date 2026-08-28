@@ -1,0 +1,140 @@
+@import "tailwindcss";
+
+/* ==================================================================
+   Design tokens — the ONLY place colors are defined. Components must
+   use these (bg-surface, text-muted, bg-primary, …), never raw hexes.
+   ================================================================== */
+@theme {
+  --color-canvas: #0d0d0d; /* subtle backdrop behind the app column (desktop) */
+  --color-app: #000000; /* the app column background (pure black) */
+  --color-surface: #1a1a1a; /* elevated: cards, nav, inputs, incoming bubbles */
+  --color-surface-2: #2a2a2a; /* more elevated: outgoing bubbles, selected, hover */
+  --color-hairline: rgba(255, 255, 255, 0.1); /* dividers & borders */
+
+  --color-content: #ffffff; /* primary text */
+  --color-muted: rgba(255, 255, 255, 0.65); /* secondary text */
+  --color-faint: rgba(255, 255, 255, 0.45); /* tertiary text / placeholders */
+
+  --color-primary: #007aff; /* blue  = interactive / primary / active */
+  --color-success: #34c759; /* green = positive / confirm / success */
+  --color-danger: #ff3b30; /* red   = destructive / alert / error */
+
+  --color-primary-soft: rgba(0, 122, 255, 0.15);
+  --color-success-soft: rgba(52, 199, 89, 0.15);
+  --color-danger-soft: rgba(255, 59, 48, 0.15);
+}
+
+:root {
+  color-scheme: dark;
+}
+
+/* Prevent flex/grid children from refusing to shrink (the #1 overflow cause).
+   :where() keeps specificity 0 so components can override when needed. */
+:where(*) {
+  min-width: 0;
+}
+
+html {
+  background: var(--color-canvas);
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-content);
+  font-family: var(--font-sans), system-ui, -apple-system, Arial, sans-serif;
+  overflow-wrap: break-word;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Media never breaks the layout. */
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Visible keyboard focus. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ==================================================================
+   Reusable component classes (tokens only).
+   ================================================================== */
+@layer components {
+  /* Centered single-column mobile frame on every screen size. */
+  .app-shell {
+    @apply mx-auto flex min-h-screen w-full max-w-[480px] flex-col bg-app;
+  }
+  @media (min-width: 481px) {
+    .app-shell {
+      @apply border-x border-hairline;
+    }
+  }
+
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .card {
+    @apply rounded-2xl bg-surface p-4;
+  }
+
+  /* Long strings (addresses, emails, links) wrap instead of overflowing. */
+  .wrap-anywhere {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  /* Buttons — 44px min tap target, semantic color variants. */
+  .btn {
+    @apply inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply bg-primary text-white hover:opacity-90;
+  }
+  .btn-success {
+    @apply bg-success text-black hover:opacity-90;
+  }
+  .btn-danger {
+    @apply bg-danger text-white hover:opacity-90;
+  }
+  .btn-secondary {
+    @apply bg-surface-2 text-content hover:opacity-90;
+  }
+  .btn-ghost {
+    @apply text-muted hover:bg-surface hover:text-content;
+  }
+
+  /* Inputs — 16px text avoids iOS focus-zoom; 44px min height. */
+  .input {
+    @apply min-h-11 w-full rounded-xl border border-hairline bg-surface px-3 text-base text-content placeholder:text-faint;
+  }
+  textarea.input {
+    @apply py-2;
+  }
+
+  .chip {
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+  }
+}

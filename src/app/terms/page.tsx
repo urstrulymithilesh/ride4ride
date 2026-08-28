@@ -18,7 +18,7 @@ export default function TermsPage() {
       <div className="mt-6 space-y-5 text-sm leading-6 text-muted">
         <section>
           <h2 className="font-semibold text-content">1. Who can use Ride4Ride</h2>
-          <p>Accounts may be limited to verified student email domains. You are responsible for activity on your account.</p>
+          <p>You must be 18 or older to create an account. Accounts confirmed with a student email address display a verification badge; the badge is informational and is not a background check, an identity check, or a guarantee of anything. You are responsible for activity on your account.</p>
         </section>
         <section>
           <h2 className="font-semibold text-content">2. Rides are between users</h2>
@@ -37,11 +37,21 @@ export default function TermsPage() {
           <p>Full addresses for &lsquo;get&rsquo; rides are shared with another user only after both of you agree. Do not share others&apos; personal information outside the platform.</p>
         </section>
         <section>
-          <h2 className="font-semibold text-content">6. Disclaimers &amp; liability</h2>
+          <h2 className="font-semibold text-content">6. Money is entirely between users</h2>
+          <p>Ride4Ride never sets, suggests, calculates, caps, or displays a price for any ride. There is no price field anywhere on the platform. If riders and drivers agree to share costs, they arrange that amount themselves, in their own words, entirely between themselves and off the platform.</p>
+          <p className="mt-2">Ride4Ride does not process, hold, transfer, guarantee, or take a share of any payment. <strong className="text-content">The service is free and will remain free: we do not charge users and we take no fee or commission on any ride, ever.</strong></p>
+        </section>
+        <section>
+          <h2 className="font-semibold text-content">7. Your conversations are private</h2>
+          <p>Messages between two users can be read only by those two users. We do not read conversation contents — not for moderation, not for analytics, not for research, and not to improve the product. There are no exceptions to this.</p>
+          <p className="mt-2">If you report a conversation, you choose what to include in that report. Reporting does not give us access to the rest of the thread.</p>
+        </section>
+        <section>
+          <h2 className="font-semibold text-content">8. Disclaimers &amp; liability</h2>
           <p>The service is provided &ldquo;as is,&rdquo; without warranties. To the extent permitted by law, Ride4Ride is not liable for interactions between users. (Your attorney should tailor this section.)</p>
         </section>
         <section>
-          <h2 className="font-semibold text-content">7. Contact</h2>
+          <h2 className="font-semibold text-content">9. Contact</h2>
           <p>Questions about these terms: legal@ride4ride.com.</p>
         </section>
       </div>

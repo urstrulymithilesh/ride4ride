@@ -146,7 +146,9 @@ Found 2026-09-02 while verifying local setup. `NEXT_PUBLIC_SUPABASE_URL` had `/r
 
 That is a serious failure mode for this pilot specifically, because the entire day-21 output is "did anyone post." A silent query failure produces the exact reading that triggers the kill condition. The feed must surface a query error as an error state, distinct from the empty state.
 
-Not yet fixed. Tracked as a P1.
+**FIXED in `224e471` (T20).** The feed now captures the query error, logs it server-side, and renders a distinct error state that says plainly it is not the same as there being no rides. The count reads "Couldn't load rides" rather than "0". The detail page had the same bug with a worse consequence — a failed query fell through to `notFound()`, telling someone who followed a shared link that the post was deleted — and now throws instead.
+
+Verified by re-injecting the original malformed URL and confirming the two states differ, then restoring the config.
 
 ## Known Risk: Two Airport Sources of Truth
 

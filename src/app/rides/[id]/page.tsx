@@ -26,11 +26,21 @@ export default async function RideDetailPage({
   // rides_with_location is RLS-aware: address fields are null unless the
   // viewer is the owner or an agreed counterparty. RLS also hides inactive
   // rides from non-owners (=> notFound).
-  const { data: ride } = await supabase
+  const { data: ride, error: rideError } = await supabase
     .from("rides_with_location")
     .select("*")
     .eq("id", id)
     .maybeSingle<RideWithLocation>();
+
+  // Same failure class as the feed, and worse here: without this check a
+  // query failure renders "not found", telling someone who followed a
+  // shared link that the post was deleted when it may be sitting there
+  // fine. Throw instead, so error.tsx shows a real error and the failure
+  // reaches the server log.
+  if (rideError) {
+    console.error("[rides/:id] detail query failed:", rideError.message, rideError);
+    throw new Error("Couldn't load this ride.");
+  }
 
   if (!ride) notFound();
 

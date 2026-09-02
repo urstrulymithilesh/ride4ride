@@ -60,10 +60,25 @@ export default async function BrowseRidesPage({
   if (city) query = query.ilike("from_city", city);
   if (state) query = query.ilike("from_state", state);
 
-  const { data: rides } = await query
+  // Capture the error. Discarding it here is how a totally broken database
+  // rendered as "0 current rides" with HTTP 200 and nothing in the logs:
+  // `data` comes back null on failure, which is indistinguishable from an
+  // empty result unless you look at `error`. On a board whose entire purpose
+  // is answering "did anyone post", a silent failure produces exactly the
+  // reading that says nobody did.
+  const { data: rides, error: ridesError } = await query
     .order("created_at", { ascending: sort === "oldest" })
     .limit(60)
     .returns<RideCardData[]>();
+
+  if (ridesError) {
+    // Server-side log: this is the signal that was missing entirely before.
+    console.error("[rides] feed query failed:", ridesError.message, ridesError);
+  }
+
+  // Only meaningful when ridesError is null. Kept separate so an empty list
+  // can never be produced by a failure.
+  const list = rides ?? [];
 
   const tab = (value: When, label: string) => (
     <Link
@@ -137,10 +152,13 @@ export default async function BrowseRidesPage({
         </div>
       </form>
 
-      {/* Sort + count */}
+      {/* Sort + count. On failure we show no count at all: "0 rides" would be
+          a claim about the board we cannot actually make. */}
       <div className="mb-3 flex items-center justify-between text-sm text-muted">
         <span>
-          {rides?.length ?? 0} {when} ride{(rides?.length ?? 0) === 1 ? "" : "s"}
+          {ridesError
+            ? "Couldn't load rides"
+            : `${list.length} ${when} ride${list.length === 1 ? "" : "s"}`}
         </span>
         <div className="flex items-center gap-1">
           <span className="text-xs">Sort:</span>
@@ -150,7 +168,28 @@ export default async function BrowseRidesPage({
         </div>
       </div>
 
-      {!rides || rides.length === 0 ? (
+      {ridesError ? (
+        /* ERROR state — deliberately NOT the empty state. An empty board and
+           a broken board mean opposite things and must never look alike. */
+        <div
+          role="alert"
+          className="card border border-danger bg-transparent p-8 text-center"
+        >
+          <p className="text-sm font-semibold text-content">
+            Couldn&apos;t load rides.
+          </p>
+          <p className="mt-1 text-sm text-muted">
+            Something went wrong on our side, so we can&apos;t show the board
+            right now. This is not the same as there being no rides.
+          </p>
+          <Link
+            href={hrefWith({})}
+            className="mt-3 inline-block text-sm font-medium text-primary"
+          >
+            Try again
+          </Link>
+        </div>
+      ) : list.length === 0 ? (
         <div className="card border border-dashed border-hairline bg-transparent p-8 text-center">
           <p className="text-sm text-muted">
             {hasFilters
@@ -175,7 +214,7 @@ export default async function BrowseRidesPage({
         </div>
       ) : (
         <ul className="flex flex-col gap-3">
-          {rides.map((r) => (
+          {list.map((r) => (
             <li key={r.id}>
               <RideCard ride={r} />
             </li>

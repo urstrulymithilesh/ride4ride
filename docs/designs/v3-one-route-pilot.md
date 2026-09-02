@@ -84,17 +84,24 @@ The DB already encodes this: `0002:70` `constraint rides_distance_only_for_get c
 
 **A post expires exactly 7 days after the ride's scheduled date/time passes**, not 7 days after posting. A ride posted today for three weeks out stays listed until a week after it happens.
 
-- `ride_date IS NOT NULL` → `expires_at = ride_date + 7 days`
-- `ride_date IS NULL` (current/ASAP; enforced by `rides_future_has_date`) → `expires_at = created_at + 7 days`
+- `ride_date IS NOT NULL` → `expires_at = (ride_date + 8 days)` at midnight, i.e. the ride day ends then 7 full days
+- `ride_date IS NULL` → `expires_at = created_at + 7 days`
 
-**Computed server-side inside the RPC. The client-supplied `p_expires_at` parameter is removed.**
+**Correction:** an earlier draft of this section said current/ASAP rides always have `ride_date IS NULL`, "enforced by `rides_future_has_date`". That was written against the `0002` constraint. **`0003` relaxed it** to `check (not is_future or ride_date is not null)`, so a current ride *may* carry a date. The rule above needs no `is_future` branch as a result: if there is a date, it wins.
 
-Three current violations, all in `src/app/rides/actions.ts`:
-- `:46` passes `p_expires_at: d.expires_at` — the browser currently controls post lifetime. This is the security-relevant one.
-- `:76` `repostRide` grants a fresh 7-day window, repeatable indefinitely.
-- `:77-81` future rides expire the day after `ride_date`, close to the new rule but not it.
+**Status: SHIPPED in `0008_expiry_hardening.sql` (commit `9bb7dec`).**
 
-Watch item, accepted: no ceiling, so a ride booked months out lives months. Stale-post accumulation is now monitored rather than prevented.
+Expiry was settable from the client in **four** places, not the three first found:
+1. An "Auto-expire after 3/7/14/30 days" `<select>` in the post form.
+2. `computeExpiresAt()` in `src/lib/validations/rides.ts`.
+3. The `p_expires_at` parameter on both create RPCs.
+4. A direct `update rides set expires_at` in `repostRide()`, which the `rides: owner updates own` policy permits.
+
+Fixing only the RPCs would have left (4) open, so the rule is enforced by a **`BEFORE INSERT OR UPDATE` trigger** that derives `expires_at` on every write and discards caller input. One rule, one place, closed for code paths that do not exist yet.
+
+Proof: `supabase/tests/expiry_rule.sql`, six assertions including the regression (a far-future ride must outlive its ride date) and that both INSERT and UPDATE discard a supplied expiry.
+
+Watch item, accepted: no ceiling, so a ride booked months out lives months. Stale-post accumulation is monitored rather than prevented (`TODOS.md` T-4).
 
 ## Metrics
 
@@ -132,6 +139,14 @@ Watch item, accepted: no ceiling, so a ride booked months out lives months. Stal
 12. **IP-suggested FROM city** — the feed's FROM city defaults from the visitor's IP as a *suggestion*, always changeable, any number of times. Never auto-fills a post. Vercel supplies the geo headers, so no third-party service. This was deferred earlier in the review on the grounds that it would strand arrivals on an empty local feed instead of the one seeded route; removing seeding dissolved that objection, since the launch is now organic across groups in several cities.
 
 Single migration where possible; `0008` onward.
+
+## Known Risk: The Feed Renders Empty When the Query Fails
+
+Found 2026-09-02 while verifying local setup. `NEXT_PUBLIC_SUPABASE_URL` had `/rest/v1/` appended, so every PostgREST call returned `404 PGRST125 "Invalid path specified in request URL"`. The `/rides` page rendered "0 current rides / No current rides posted yet" and returned HTTP 200 with **nothing in the server logs**. A completely broken database was indistinguishable from an empty board.
+
+That is a serious failure mode for this pilot specifically, because the entire day-21 output is "did anyone post." A silent query failure produces the exact reading that triggers the kill condition. The feed must surface a query error as an error state, distinct from the empty state.
+
+Not yet fixed. Tracked as a P1.
 
 ## Known Risk: Two Airport Sources of Truth
 

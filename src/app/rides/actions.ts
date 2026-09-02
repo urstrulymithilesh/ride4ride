@@ -43,7 +43,6 @@ export async function createOfferRide(
     p_description: d.description,
     p_ride_date: d.timing.ride_date,
     p_is_future: d.timing.is_future,
-    p_expires_at: d.expires_at,
   });
 
   if (error) return { error: "Couldn't create the post. Please try again." };
@@ -54,9 +53,18 @@ export async function createOfferRide(
 }
 
 /**
- * One-click repost: republish an expired post with a fresh expiry. RLS
- * (owner-only update) is the real guard; we also reset expiry_notified_at so
- * the pre-expiry reminder can fire again for the new window.
+ * One-click repost: flip an expired post back to active.
+ *
+ * Repost does NOT extend a post's life. Expiry is derived from the ride
+ * date by `trg_set_ride_expiry` (migration 0008), so reactivating a post
+ * whose ride date is already more than 7 days past will simply be
+ * re-expired by the next cron pass. That is correct: reposting a ride
+ * that has already happened should not resurrect it. To relist, the
+ * owner changes the ride date, and the expiry follows it.
+ *
+ * We reset expiry_notified_at so the pre-expiry reminder can fire again
+ * for the new window. RLS (owner-only update) is the access guard; the
+ * trigger is what guarantees the expiry value.
  */
 export async function repostRide(formData: FormData): Promise<void> {
   const user = await getUser();
@@ -65,26 +73,10 @@ export async function repostRide(formData: FormData): Promise<void> {
   if (!rideId) redirect("/rides");
 
   const supabase = await createClient();
-  const { data: ride } = await supabase
-    .from("rides")
-    .select("is_future, ride_date")
-    .eq("id", rideId)
-    .maybeSingle<{ is_future: boolean; ride_date: string | null }>();
-
-  // Future ride with a still-future date -> expire the day after it;
-  // otherwise give it a fresh 7-day window.
-  let expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-  if (ride?.is_future && ride.ride_date) {
-    const day = new Date(ride.ride_date + "T00:00:00");
-    day.setDate(day.getDate() + 1);
-    if (day.getTime() > Date.now()) expiresAt = day;
-  }
-
   const { error } = await supabase
     .from("rides")
     .update({
       status: "active",
-      expires_at: expiresAt.toISOString(),
       expiry_notified_at: null,
     })
     .eq("id", rideId)
@@ -144,7 +136,6 @@ export async function createGetRide(
     p_description: d.description,
     p_ride_date: d.timing.ride_date,
     p_is_future: d.timing.is_future,
-    p_expires_at: d.expires_at,
   });
 
   if (error) return { error: "Couldn't create the post. Please try again." };

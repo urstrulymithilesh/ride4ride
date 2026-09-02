@@ -2,9 +2,6 @@ import type { FieldErrors } from "@/lib/validations/auth";
 
 export type RideMode = "current" | "future";
 
-const EXPIRE_DAY_CHOICES = [3, 7, 14, 30] as const;
-export const DEFAULT_EXPIRE_DAYS = 7;
-
 export interface Timing {
   is_future: boolean;
   ride_date: string | null; // YYYY-MM-DD
@@ -35,21 +32,14 @@ export function parseTiming(
   return { ok: true, data: { is_future: false, ride_date: trimmed || null } };
 }
 
-/** Compute a default expiry timestamp (ISO) from timing + an "expire in N days" choice. */
-export function computeExpiresAt(timing: Timing, expireDaysRaw: string): string {
-  if (timing.is_future && timing.ride_date) {
-    // Future ride: expire the day after the ride date.
-    const d = new Date(timing.ride_date + "T00:00:00");
-    d.setDate(d.getDate() + 1);
-    return d.toISOString();
-  }
-  const days = EXPIRE_DAY_CHOICES.includes(Number(expireDaysRaw) as never)
-    ? Number(expireDaysRaw)
-    : DEFAULT_EXPIRE_DAYS;
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  return d.toISOString();
-}
+// Expiry is NOT computed here, and is not part of any form input.
+//
+// A post expires exactly 7 days after the ride's scheduled date passes
+// (or 7 days after creation when there is no date). That rule lives in
+// one place only: the `trg_set_ride_expiry` trigger added by migration
+// 0008, which derives `expires_at` on every insert and update and
+// discards anything a caller supplies. Computing it here as well would
+// be a second source of truth that silently drifts.
 
 export interface OfferInput {
   from_city: string;
@@ -60,7 +50,6 @@ export interface OfferInput {
   to_zip: string;
   description: string;
   timing: Timing;
-  expires_at: string;
 }
 
 export interface GetInput {
@@ -68,7 +57,6 @@ export interface GetInput {
   to_address: string;
   description: string;
   timing: Timing;
-  expires_at: string;
 }
 
 function commonTiming(
@@ -112,7 +100,6 @@ export function validateOffer(
       to_zip: (raw.to_zip ?? "").trim(),
       description: (raw.description ?? "").trim(),
       timing,
-      expires_at: computeExpiresAt(timing, raw.expire_days ?? ""),
     },
   };
 }
@@ -140,7 +127,6 @@ export function validateGet(
       to_address,
       description: (raw.description ?? "").trim(),
       timing,
-      expires_at: computeExpiresAt(timing, raw.expire_days ?? ""),
     },
   };
 }

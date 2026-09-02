@@ -77,21 +77,13 @@ export function WhenFields({ fieldErrors }: { fieldErrors?: FieldErrors }) {
             </p>
           ) : null}
           <p className="text-xs text-muted">
-            The post will expire the day after the ride.
+            The post stays up until 7 days after the ride.
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="expire_days" className="text-sm font-medium text-content">
-            Auto-expire after
-          </label>
-          <select id="expire_days" name="expire_days" defaultValue="7" className="input">
-            <option value="3">3 days</option>
-            <option value="7">7 days</option>
-            <option value="14">14 days</option>
-            <option value="30">30 days</option>
-          </select>
-        </div>
+        <p className="text-xs text-muted">
+          The post stays up for 7 days.
+        </p>
       )}
     </fieldset>
   );

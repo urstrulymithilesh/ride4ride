@@ -39,6 +39,7 @@ export async function signUp(
     displayName: String(formData.get("displayName") ?? ""),
     // An unchecked checkbox submits nothing at all, so absence is "no".
     ageConfirmed18: formData.get("ageConfirmed18") === "on",
+    tosAccepted: formData.get("tosAccepted") === "on",
   });
   if (!result.ok) return { fieldErrors: result.fieldErrors };
 

@@ -19,7 +19,16 @@ export interface SignUpInput {
   email: string;
   password: string;
   displayName: string;
+  /**
+   * Deliberately two separate consents, not one combined checkbox.
+   * Bundling "I am 18+" with "I accept the Terms" makes each weaker: a
+   * user can only be shown to have agreed to the pair, never to either
+   * on its own. Unbundled consent is the more defensible pattern for an
+   * age attestation specifically, and this is one-way once real accounts
+   * exist. `profiles` already stores them as separate columns.
+   */
   ageConfirmed18: boolean;
+  tosAccepted: boolean;
 }
 
 export interface SignInInput {
@@ -32,6 +41,7 @@ export function validateSignUp(raw: {
   password: string;
   displayName: string;
   ageConfirmed18: boolean;
+  tosAccepted: boolean;
 }): { ok: true; data: SignUpInput } | { ok: false; fieldErrors: FieldErrors } {
   const fieldErrors: FieldErrors = {};
   const email = raw.email.trim().toLowerCase();
@@ -45,16 +55,25 @@ export function validateSignUp(raw: {
     fieldErrors.displayName = "Display name must be 50 characters or fewer.";
   if (password.length < 8)
     fieldErrors.password = "Password must be at least 8 characters.";
-  // Blocking, not advisory: the attestation cannot be applied
-  // retroactively to a ride that has already happened.
+  // Both blocking, not advisory, and checked separately so the user is
+  // told which one they missed. Neither can be applied retroactively to a
+  // ride that has already happened.
   if (!raw.ageConfirmed18)
-    fieldErrors.ageConfirmed18 =
-      "You must be 18 or older and accept the Terms to create an account.";
+    fieldErrors.ageConfirmed18 = "You must confirm you are 18 or older.";
+  if (!raw.tosAccepted)
+    fieldErrors.tosAccepted =
+      "You must accept the Terms and Privacy Policy to create an account.";
 
   if (Object.keys(fieldErrors).length > 0) return { ok: false, fieldErrors };
   return {
     ok: true,
-    data: { email, password, displayName, ageConfirmed18: true },
+    data: {
+      email,
+      password,
+      displayName,
+      ageConfirmed18: true,
+      tosAccepted: true,
+    },
   };
 }
 

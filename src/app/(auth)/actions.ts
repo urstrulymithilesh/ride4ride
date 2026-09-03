@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import {
+  TOS_VERSION,
   validateSignUp,
   validateSignIn,
   sanitizeRedirect,
@@ -36,6 +37,8 @@ export async function signUp(
     email: String(formData.get("email") ?? ""),
     password: String(formData.get("password") ?? ""),
     displayName: String(formData.get("displayName") ?? ""),
+    // An unchecked checkbox submits nothing at all, so absence is "no".
+    ageConfirmed18: formData.get("ageConfirmed18") === "on",
   });
   if (!result.ok) return { fieldErrors: result.fieldErrors };
 
@@ -65,7 +68,14 @@ export async function signUp(
     email,
     password,
     options: {
-      data: { display_name: displayName },
+      // Carried into profiles by handle_new_user() in the same transaction
+      // as account creation (migration 0009), so an account cannot exist
+      // without its acceptance record.
+      data: {
+        display_name: displayName,
+        age_confirmed_18: true,
+        tos_version: TOS_VERSION,
+      },
       emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(redirectTo)}`,
     },
   });

@@ -13,7 +13,18 @@ import { repostRide } from "@/app/rides/actions";
 import { formatDistance, formatPlace, formatRideWhen } from "@/lib/utils/format";
 import type { RideWithLocation } from "@/types";
 
-export const metadata: Metadata = { title: "Ride" };
+// noindex: a post page is a PUBLIC, shareable URL carrying one person's
+// route and travel date. That is fine to hand to someone in a group chat
+// and wrong to leave in a search index, where it outlives the ride and is
+// findable by anyone. Matches the convention already used by /admin.
+//
+// This does not affect link previews in messengers: those crawlers read
+// Open Graph tags and generally ignore robots meta. Worth eyeballing the
+// first time you paste a post link into WhatsApp.
+export const metadata: Metadata = {
+  title: "Ride",
+  robots: { index: false },
+};
 
 export default async function RideDetailPage({
   params,

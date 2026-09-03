@@ -49,6 +49,7 @@ A student flying through ORD posts "need ride from ORD airport tomorrow 5pm." Fa
 2. **Price is the core value proposition.** "Uber/Lyft already deliver safety, convenience, and reliability as a packaged service. What's missing is affordability."
 3. **No platform-set price, ever. Permanent.** Classification turns on *who sets the price*, not on payment processing. A platform-computed cap makes the platform the price-setter, same risk category as a bid field. BlaBlaCar's cap does not transfer: it caps a *driver-set* price under an explicit EU carpooling safe harbor. Money lives only in free text between users, which is user speech. Also ruled out: a poster-typed price field. One clean sentence — the platform has no price field, no exceptions.
 4. **Trust and safety depth is deferred, narrowly.** `blocks` and `reports` with RLS ship in `0007`. The pilot trips "strangers matching strangers" on day one, so before launch: 18+ self-attestation, disclaimer shown with acceptance recorded, `reports` reachable everywhere. Deferred: ratings, ride counts, reputation, identity verification, moderation tooling. **Honest scope of the 18+ gate:** with DOB deferred, it is an unverified checkbox plus a disclaimer line. A terms-of-use artifact, not age assurance.
+   - **Done (T5), `0009_tos_acceptance.sql`.** `profiles` gains `age_confirmed_18`, `tos_accepted_at`, `tos_version`. Acceptance rides the same `raw_user_meta_data` path `display_name` already uses, so `handle_new_user()` writes it in the **same transaction as account creation** — an account cannot exist without its acceptance record. A follow-up UPDATE from the app could have failed, been skipped, or been interrupted by the email-confirmation round trip. `0007` already revokes UPDATE on `profiles` except `display_name`, so a client cannot forge these columns; the security-definer trigger is the only writer. `profiles_missing_tos(version)` finds anyone predating a Terms revision. `TOS_VERSION` lives in `src/lib/validations/auth.ts` — bump it when the Terms change.
 
 ## Design Direction
 
@@ -64,7 +65,7 @@ A student flying through ORD posts "need ride from ORD airport tomorrow 5pm." Fa
 
 **Already implemented and verified.** `/rides` and `/rides/[id]` use `getUser()` and render regardless; `/rides/new`, `/rides/get`, `/rides/offer`, `/messages`, `/messages/[id]` use `requireUser()`. `lib/auth.ts` documents this exact access model. `CopyLinkButton` already exists on the detail page.
 
-**Still to do:** post detail pages ship `noindex`. Today only `admin/page.tsx` sets `robots: { index: false }`. A public shareable post URL exposing route and travel date should not land in a search engine.
+**Done (T6).** Post detail pages ship `robots: { index: false }`, matching the convention already used by `/admin`. A public shareable post URL carrying one person's route and travel date is fine to hand someone in a group chat and wrong to leave in a search index, where it outlives the ride. Messenger link previews read Open Graph tags and generally ignore robots meta, so this should not affect the WhatsApp preview — worth eyeballing the first time a post link is pasted.
 
 ## The Rider / Captain Asymmetry (deliberate, not a gap)
 

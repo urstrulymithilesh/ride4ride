@@ -7,10 +7,19 @@ export type FieldErrors = Record<string, string>;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/**
+ * Current version of the Terms. Bump this whenever the Terms change in a
+ * way that should require re-acceptance; `profiles.tos_version` records
+ * what each user actually agreed to, so `profiles_missing_tos()` can find
+ * everyone still on an older one.
+ */
+export const TOS_VERSION = "2026-09-03";
+
 export interface SignUpInput {
   email: string;
   password: string;
   displayName: string;
+  ageConfirmed18: boolean;
 }
 
 export interface SignInInput {
@@ -22,6 +31,7 @@ export function validateSignUp(raw: {
   email: string;
   password: string;
   displayName: string;
+  ageConfirmed18: boolean;
 }): { ok: true; data: SignUpInput } | { ok: false; fieldErrors: FieldErrors } {
   const fieldErrors: FieldErrors = {};
   const email = raw.email.trim().toLowerCase();
@@ -35,9 +45,17 @@ export function validateSignUp(raw: {
     fieldErrors.displayName = "Display name must be 50 characters or fewer.";
   if (password.length < 8)
     fieldErrors.password = "Password must be at least 8 characters.";
+  // Blocking, not advisory: the attestation cannot be applied
+  // retroactively to a ride that has already happened.
+  if (!raw.ageConfirmed18)
+    fieldErrors.ageConfirmed18 =
+      "You must be 18 or older and accept the Terms to create an account.";
 
   if (Object.keys(fieldErrors).length > 0) return { ok: false, fieldErrors };
-  return { ok: true, data: { email, password, displayName } };
+  return {
+    ok: true,
+    data: { email, password, displayName, ageConfirmed18: true },
+  };
 }
 
 export function validateSignIn(raw: {

@@ -33,11 +33,20 @@ export default async function ConversationPage({
   const supabase = await createClient();
 
   // RLS hides conversations the user isn't part of => notFound.
-  const { data: convo } = await supabase
+  const { data: convo, error: convoError } = await supabase
     .from("conversations")
     .select("*")
     .eq("id", id)
     .maybeSingle<Conversation>();
+
+  // A failed query must not fall through to notFound(): that would tell the
+  // user this conversation no longer exists, when it may be intact and only
+  // the read failed. Throw so error.tsx renders a real error instead.
+  if (convoError) {
+    console.error("[messages/:id] conversation query failed:", convoError.message, convoError);
+    throw new Error("Couldn't load this conversation.");
+  }
+
   if (!convo) notFound();
 
   const otherId =

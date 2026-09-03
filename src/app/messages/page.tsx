@@ -20,11 +20,17 @@ export default async function MessagesPage() {
   const supabase = await createClient();
 
   // RLS returns only conversations the user participates in. Newest-first.
-  const { data: conversations } = await supabase
+  const { data: conversations, error: convosError } = await supabase
     .from("conversations")
     .select("*")
     .order("created_at", { ascending: false })
     .returns<Conversation[]>();
+
+  if (convosError) {
+    // Without this, a failed query renders "No conversations yet" — telling
+    // someone their chat history is gone when it is sitting there fine.
+    console.error("[messages] conversation list query failed:", convosError.message, convosError);
+  }
 
   const convos = conversations ?? [];
 
@@ -58,7 +64,28 @@ export default async function MessagesPage() {
     <main className="w-full flex-1 px-4 py-6">
       <h1 className="mb-4 text-xl font-semibold text-content">Messages</h1>
 
-      {convos.length === 0 ? (
+      {convosError ? (
+        /* ERROR state, deliberately not the empty state: "no conversations"
+           and "we couldn't load your conversations" mean opposite things. */
+        <div
+          role="alert"
+          className="card border border-danger bg-transparent p-8 text-center"
+        >
+          <p className="text-sm font-semibold text-content">
+            Couldn&apos;t load your messages.
+          </p>
+          <p className="mt-1 text-sm text-muted">
+            Something went wrong on our side. Your conversations are still
+            there — we just can&apos;t show them right now.
+          </p>
+          <Link
+            href="/messages"
+            className="mt-3 inline-block text-sm font-medium text-primary"
+          >
+            Try again
+          </Link>
+        </div>
+      ) : convos.length === 0 ? (
         <div className="card border border-dashed border-hairline bg-transparent p-8 text-center">
           <p className="text-sm text-muted">No conversations yet.</p>
           <Link

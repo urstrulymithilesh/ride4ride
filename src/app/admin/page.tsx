@@ -14,12 +14,20 @@ export default async function AdminPage() {
   if (!(await isCurrentUserAdmin())) notFound();
 
   const admin = createAdminClient();
-  const { data: reports } = await admin
+  const { data: reports, error: reportsError } = await admin
     .from("reports")
     .select("*")
     .order("created_at", { ascending: false })
     .limit(200)
     .returns<Report[]>();
+
+  // Same bug class as the rides feed, on the moderation surface: a failed
+  // query would render "no reports", which reads as "nothing to action".
+  // Throw rather than show a reassuring empty queue.
+  if (reportsError) {
+    console.error("[admin] reports query failed:", reportsError.message, reportsError);
+    throw new Error("Couldn't load reports.");
+  }
 
   const list = reports ?? [];
   const userIds = new Set<string>();

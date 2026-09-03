@@ -35,32 +35,70 @@ export async function GET(request: Request) {
 
   const ids = expired.map((c) => c.id);
   let deletedImages = 0;
+  const purgeable: string[] = [];
+  const failures: string[] = [];
 
   // Remove each conversation's images from Storage (folder = conversationId).
+  //
+  // ORDERING MATTERS. Previously both Storage calls discarded their error
+  // and the conversation row was deleted regardless. If listing or removal
+  // failed, the images survived in Storage while the row pointing at them
+  // was gone — so nothing would ever try to delete them again. Chat images
+  // outliving their conversation is a privacy failure, not a tidiness one
+  // (see TODOS.md P-1: chat privacy is absolute).
+  //
+  // So a conversation is only queued for deletion once its images are
+  // actually gone. Anything that fails is left in place and retried on the
+  // next run, which is safe because this job is idempotent.
   for (const id of ids) {
-    const { data: files } = await admin.storage.from(CHAT_BUCKET).list(id, {
-      limit: 1000,
-    });
+    const { data: files, error: listError } = await admin.storage
+      .from(CHAT_BUCKET)
+      .list(id, { limit: 1000 });
+
+    if (listError) {
+      console.error(`[cron/purge-chats] listing images failed for ${id}:`, listError.message);
+      failures.push(`list ${id}: ${listError.message}`);
+      continue; // keep the conversation; retry next run
+    }
+
     if (files && files.length > 0) {
       const paths = files.map((f) => `${id}/${f.name}`);
-      const { data: removed } = await admin.storage
+      const { data: removed, error: removeError } = await admin.storage
         .from(CHAT_BUCKET)
         .remove(paths);
+
+      if (removeError) {
+        console.error(`[cron/purge-chats] removing images failed for ${id}:`, removeError.message);
+        failures.push(`remove ${id}: ${removeError.message}`);
+        continue; // keep the conversation; retry next run
+      }
       deletedImages += removed?.length ?? 0;
+    }
+
+    purgeable.push(id);
+  }
+
+  // Delete only the conversations whose images are confirmed gone.
+  if (purgeable.length > 0) {
+    const { error: delErr } = await admin
+      .from("conversations")
+      .delete()
+      .in("id", purgeable);
+    if (delErr) {
+      console.error("[cron/purge-chats] conversation delete failed:", delErr.message);
+      return NextResponse.json(
+        { error: delErr.message, deletedImages, failures },
+        { status: 500 },
+      );
     }
   }
 
-  // Delete conversations (messages cascade).
-  const { error: delErr } = await admin
-    .from("conversations")
-    .delete()
-    .in("id", ids);
-  if (delErr) {
-    return NextResponse.json({ error: delErr.message }, { status: 500 });
-  }
-
-  return NextResponse.json({
-    deletedConversations: ids.length,
+  const body = {
+    deletedConversations: purgeable.length,
     deletedImages,
-  });
+    ...(failures.length > 0 ? { skipped: ids.length - purgeable.length, failures } : {}),
+  };
+
+  // A run that could not purge everything it was asked to must not report 200.
+  return NextResponse.json(body, { status: failures.length > 0 ? 500 : 200 });
 }

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getUser } from "@/lib/auth";
 import { rememberWantedRoute } from "@/lib/wanted-routes";
+import { takeRateLimit } from "@/lib/rate-limit";
 import {
   validateWantedRoute,
   type WantedRouteInput,
@@ -44,6 +45,17 @@ export async function submitWantedRoute(
 
   const result = validateWantedRoute(raw);
   if (!result.ok) return { fieldErrors: result.fieldErrors };
+
+  // Rate limit AFTER validation so a malformed submission does not burn a
+  // token, and BEFORE the insert so a flood never reaches the table. This
+  // is the only write endpoint that works without an account, so it is the
+  // one that needs this.
+  if (!(await takeRateLimit("wanted_routes"))) {
+    return {
+      error:
+        "You've sent a few of these already. Please try again in a little while.",
+    };
+  }
 
   const user = await getUser();
   const supabase = await createClient();

@@ -62,6 +62,7 @@ with `npx web-push generate-vapid-keys`; generate `CRON_SECRET` with
 | `VAPID_PUBLIC_KEY` | Server | same public key |
 | `VAPID_PRIVATE_KEY` | **Secret** | from `web-push generate-vapid-keys` |
 | `VAPID_SUBJECT` | Server | `mailto:admin@ride4ride.com` |
+| `RATE_LIMIT_SALT` | **Secret** | long random string; salts client-IP hashes in the rate limiter. Without it the hashes are brute-forceable. |
 | `CRON_SECRET` | **Secret** | long random string; Vercel sends it to cron routes |
 
 > Never expose `SUPABASE_SERVICE_ROLE_KEY`, `VAPID_PRIVATE_KEY`, or

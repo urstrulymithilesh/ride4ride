@@ -5,7 +5,6 @@ import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { ChatThread } from "@/components/chat/chat-thread";
 import { RevealPanel } from "@/components/chat/reveal-panel";
-import { VerifiedBadge } from "@/components/safety/verified-badge";
 import { ReportButton } from "@/components/safety/report-button";
 import { blockUser, unblockUser } from "@/app/safety/actions";
 import { formatPlace } from "@/lib/utils/format";
@@ -58,9 +57,9 @@ export default async function ConversationPage({
     await Promise.all([
       supabase
         .from("profiles")
-        .select("display_name, verification")
+        .select("display_name")
         .eq("id", otherId)
-        .maybeSingle<{ display_name: string; verification: "unverified" | "pending" | "verified" }>(),
+        .maybeSingle<{ display_name: string }>(),
       convo.ride_id
         ? supabase
             .from("rides")
@@ -133,7 +132,6 @@ export default async function ConversationPage({
           </Link>
           <h1 className="flex items-center gap-1.5 font-semibold text-content">
             <span className="truncate">{other?.display_name ?? "A member"}</span>
-            <VerifiedBadge verification={other?.verification} />
           </h1>
         </div>
         {ride ? (

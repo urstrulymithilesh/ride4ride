@@ -17,7 +17,7 @@ export default function PrivacyPage() {
       <div className="mt-6 space-y-5 text-sm leading-6 text-muted">
         <section>
           <h2 className="font-semibold text-content">What we collect</h2>
-          <p>Account info (email, display name, verification status), ride posts (cities/state/ZIP; and for &lsquo;get&rsquo; rides, exact addresses and coordinates), messages and images you send, and technical data needed to run the service.</p>
+          <p>Account info (email, display name), ride posts (cities/state/ZIP; and for &lsquo;get&rsquo; rides, exact addresses and coordinates), messages and images you send, and technical data needed to run the service.</p>
         </section>
         <section>
           <h2 className="font-semibold text-content">How addresses are protected</h2>

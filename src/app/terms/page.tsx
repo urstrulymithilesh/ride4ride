@@ -18,7 +18,7 @@ export default function TermsPage() {
       <div className="mt-6 space-y-5 text-sm leading-6 text-muted">
         <section>
           <h2 className="font-semibold text-content">1. Who can use Ride4Ride</h2>
-          <p>You must be 18 or older to create an account. Accounts confirmed with a student email address display a verification badge; the badge is informational and is not a background check, an identity check, or a guarantee of anything. You are responsible for activity on your account.</p>
+          <p>You must be 18 or older to create an account, and you must accept these Terms. We confirm that you control the email address you sign up with. We do NOT verify your identity, age, driving licence, insurance, or vehicle, and we do not run background checks. You are responsible for activity on your account.</p>
         </section>
         <section>
           <h2 className="font-semibold text-content">2. Rides are between users</h2>

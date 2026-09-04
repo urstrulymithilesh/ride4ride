@@ -22,10 +22,10 @@ export async function GET(request: NextRequest) {
       token_hash,
     });
     if (!error) {
-      // Email is now confirmed — upgrade to "verified student" if the domain
-      // is allowed. The RPC re-checks confirmation + domain server-side, so
-      // this can't be abused to self-verify. Failure here is non-fatal.
-      await supabase.rpc("verify_current_user_email");
+      // The "verified student" upgrade used to happen here. Retired in
+      // 0013 along with the badge: the platform is not campus-scoped, and
+      // a badge that ends up meaning "has an email address" reads as an
+      // endorsement while guaranteeing nothing.
 
       // Attach any wanted-route rows this person submitted before signing
       // up. This is the far side of the email round trip that made a

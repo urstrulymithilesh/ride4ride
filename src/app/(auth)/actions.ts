@@ -11,7 +11,7 @@ import {
   sanitizeRedirect,
   type FieldErrors,
 } from "@/lib/validations/auth";
-import { getVerificationMode, STUDENT_DOMAIN_HINT } from "@/lib/verification";
+import { getVerificationMode, allowedDomainsHint } from "@/lib/verification";
 import { claimWantedRoutes } from "@/lib/wanted-routes";
 
 export interface AuthState {
@@ -48,9 +48,10 @@ export async function signUp(
   const { email, password, displayName } = result.data;
   const supabase = await createClient();
 
-  // In "restrict" mode, only allowed student domains may create an account.
-  // The allowed-domain list lives in the DB (allowed_email_domains) so it's
-  // the single source of truth for both this check and DB-side verification.
+  // In "restrict" mode, only allow-listed email domains may create an
+  // account. The list lives in the DB (allowed_email_domains) so it can be
+  // changed without a redeploy. Since 0013 that table is a SIGNUP
+  // ALLOWLIST ONLY — it no longer grants any badge.
   if (getVerificationMode() === "restrict") {
     const { data: allowed } = await supabase.rpc("is_allowed_student_email", {
       p_email: email,
@@ -58,7 +59,7 @@ export async function signUp(
     if (!allowed) {
       return {
         fieldErrors: {
-          email: `Sign-up is limited to student email addresses (${STUDENT_DOMAIN_HINT}).`,
+          email: `Sign up with ${await allowedDomainsHint(supabase)}.`,
         },
       };
     }

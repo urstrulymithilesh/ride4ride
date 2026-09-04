@@ -6,7 +6,6 @@ import { getUser } from "@/lib/auth";
 import { SignInPrompt } from "@/components/auth/sign-in-prompt";
 import { CopyLinkButton } from "@/components/rides/copy-link-button";
 import { EnableNotifications } from "@/components/notifications/enable-notifications";
-import { VerifiedBadge } from "@/components/safety/verified-badge";
 import { ReportButton } from "@/components/safety/report-button";
 import { startConversation } from "@/app/messages/actions";
 import { repostRide } from "@/app/rides/actions";
@@ -146,15 +145,13 @@ export default async function RideDetailPage({
 
   // Poster identity is part of "full details" — only fetch/expose to signed-in.
   let posterName: string | null = null;
-  let posterVerification: "unverified" | "pending" | "verified" | null = null;
   if (user) {
     const { data: poster } = await supabase
       .from("profiles")
-      .select("display_name, verification")
+      .select("display_name")
       .eq("id", ride.owner_id)
-      .maybeSingle<{ display_name: string; verification: typeof posterVerification }>();
+      .maybeSingle<{ display_name: string }>();
     posterName = poster?.display_name ?? "A member";
-    posterVerification = poster?.verification ?? null;
   }
 
   return (
@@ -216,7 +213,6 @@ export default async function RideDetailPage({
                 <dt className="text-muted">Posted by</dt>
                 <dd className="flex flex-wrap items-center gap-1.5 text-content">
                   <span className="wrap-anywhere">{posterName}</span>
-                  <VerifiedBadge verification={posterVerification} />
                 </dd>
               </div>
               {ride.description ? (

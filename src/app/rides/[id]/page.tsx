@@ -13,18 +13,102 @@ import { repostRide } from "@/app/rides/actions";
 import { formatDistance, formatPlace, formatRideWhen } from "@/lib/utils/format";
 import type { RideWithLocation } from "@/types";
 
-// noindex: a post page is a PUBLIC, shareable URL carrying one person's
-// route and travel date. That is fine to hand to someone in a group chat
-// and wrong to leave in a search index, where it outlives the ride and is
-// findable by anyone. Matches the convention already used by /admin.
-//
-// This does not affect link previews in messengers: those crawlers read
-// Open Graph tags and generally ignore robots meta. Worth eyeballing the
-// first time you paste a post link into WhatsApp.
-export const metadata: Metadata = {
-  title: "Ride",
-  robots: { index: false },
-};
+/**
+ * Per-post metadata, because pasting a post link into a group chat IS the
+ * distribution mechanism. A bare URL with the title "Ride" is a wasted
+ * share; "Chicago, IL → Naperville, IL · Fri Sep 4" is one someone might
+ * actually tap.
+ *
+ * PRIVACY. This runs on a PUBLIC page and its output is handed to
+ * third-party crawlers (WhatsApp, Telegram, Slack), which may cache it
+ * indefinitely and outside our control. So it selects the anonymous
+ * column set ONLY — city, state, date, direction, distance. Never zip,
+ * never `description` (free text, sign-in gated on the page itself), and
+ * never anything from `ride_locations`. Widening this select is a
+ * privacy decision, not a formatting one.
+ *
+ * noindex is preserved from T6: fine to hand someone in a chat, wrong to
+ * leave in a search index where it outlives the ride. Messenger crawlers
+ * read OG tags and ignore robots meta, so previews still work — and per
+ * the Next docs, streaming metadata is disabled for those bots, so the
+ * tags land in <head> where they expect them.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const fallback: Metadata = { title: "Ride", robots: { index: false } };
+
+  try {
+    const { id } = await params;
+    const supabase = await createClient();
+    const { data: ride, error } = await supabase
+      .from("rides")
+      .select(
+        "type, from_city, from_state, to_city, to_state, ride_date, is_future, distance_meters, status",
+      )
+      .eq("id", id)
+      .maybeSingle<{
+        type: "offer" | "get";
+        from_city: string;
+        from_state: string;
+        to_city: string;
+        to_state: string;
+        ride_date: string | null;
+        is_future: boolean;
+        distance_meters: number | null;
+        status: string;
+      }>();
+
+    // Never throw from here: a metadata failure must not take the page
+    // down with it. Generic metadata is a fine degradation.
+    if (error || !ride) return fallback;
+
+    const route = `${formatPlace(ride.from_city, ride.from_state)} → ${formatPlace(
+      ride.to_city,
+      ride.to_state,
+    )}`;
+    const when = formatRideWhen(ride.ride_date, ride.is_future);
+    const distance = formatDistance(ride.distance_meters);
+
+    // A shared link often gets tapped days later. Say so in the preview
+    // rather than letting someone open a dead post expecting a live one.
+    const stale = ride.status !== "active" ? `[${ride.status}] ` : "";
+    const title = `${stale}${route} · ${when}`;
+    const description = [
+      ride.type === "offer"
+        ? "Someone is driving this route and has seats."
+        : "Someone is looking for a ride on this route.",
+      distance ? `About ${distance}.` : null,
+      "Ride4Ride is a free board for arranging rides directly with other people.",
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+
+    return {
+      title,
+      description,
+      robots: { index: false },
+      openGraph: {
+        title,
+        description,
+        type: "website",
+        siteName: "Ride4Ride",
+        ...(siteUrl ? { url: `${siteUrl}/rides/${id}` } : {}),
+      },
+      twitter: {
+        card: "summary",
+        title,
+        description,
+      },
+    };
+  } catch {
+    return fallback;
+  }
+}
 
 export default async function RideDetailPage({
   params,

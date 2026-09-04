@@ -5,7 +5,7 @@ import { getUser } from "@/lib/auth";
 import { sanitizeRedirect } from "@/lib/validations/auth";
 import { SignInForm } from "./sign-in-form";
 
-export const metadata: Metadata = { title: "Sign in · Ride4Ride" };
+export const metadata: Metadata = { title: "Sign in" };
 
 export default async function SignInPage({
   searchParams,

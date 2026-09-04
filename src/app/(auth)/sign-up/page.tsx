@@ -5,7 +5,7 @@ import { getUser } from "@/lib/auth";
 import { sanitizeRedirect } from "@/lib/validations/auth";
 import { SignUpForm } from "./sign-up-form";
 
-export const metadata: Metadata = { title: "Sign up · Ride4Ride" };
+export const metadata: Metadata = { title: "Sign up" };
 
 export default async function SignUpPage({
   searchParams,

@@ -12,6 +12,7 @@ import {
   type FieldErrors,
 } from "@/lib/validations/auth";
 import { getVerificationMode, STUDENT_DOMAIN_HINT } from "@/lib/verification";
+import { claimWantedRoutes } from "@/lib/wanted-routes";
 
 export interface AuthState {
   error?: string;
@@ -109,11 +110,18 @@ export async function signIn(
   const redirectTo = sanitizeRedirect(String(formData.get("redirectTo") ?? ""));
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signInWithPassword(result.data);
+  const { data: signedIn, error } = await supabase.auth.signInWithPassword(
+    result.data,
+  );
   if (error) {
     // Keep the message generic to avoid leaking which part was wrong.
     return { error: "Invalid email or password." };
   }
+
+  // Also claim here, not only on email confirmation: someone may submit a
+  // wanted route, close the tab, and sign in days later with the cookie
+  // still present. Best-effort and never blocks sign-in.
+  if (signedIn.user) await claimWantedRoutes(signedIn.user.id);
 
   revalidatePath("/", "layout");
   redirect(redirectTo);

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { RideCard, type RideCardData } from "@/components/rides/ride-card";
+import { WantedRouteForm } from "@/components/rides/wanted-route-form";
 
 export const metadata: Metadata = { title: "Browse rides" };
 
@@ -211,6 +212,7 @@ export default async function BrowseRidesPage({
               Be the first to post one
             </Link>
           )}
+          <WantedRouteForm defaultOpen />
         </div>
       ) : (
         <ul className="flex flex-col gap-3">
@@ -221,6 +223,11 @@ export default async function BrowseRidesPage({
           ))}
         </ul>
       )}
+
+      {/* Standing entry point, always reachable. The rows we most need are
+          for routes the board cannot serve, so this must not be gated
+          behind a zero-result search. */}
+      {!ridesError && list.length > 0 ? <WantedRouteForm /> : null}
     </main>
   );
 }

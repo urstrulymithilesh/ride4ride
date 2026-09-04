@@ -17,8 +17,18 @@ create temporary table _actors on commit drop as
     from auth.users order by created_at limit 2;
 
 -- ---- 1. ANON may insert an unowned row ------------------------------
+-- IMPORTANT: `set role anon` alone is NOT what a real request looks like.
+-- PostgREST sets request.jwt.claims from the bearer token, and the anon
+-- KEY is itself a JWT carrying {"role":"anon"} and NO "sub" claim. An
+-- earlier version of this file left the claims unset, which made the test
+-- pass against a policy that rejected every real anonymous insert in
+-- production (fixed in 0012). Reproduce the real shape: anon role, claims
+-- present, sub absent.
 set local role anon;
-select set_config('request.jwt.claims', null, true);
+select set_config(
+  'request.jwt.claims',
+  json_build_object('role', 'anon', 'iss', 'supabase')::text,
+  true);
 
 insert into public.wanted_routes (
   from_city, from_state, from_airport, to_city, to_state,
@@ -48,6 +58,7 @@ end$$;
 select 'PASS' as test_2_anon_cannot_insert_owned_row;
 
 -- ---- 3. ANON cannot READ anything, including its own insert ----------
+-- (still under the anon role + anon-shaped claims set in test 1)
 -- The read policy requires created_by = auth.uid(); anon has no uid, so
 -- an anonymous submitter cannot enumerate the table afterwards.
 select case when count(*) = 0 then 'PASS' else 'FAIL' end

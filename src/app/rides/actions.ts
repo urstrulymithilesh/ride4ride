@@ -45,9 +45,20 @@ export async function createOfferRide(
     p_is_future: d.timing.is_future,
   });
 
-  if (error) return { error: "Couldn't create the post. Please try again." };
+  // Log before returning the friendly message. Without this the real cause
+  // is invisible: a migration that never applied surfaced only as
+  // "Couldn't create the post", with nothing in the server log to say why.
+  if (error) {
+    console.error("[rides] create_offer_ride failed:", error.message, error);
+    return { error: "Couldn't create the post. Please try again." };
+  }
 
   const ride = Array.isArray(data) ? data[0] : data;
+  if (!ride?.id) {
+    console.error("[rides] create_offer_ride returned no row:", data);
+    return { error: "Couldn't create the post. Please try again." };
+  }
+
   revalidatePath("/rides");
   redirect(`/rides/${ride.id}`);
 }
@@ -138,9 +149,20 @@ export async function createGetRide(
     p_is_future: d.timing.is_future,
   });
 
-  if (error) return { error: "Couldn't create the post. Please try again." };
+  // Log before returning the friendly message. Without this the real cause
+  // is invisible: a migration that never applied surfaced only as
+  // "Couldn't create the post", with nothing in the server log to say why.
+  if (error) {
+    console.error("[rides] create_get_ride failed:", error.message, error);
+    return { error: "Couldn't create the post. Please try again." };
+  }
 
   const ride = Array.isArray(data) ? data[0] : data;
+  if (!ride?.id) {
+    console.error("[rides] create_get_ride returned no row:", data);
+    return { error: "Couldn't create the post. Please try again." };
+  }
+
   revalidatePath("/rides");
   redirect(`/rides/${ride.id}`);
 }

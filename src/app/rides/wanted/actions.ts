@@ -1,5 +1,7 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+
 import { createClient } from "@/lib/supabase/server";
 import { getUser } from "@/lib/auth";
 import { rememberWantedRoute } from "@/lib/wanted-routes";
@@ -59,18 +61,31 @@ export async function submitWantedRoute(
 
   const user = await getUser();
   const supabase = await createClient();
-  const row: WantedRouteInput & { created_by: string | null } = {
+
+  // The id is generated HERE rather than read back from the insert.
+  //
+  // The obvious `.insert(row).select("id")` cannot work for an anonymous
+  // row, and the failure is not obvious from the error. Asking for the
+  // representation makes PostgREST run INSERT ... RETURNING, and RETURNING
+  // is evaluated against the SELECT policy — which is
+  // `created_by = auth.uid()`. An unowned row is therefore invisible the
+  // moment it is created, the RETURNING is refused, and Postgres reports
+  // it as "new row violates row-level security policy", pointing at the
+  // INSERT check that was actually fine.
+  //
+  // Verified against the live API: identical anonymous insert returns 401
+  // with `Prefer: return=representation` and 201 with `return=minimal`.
+  //
+  // Generating the id up front sidesteps it entirely: nothing needs to be
+  // read back, and we still have the id for the claim cookie.
+  const id = randomUUID();
+  const row: WantedRouteInput & { id: string; created_by: string | null } = {
+    id,
     ...result.data,
-    // Signed out => null, which is the only shape the anon INSERT policy
-    // accepts. Signed in => own id, the only other shape it accepts.
     created_by: user?.id ?? null,
   };
 
-  const { data, error } = await supabase
-    .from("wanted_routes")
-    .insert(row)
-    .select("id")
-    .maybeSingle<{ id: string }>();
+  const { error } = await supabase.from("wanted_routes").insert(row);
 
   if (error) {
     console.error("[wanted-routes] insert failed:", error.message, error);
@@ -79,7 +94,7 @@ export async function submitWantedRoute(
 
   // Only anonymous rows need remembering; a signed-in row already has an
   // owner and there is nothing to claim later.
-  if (!user && data?.id) await rememberWantedRoute(data.id);
+  if (!user) await rememberWantedRoute(id);
 
   return {
     message:

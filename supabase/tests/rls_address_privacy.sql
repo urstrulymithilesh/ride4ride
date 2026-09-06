@@ -43,7 +43,14 @@ create temporary table _t as
   order by created_at desc limit 1;
 
 -- === 1) ANON cannot read any address ===
+-- `set role anon` alone is not what a real request looks like: PostgREST
+-- sets request.jwt.claims from the bearer token, and the anon KEY is itself
+-- a JWT carrying {"role":"anon"} with NO "sub". Setting the claims makes
+-- this match production. It does not change the result here (anon sees 0
+-- either way), but a future policy branching on `auth.uid() is null` would
+-- be mis-tested without it — which is exactly what happened in 0010/0012.
 set local role anon;
+set local request.jwt.claims = '{"role":"anon","iss":"supabase"}';
 select 'anon sees location rows (expect 0):' as check,
        count(*) as rows
 from public.ride_locations

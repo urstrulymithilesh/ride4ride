@@ -52,7 +52,8 @@ select
 -- RLS is on with NO policies, so both roles must see zero rows. If this
 -- fails, the stored IP hashes are enumerable by anyone with the anon key.
 set local role anon;
-select set_config('request.jwt.claims', null, true);
+-- Anon-shaped claims, matching a real anon-key request (role present, no sub).
+select set_config('request.jwt.claims', '{"role":"anon","iss":"supabase"}', true);
 select case when count(*) = 0 then 'PASS' else 'FAIL' end
          as test_6a_anon_cannot_read_hashes,
        count(*) as rows_visible

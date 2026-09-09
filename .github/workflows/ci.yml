@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# One run per branch; a newer push cancels an in-flight older one.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    name: Static checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Runs the privacy-guard self-test first, then the guard, then
+      # tsc --noEmit, then eslint. See package.json "check".
+      - name: npm run check
+        run: npm run check
+
+  database:
+    name: Migrations + SQL proofs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # THE MOST VALUABLE STEP IN THIS FILE.
+      #
+      # `supabase db reset` replays every migration in supabase/migrations/
+      # in order against an empty database. A migration that cannot apply
+      # cleanly — bad signature, dependency on something dropped, a syntax
+      # error partway through — fails here.
+      #
+      # This is the check that was missing when 0008, 0012 and 0013 were
+      # each reported applied while the live API proved they were not. It
+      # cannot catch a human running half a file in the SQL Editor against
+      # the hosted project, but it does prove the migrations themselves are
+      # sound and complete, which is what made that failure mode hard to
+      # tell apart from a broken migration.
+      - name: Start Supabase and apply all migrations from scratch
+        run: supabase db start
+
+      - name: Export DATABASE_URL
+        run: echo "DATABASE_URL=$(supabase status -o json | jq -r '.DB_URL')" >> "$GITHUB_ENV"
+
+      # Verifies the failure detector itself before trusting its verdict.
+      - name: SQL proof runner self-test
+        run: node scripts/run-sql-proofs.mjs --self-test
+
+      - name: Run SQL proofs
+        run: npm run test:sql
+
+      - name: Supabase logs on failure
+        if: failure()
+        run: supabase status || true

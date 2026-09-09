@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "check:privacy": "node scripts/check-privacy.mjs",
-    "check": "node scripts/check-privacy.mjs && tsc --noEmit && eslint"
+    "check": "node scripts/check-privacy.mjs --self-test && node scripts/check-privacy.mjs && tsc --noEmit && eslint",
+    "check:privacy:self": "node scripts/check-privacy.mjs --self-test"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

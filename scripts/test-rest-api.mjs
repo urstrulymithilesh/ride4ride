@@ -24,21 +24,47 @@
  *   SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
  */
 
-const URL_BASE = (process.env.SUPABASE_URL ?? "").replace(/\/$/, "");
-const ANON = process.env.SUPABASE_ANON_KEY ?? "";
-const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "";
+/**
+ * Read a required env var, rejecting the shapes a shell pipeline produces
+ * when a value is absent.
+ *
+ * `jq -r '.MISSING'` prints the literal string "null", which is TRUTHY in
+ * JS. The first version of this file checked `if (!URL_BASE)` and sailed
+ * straight past it, then crashed on `Failed to parse URL from null/rest/v1/…`
+ * after reporting "Integration tests against null". The guard has to reject
+ * the string, not just the empty value.
+ */
+function requireEnv(name) {
+  const raw = (process.env[name] ?? "").trim();
+  if (raw === "" || raw === "null" || raw === "undefined") {
+    console.error(
+      `test-rest-api: ${name} is missing or literally "${raw || "empty"}".\n` +
+        "  CI derives these from `supabase status -o json`; an unmatched key name\n" +
+        "  yields the string \"null\" rather than nothing, so this is most likely a\n" +
+        "  key-name mismatch in the workflow, not a missing step.\n" +
+        "  The workflow prints the JSON keys it actually got — check that output.",
+    );
+    process.exit(1);
+  }
+  return raw;
+}
+
+const URL_BASE = requireEnv("SUPABASE_URL").replace(/\/$/, "");
+const ANON = requireEnv("SUPABASE_ANON_KEY");
+const SERVICE = requireEnv("SUPABASE_SERVICE_ROLE_KEY");
+
+// A URL that is present but unusable should fail here, with a clear reason,
+// rather than inside the first fetch.
+try {
+  const u = new URL(URL_BASE);
+  if (!/^https?:$/.test(u.protocol)) throw new Error(`unexpected protocol ${u.protocol}`);
+} catch (err) {
+  console.error(`test-rest-api: SUPABASE_URL is not a usable URL (${URL_BASE}): ${err.message}`);
+  process.exit(1);
+}
 
 /** Seeded by supabase/seed/ci-test-users.sql. */
 const USER_A = "00000000-0000-0000-0000-00000000000a";
-
-if (!URL_BASE || !ANON || !SERVICE) {
-  console.error(
-    "test-rest-api: missing env.\n" +
-      "  Need SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY.\n" +
-      "  CI sets these from `supabase status -o json`.",
-  );
-  process.exit(1);
-}
 
 const anonH = (extra = {}) => ({
   apikey: ANON,

@@ -63,8 +63,52 @@ jobs:
       - name: Start Supabase and apply all migrations from scratch
         run: supabase db start
 
+      # One saved blob, and the KEY NAMES get printed. The first REST run
+      # failed because a key did not match and `jq -r` emitted the literal
+      # string "null" — which is truthy, so the script crashed on
+      # "Failed to parse URL from null/rest/v1/...". Printing the keys makes
+      # a mismatch diagnosable in one run instead of a guess-and-push cycle.
+      # Values are never printed, only lengths.
+      - name: Read Supabase status
+        run: |
+          supabase status -o json > /tmp/sb.json
+          echo "--- keys from supabase status -o json ---"
+          jq -r 'keys[]' /tmp/sb.json || echo "(could not parse JSON)"
+          echo "-----------------------------------------"
+
+      # `// empty` is load-bearing: without it a missing key becomes the
+      # string "null" rather than an empty value, and every guard downstream
+      # sees something truthy.
       - name: Export DATABASE_URL
-        run: echo "DATABASE_URL=$(supabase status -o json | jq -r '.DB_URL')" >> "$GITHUB_ENV"
+        run: |
+          DB=$(jq -r '.DB_URL // .DATABASE_URL // empty' /tmp/sb.json)
+          if [ -z "$DB" ]; then
+            echo "::error::no database URL key matched; see the key list above"
+            exit 1
+          fi
+          echo "DATABASE_URL=$DB" >> "$GITHUB_ENV"
+
+      - name: Export Supabase API credentials
+        run: |
+          API=$(jq -r '.API_URL // .API_EXTERNAL_URL // .SUPABASE_URL // .REST_URL // empty' /tmp/sb.json)
+          ANON=$(jq -r '.ANON_KEY // .SUPABASE_ANON_KEY // .PUBLISHABLE_KEY // empty' /tmp/sb.json)
+          SERVICE=$(jq -r '.SERVICE_ROLE_KEY // .SUPABASE_SERVICE_ROLE_KEY // .SECRET_KEY // empty' /tmp/sb.json)
+          # The local stack's API port is fixed by CLI defaults, so this
+          # fallback is safe, and better than failing the job over a renamed
+          # key when the endpoint is knowable.
+          if [ -z "$API" ]; then
+            echo "::warning::no API URL key matched; using the default local endpoint"
+            API="http://127.0.0.1:54321"
+          fi
+          echo "resolved API URL: $API"
+          echo "anon key length: ${#ANON}  service key length: ${#SERVICE}"
+          if [ -z "$ANON" ] || [ -z "$SERVICE" ]; then
+            echo "::error::anon and/or service-role key did not resolve; see the key list above"
+            exit 1
+          fi
+          echo "SUPABASE_URL=$API" >> "$GITHUB_ENV"
+          echo "SUPABASE_ANON_KEY=$ANON" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE" >> "$GITHUB_ENV"
 
       # Verifies the failure detector itself before trusting its verdict.
       - name: SQL proof runner self-test
@@ -76,15 +120,12 @@ jobs:
       # T26 — the layer the SQL proofs cannot reach. Real HTTP through
       # PostgREST with the anon key, which is where the INSERT ... RETURNING
       # vs SELECT-policy bug lived for a whole session.
-      - name: Export Supabase API credentials
-        run: |
-          echo "SUPABASE_URL=$(supabase status -o json | jq -r '.API_URL')" >> "$GITHUB_ENV"
-          echo "SUPABASE_ANON_KEY=$(supabase status -o json | jq -r '.ANON_KEY')" >> "$GITHUB_ENV"
-          echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status -o json | jq -r '.SERVICE_ROLE_KEY')" >> "$GITHUB_ENV"
-
       - name: Run REST API integration tests
         run: npm run test:rest
 
-      - name: Supabase logs on failure
+      - name: Supabase status on failure
         if: failure()
-        run: supabase status || true
+        run: |
+          supabase status || true
+          echo "--- raw status JSON ---"
+          cat /tmp/sb.json || true

@@ -73,6 +73,18 @@ jobs:
       - name: Run SQL proofs
         run: npm run test:sql
 
+      # T26 — the layer the SQL proofs cannot reach. Real HTTP through
+      # PostgREST with the anon key, which is where the INSERT ... RETURNING
+      # vs SELECT-policy bug lived for a whole session.
+      - name: Export Supabase API credentials
+        run: |
+          echo "SUPABASE_URL=$(supabase status -o json | jq -r '.API_URL')" >> "$GITHUB_ENV"
+          echo "SUPABASE_ANON_KEY=$(supabase status -o json | jq -r '.ANON_KEY')" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status -o json | jq -r '.SERVICE_ROLE_KEY')" >> "$GITHUB_ENV"
+
+      - name: Run REST API integration tests
+        run: npm run test:rest
+
       - name: Supabase logs on failure
         if: failure()
         run: supabase status || true

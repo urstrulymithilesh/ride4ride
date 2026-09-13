@@ -11,7 +11,8 @@
     "check": "node scripts/check-privacy.mjs --self-test && node scripts/check-privacy.mjs && tsc --noEmit && eslint",
     "check:privacy:self": "node scripts/check-privacy.mjs --self-test",
     "test:sql": "node scripts/run-sql-proofs.mjs",
-    "test:sql:self": "node scripts/run-sql-proofs.mjs --self-test"
+    "test:sql:self": "node scripts/run-sql-proofs.mjs --self-test",
+    "test:rest": "node scripts/test-rest-api.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",

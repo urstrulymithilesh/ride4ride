@@ -43,6 +43,13 @@ jobs:
 
       - run: npm ci
 
+      # Both self-tests run before the things they guard, so a broken
+      # detector fails loudly instead of reporting green.
+      - name: Self-tests (credential resolver + SQL failure detector)
+        run: |
+          node scripts/resolve-supabase-env.mjs --self-test
+          node scripts/run-sql-proofs.mjs --self-test
+
       - uses: supabase/setup-cli@v1
         with:
           version: latest
@@ -78,41 +85,24 @@ jobs:
 
       # `// empty` is load-bearing: without it a missing key becomes the
       # string "null" rather than an empty value, and every guard downstream
-      # sees something truthy.
+      # sees something truthy. (.DB_URL has matched from the first run.)
       - name: Export DATABASE_URL
         run: |
           DB=$(jq -r '.DB_URL // .DATABASE_URL // empty' /tmp/sb.json)
           if [ -z "$DB" ]; then
-            echo "::error::no database URL key matched; see the key list above"
+            echo "::error::no database URL key matched; see the inventory below"
             exit 1
           fi
           echo "DATABASE_URL=$DB" >> "$GITHUB_ENV"
 
-      - name: Export Supabase API credentials
-        run: |
-          API=$(jq -r '.API_URL // .API_EXTERNAL_URL // .SUPABASE_URL // .REST_URL // empty' /tmp/sb.json)
-          ANON=$(jq -r '.ANON_KEY // .SUPABASE_ANON_KEY // .PUBLISHABLE_KEY // empty' /tmp/sb.json)
-          SERVICE=$(jq -r '.SERVICE_ROLE_KEY // .SUPABASE_SERVICE_ROLE_KEY // .SECRET_KEY // empty' /tmp/sb.json)
-          # The local stack's API port is fixed by CLI defaults, so this
-          # fallback is safe, and better than failing the job over a renamed
-          # key when the endpoint is knowable.
-          if [ -z "$API" ]; then
-            echo "::warning::no API URL key matched; using the default local endpoint"
-            API="http://127.0.0.1:54321"
-          fi
-          echo "resolved API URL: $API"
-          echo "anon key length: ${#ANON}  service key length: ${#SERVICE}"
-          if [ -z "$ANON" ] || [ -z "$SERVICE" ]; then
-            echo "::error::anon and/or service-role key did not resolve; see the key list above"
-            exit 1
-          fi
-          echo "SUPABASE_URL=$API" >> "$GITHUB_ENV"
-          echo "SUPABASE_ANON_KEY=$ANON" >> "$GITHUB_ENV"
-          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE" >> "$GITHUB_ENV"
-
-      # Verifies the failure detector itself before trusting its verdict.
-      - name: SQL proof runner self-test
-        run: node scripts/run-sql-proofs.mjs --self-test
+      # Resolves the API credentials by INSPECTING VALUES, not key names.
+      # Two runs were lost guessing names (.ANON_KEY, .PUBLISHABLE_KEY, …).
+      # An anon key is a JWT whose payload says role=anon; that is true
+      # whatever the CLI calls the field, and across CLI versions. The
+      # resolver prints a redacted inventory, so if it ever still fails the
+      # log says exactly which shapes were present.
+      - name: Resolve Supabase API credentials
+        run: node scripts/resolve-supabase-env.mjs /tmp/sb.json --github-env
 
       - name: Run SQL proofs
         run: npm run test:sql

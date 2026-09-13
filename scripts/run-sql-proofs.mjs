@@ -49,6 +49,31 @@ export function outputHasFailure(out) {
   return /\bFAIL(ED)?\b/.test(out);
 }
 
+/**
+ * Minimum assertions each proof must actually emit.
+ *
+ * WHY THIS EXISTS. A proof can exit 0 having asserted NOTHING, and that is
+ * not hypothetical: rls_address_privacy.sql and rls_reveal_handshake.sql
+ * originally printed row counts for a human to eyeball and emitted no
+ * PASS/FAIL at all. Under CI they would have gone green while `anon` read
+ * every address — a test that structurally cannot fail, guarding the most
+ * important invariant in the product.
+ *
+ * Both now self-assert. This manifest stops the regression: if a proof
+ * stops asserting (a block commented out, a rewrite that drops checks),
+ * the count falls short and the build fails instead of passing vacuously.
+ *
+ * Raise a number ONLY when deliberately adding assertions.
+ */
+const MIN_ASSERTIONS = {
+  "expiry_rule.sql": 6,
+  "rate_limit.sql": 7,
+  "rls_address_privacy.sql": 5,
+  "rls_blocking_and_verify.sql": 2,
+  "rls_reveal_handshake.sql": 3,
+  "wanted_routes_rls.sql": 7,
+};
+
 /** Proofs are ordered so a broken schema fails on the cheapest one first. */
 function proofFiles() {
   return readdirSync(TESTS)
@@ -131,13 +156,29 @@ for (const f of proofFiles()) {
   const errored = r.status !== 0;
   const asserted = outputHasFailure(out);
 
-  if (errored || asserted) {
+  const passes = (out.match(/\bPASS(ED)?\b/g) ?? []).length;
+  const expected = MIN_ASSERTIONS[basename(f)];
+  // An unlisted proof gets a floor of 1: a new file that asserts nothing
+  // should not slip through just because nobody updated the manifest.
+  const floor = expected ?? 1;
+  const tooFew = !errored && !asserted && passes < floor;
+
+  if (errored || asserted || tooFew) {
     failures++;
-    console.error(`\n✗ ${basename(f)} ${errored ? "(psql error)" : "(assertion FAILED)"}`);
+    const why = errored
+      ? "(psql error)"
+      : asserted
+        ? "(assertion FAILED)"
+        : `(only ${passes} assertion(s), expected >= ${floor} — did a check get dropped?)`;
+    console.error(`\n✗ ${basename(f)} ${why}`);
     console.error(out.trim().split("\n").map((l) => "    " + l).join("\n"));
+    if (tooFew && expected === undefined) {
+      console.error(
+        `    NOTE: ${basename(f)} is not in MIN_ASSERTIONS. Add it so its count is checked.`,
+      );
+    }
   } else {
-    const passes = (out.match(/\bPASS(ED)?\b/g) ?? []).length;
-    console.log(`✓ ${basename(f).padEnd(28)} ${passes} assertion(s) passed`);
+    console.log(`✓ ${basename(f).padEnd(28)} ${passes} assertion(s) passed (>= ${floor})`);
   }
 }
 

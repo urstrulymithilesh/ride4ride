@@ -16,6 +16,13 @@ create temporary table _actors on commit drop as
   select id, row_number() over (order by created_at) as n
     from auth.users order by created_at limit 2;
 
+-- A temp table is owned by its creating role (postgres), and the checks
+-- below read it after switching to anon or authenticated. Without this
+-- grant the first such read dies with "permission denied for table
+-- _actors" before any assertion runs. Scaffolding only: _actors holds two
+-- user ids that the proof itself supplies to the roles under test.
+grant select on _actors to anon, authenticated;
+
 -- ---- 1. ANON may insert an unowned row ------------------------------
 -- IMPORTANT: `set role anon` alone is NOT what a real request looks like.
 -- PostgREST sets request.jwt.claims from the bearer token, and the anon

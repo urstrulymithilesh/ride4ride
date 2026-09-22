@@ -152,6 +152,30 @@ That is a serious failure mode for this pilot specifically, because the entire d
 
 Verified by re-injecting the original malformed URL and confirming the two states differ, then restoring the config.
 
+## Closed: `notFound()` Returns HTTP 200 (works as designed)
+
+**T25, investigated 2026-09-22 and closed without a code change.**
+
+Every `notFound()` in the app returns HTTP 200 with a 404 body, while an unmatched route correctly returns 404. Reproduced in a production build, not just dev.
+
+**Cause, proven rather than assumed.** `src/app/loading.tsx` is a **root** loading file, so it wraps every route in a Suspense boundary. Per the Next 16 docs (`loading.md`, Status Codes): the response body starts streaming when a Suspense fallback renders, and "because the response headers have already been sent to the client, the status code of the response cannot be updated."
+
+Two experiments, both against production builds:
+
+| change | `/admin` (calls `notFound()`) |
+|---|---|
+| baseline | 200 |
+| `src/proxy.ts` disabled | 200 — **proxy is not the cause**, hypothesis dead |
+| root `loading.tsx` disabled | **404** — cause confirmed |
+
+**Why it stays.** The SEO concern that motivated the ticket is already handled by the framework: Next injects `<meta name="robots" content="noindex">` into these responses. Verified across user agents — Chrome, Twitterbot, WhatsApp and Googlebot all get `status=200, noindex=1`. The docs state directly that soft-404 labelling "does not lead to indexation because the page is explicitly marked `noindex`."
+
+What remains is monitoring fidelity (logs cannot separate a dead post from a live one by status) and link-preview crawlers getting 200 for a missing post — where metadata already degrades to a generic `Ride · Ride4Ride`, or `[expired]` for an expired one.
+
+Removing the root `loading.tsx` would buy real 404s at the cost of the loading UI on *every* route, against a stated mobile-first / slow-connection constraint. Scoping it does not help: `loading.tsx` applies to a segment **and its children**, so any such file above `/rides/[id]`, `/messages/[id]` or `/admin` re-breaks it, and the segments left over are forms and static pages that least need a skeleton. The documented alternative — an existence check in `proxy` — adds a database round trip to every post-page view, on the hottest path and the primary distribution surface, which the docs explicitly warn against.
+
+**Decision: keep `loading.tsx`, accept 200 + `noindex`.** Revisit only if compliance or analytics ever needs a true 404 status.
+
 ## Known Risk: Two Airport Sources of Truth
 
 Rider airport is derived from coordinates; captain airport is picked by hand. They will disagree at boundaries — a rider geocoded near the ORD/MDW line versus a captain who picked the other one. On a board with three posts that is a silent match failure. Accepted for the pilot, with the mitigation being that the airport is a display and filter aid, not a join key.

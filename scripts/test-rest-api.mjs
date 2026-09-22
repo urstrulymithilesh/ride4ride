@@ -196,6 +196,15 @@ console.log(`Integration tests against ${URL_BASE}\n`);
     `status ${messages.status} body ${messages.text.slice(0, 140)}`,
   );
 
+  const arrivals = await rest("arrival_events?select=visitor_hash&limit=5");
+  const arrivalsReadable =
+    arrivals.status === 200 && Array.isArray(arrivals.json) && arrivals.json.length > 0;
+  check(
+    "anon reads ZERO arrival_events (visitor hashes are not enumerable)",
+    !arrivalsReadable,
+    `status ${arrivals.status} body ${arrivals.text.slice(0, 140)}`,
+  );
+
   const limits = await rest("rate_limit_hits?select=subject_hash&limit=5");
   const hashesReadable =
     limits.status === 200 && Array.isArray(limits.json) && limits.json.length > 0;
@@ -241,7 +250,7 @@ console.log(`Integration tests against ${URL_BASE}\n`);
 await rest("wanted_routes?from_city=eq.RestTest", { method: "DELETE", headers: svcH() });
 
 // A suite that asserted nothing must not report success.
-const MIN_ASSERTIONS = 8;
+const MIN_ASSERTIONS = 9;
 console.log(`\n${passed} passed, ${failed} failed (minimum expected: ${MIN_ASSERTIONS})`);
 
 if (failed > 0) {

@@ -10,6 +10,7 @@ import { ReportButton } from "@/components/safety/report-button";
 import { startConversation } from "@/app/messages/actions";
 import { repostRide } from "@/app/rides/actions";
 import { formatDistance, formatPlace, formatRideWhen } from "@/lib/utils/format";
+import { recordArrival } from "@/lib/arrivals";
 import type { RideWithLocation } from "@/types";
 
 /**
@@ -139,6 +140,11 @@ export default async function RideDetailPage({
   if (!ride) notFound();
 
   const user = await getUser();
+
+  // Recorded AFTER the ride resolves, so a 404 for a missing post is not
+  // counted as someone arriving at the board.
+  await recordArrival("post", user?.id);
+
   const isOwner = user?.id === ride.owner_id;
   const distance = formatDistance(ride.distance_meters);
   const kindLabel = ride.type === "offer" ? "Offer a ride" : "Get a ride";

@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { RideCard, type RideCardData } from "@/components/rides/ride-card";
 import { WantedRouteForm } from "@/components/rides/wanted-route-form";
+import { recordArrival } from "@/lib/arrivals";
+import { getUser } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Browse rides" };
 
@@ -48,6 +50,12 @@ export default async function BrowseRidesPage({
     const s = qs.toString();
     return s ? `/rides?${s}` : "/rides";
   };
+
+  // Arrival tracking (T13). Fire before the feed query so a slow or
+  // failing database does not cost us the one signal that tells a dead
+  // link apart from a dead product.
+  const viewer = await getUser();
+  await recordArrival("feed", viewer?.id);
 
   const supabase = await createClient();
   let query = supabase

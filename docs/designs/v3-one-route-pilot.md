@@ -121,6 +121,16 @@ Watch item, accepted: no ceiling, so a ride booked months out lives months. Stal
 
 **`wanted_routes` is demoted from a gate to qualitative signal.** It was designed for a board with seeded inventory. With no seeding the board starts empty, so every search misses and every route is "unserved" — it would measure emptiness, clear its bar trivially while posts sat at zero, and then be overridden by worst-row-wins anyway. It is kept because the route *names* tell you where demand clusters, which is the only input for choosing route two.
 
+**Arrival tracking status: SHIPPED (T13), `0014_arrival_tracking.sql`.**
+
+`arrival_events` holds one row per visitor per surface per day. "Unique visits" is a UNIQUE constraint plus `ON CONFLICT DO NOTHING`, so it is a property of the schema rather than of a counting query that can drift.
+
+What is stored is deliberately thin: a **salted SHA-256 of the client IP** — never the IP — reusing the posture `0011` established, plus a two-value `surface` label (`feed` / `post`). No user agent, no referrer, no full path, no cookie, no third-party script. `surface` is constrained to those two values precisely so a post id, and therefore someone's route, can never become an analytics record.
+
+Recording is best-effort and silent: instrumentation must never take down the page it measures. Known crawlers are skipped by user agent — including the messenger previews this product's own distribution generates, which would otherwise inflate the number every time a link is pasted. A request with no resolvable IP is skipped rather than counted, since it cannot be de-duplicated; the metric undercounts rather than inflates.
+
+`arrival_report(since, exclude_user, exclude_hashes)` produces the day-21 gate and the day-3 checkpoint. It takes `exclude_hashes` because the founder cannot otherwise be filtered when browsing signed out, and will hit the board far more than anyone during the pilot — against a bar of 40, that matters. Signed-in founder visits are excluded by user id.
+
 **Not instrumentable:** "matched before they booked." No signal exists for a rider silently booking an Uber.
 
 **Ruled out permanently, not deferred:** measuring how often money is raised in chat. It required an operator read of private message bodies. Chat privacy is absolute, so this does not return in increment B or anywhere else. Premise 3's cost stays untested by instrumentation, by choice.

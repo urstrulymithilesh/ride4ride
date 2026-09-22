@@ -66,6 +66,7 @@ export function outputHasFailure(out) {
  * Raise a number ONLY when deliberately adding assertions.
  */
 const MIN_ASSERTIONS = {
+  "arrival_tracking.sql": 7,
   "expiry_rule.sql": 6,
   "rate_limit.sql": 7,
   "rls_address_privacy.sql": 5,

@@ -135,6 +135,11 @@ if (process.argv.includes("--self-test")) {
       { DB_URL: "postgresql://postgres@127.0.0.1:54322/postgres", API_URL: "http://127.0.0.1:54321", ANON_KEY: mkJwt("anon"), SERVICE_ROLE_KEY: mkJwt("service_role") },
       { api: "http://127.0.0.1:54321" },
     ],
+    [
+      "db-only blob resolves NOTHING (the `supabase db start` case)",
+      { DB_URL: "postgresql://postgres@127.0.0.1:54322/postgres" },
+      { anonNull: true, serviceNull: true, apiNull: true },
+    ],
   ];
 
   let bad = 0;
@@ -146,6 +151,9 @@ if (process.argv.includes("--self-test")) {
     if (expect.anonPrefix) checks.push(String(r.anon).startsWith(expect.anonPrefix));
     if (expect.servicePrefix) checks.push(String(r.service).startsWith(expect.servicePrefix));
     if (expect.api) checks.push(r.apiUrl === expect.api);
+    if (expect.anonNull) checks.push(r.anon === null);
+    if (expect.serviceNull) checks.push(r.service === null);
+    if (expect.apiNull) checks.push(r.apiUrl === null);
     const ok = checks.every(Boolean);
     if (!ok) bad++;
     console.log(
@@ -193,12 +201,31 @@ console.log(`resolved anon    : ${anon ? `found (${anon.length} chars)` : "NOT F
 console.log(`resolved service : ${service ? `found (${service.length} chars)` : "NOT FOUND"}`);
 
 if (!anon || !service) {
-  console.error(
-    "\nresolve-supabase-env: could not identify the anon and/or service-role key.\n" +
-      "  Looked for a JWT with role=anon / role=service_role, and for sb_publishable_ /\n" +
-      "  sb_secret_ prefixes, across every value above. If the inventory shows a\n" +
-      "  credential in a shape not covered, add it to resolve() — do not guess a key name.",
-  );
+  // The shape of the blob tells you WHY. If the only thing present is a
+  // database URL, no credential is missing — the API services simply are
+  // not running, and no amount of key-name matching will conjure them.
+  const keys = inventory.map((i) => i.key);
+  const onlyDatabase =
+    !apiUrl && keys.length <= 2 && keys.every((k) => /^(DB_URL|DATABASE_URL)$/i.test(k));
+
+  if (onlyDatabase) {
+    console.error(
+      "\nresolve-supabase-env: the API stack is not running.\n" +
+        "  The status blob contains ONLY a database URL, so Postgres is up and\n" +
+        "  nothing else is. That is what `supabase db start` does: it starts the\n" +
+        "  database alone, without Kong, PostgREST or GoTrue — which is why SQL\n" +
+        "  proofs pass (they need only DB_URL) while REST tests have nothing to\n" +
+        "  talk to.\n" +
+        "  Fix: start the full stack with `supabase start`, not `supabase db start`.",
+    );
+  } else {
+    console.error(
+      "\nresolve-supabase-env: could not identify the anon and/or service-role key.\n" +
+        "  Looked for a JWT with role=anon / role=service_role, and for sb_publishable_ /\n" +
+        "  sb_secret_ prefixes, across every value above. If the inventory shows a\n" +
+        "  credential in a shape not covered, add it to resolve() — do not guess a key name.",
+    );
+  }
   process.exit(1);
 }
 

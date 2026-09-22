@@ -54,6 +54,28 @@ jobs:
         with:
           version: latest
 
+      # `supabase start` needs a config.toml. This repo has never had one
+      # (the CLI was never used locally), so generate a default when it is
+      # absent rather than committing a config for a CLI version that
+      # cannot be tested from here.
+      - name: Initialise Supabase config if absent
+        run: |
+          if [ ! -f supabase/config.toml ]; then
+            echo "no supabase/config.toml — generating the CLI default"
+            supabase init --force
+          fi
+
+      # `supabase start`, NOT `supabase db start`.
+      #
+      # The previous version used `db start`, which brings up Postgres ALONE
+      # — no Kong, no PostgREST, no GoTrue. That is why the SQL proofs passed
+      # (they need only DB_URL) while the REST tests had nothing to talk to,
+      # and why `supabase status -o json` reported a blob containing exactly
+      # one key: DB_URL. No credential was missing; the services that issue
+      # them were never started.
+      - name: Start the full Supabase stack
+        run: supabase start
+
       # THE MOST VALUABLE STEP IN THIS FILE.
       #
       # `supabase db reset` replays every migration in supabase/migrations/
@@ -67,8 +89,11 @@ jobs:
       # the hosted project, but it does prove the migrations themselves are
       # sound and complete, which is what made that failure mode hard to
       # tell apart from a broken migration.
-      - name: Start Supabase and apply all migrations from scratch
-        run: supabase db start
+      #
+      # Explicit rather than relying on `start` applying them, so the
+      # from-scratch replay is an assertion this file actually makes.
+      - name: Replay every migration against an empty database
+        run: supabase db reset
 
       # One saved blob, and the KEY NAMES get printed. The first REST run
       # failed because a key did not match and `jq -r` emitted the literal

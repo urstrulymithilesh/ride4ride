@@ -39,6 +39,16 @@
 
 drop policy if exists "wanted_routes: anon inserts unowned" on public.wanted_routes;
 
+-- IDEMPOTENCY NOTE (added after the Supabase Preview failure on cf5d67a):
+-- this file drops the 0010 policy name above, but the replacement policy
+-- below was created WITHOUT a self-drop. A fresh replay (CI `db reset`)
+-- never notices, but a preview branch forked from a database that already
+-- ran this file replays it and fails with 42710 "already exists".
+-- Dropping our own name first makes replays safe; on a database that
+-- already has the policy the result is identical (drop + recreate same
+-- definition). Migrations stay otherwise immutable.
+drop policy if exists "wanted_routes: insert unowned or own" on public.wanted_routes;
+
 create policy "wanted_routes: insert unowned or own"
   on public.wanted_routes for insert
   with check (

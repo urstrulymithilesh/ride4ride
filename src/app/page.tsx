@@ -1,79 +1,58 @@
-import Link from "next/link";
-import { getSignupCount } from "@/lib/signup-count";
+import { createClient } from "@/lib/supabase/server";
 
-function SearchIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="11" cy="11" r="7" />
-      <path d="m20 20-3.5-3.5" />
-    </svg>
-  );
-}
-
-function UserPlusIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <circle cx="10" cy="8" r="3.5" />
-      <path d="M4 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
-      <path d="M18.5 8v6" />
-      <path d="M15.5 11h6" />
-    </svg>
-  );
+async function getJoinedCount(): Promise<number> {
+  try {
+    const supabase = await createClient();
+    const { count } = await supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true });
+    if (typeof count === "number") return count;
+  } catch {
+    // Public count unavailable — fall back to the seed value.
+  }
+  return 2;
 }
 
 export default async function Home() {
-  // Cached ~60s (see lib/signup-count). Null hides the line: no number
-  // is better than a wrong number on the landing page.
-  const memberCount = await getSignupCount();
+  const joined = await getJoinedCount();
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center px-5 py-20 text-center">
-      <span className="chip mb-4 border border-hairline text-muted">
-        For the student community
-      </span>
-      <h1 className="wrap-anywhere text-3xl font-semibold tracking-tight text-content">
-        Share the ride. Split the trip.
-      </h1>
-      <p className="mt-4 text-base text-muted">
-        Offer a ride you&apos;re already taking, or find one going your way.
-        Browse freely — sign in when you&apos;re ready to connect.
-      </p>
-      <div className="mt-8 flex w-full flex-col gap-3">
-        <Link href="/rides" className="btn btn-primary w-full">
-          <SearchIcon />
-          Browse rides
-        </Link>
-        <Link href="/sign-up" className="btn btn-secondary w-full">
-          <UserPlusIcon />
-          Create an account
-        </Link>
+    <main className="flex w-full flex-1 flex-col bg-black px-5 pb-6 pt-14 text-white">
+      <div className="-mx-5 flex h-16 items-center border-l-[3.75px] border-primary pl-3 pr-5">
+        <div className="flex flex-wrap items-center gap-x-3">
+          <p className="whitespace-nowrap text-4xl font-normal italic text-white/90">
+            need ride?
+          </p>
+          <p className="text-xs text-white/60">
+            request a ride from someone nearby
+          </p>
+        </div>
       </div>
-      {memberCount !== null && memberCount > 0 ? (
-        <p className="mt-6 text-sm text-muted">
-          Joined by {memberCount} member{memberCount === 1 ? "" : "s"} and
-          counting.
+
+      <div className="flex flex-1 flex-col items-center justify-center py-10 text-center">
+        <span className="rounded-full border border-white/25 bg-surface px-10 py-2 text-3xl font-bold tracking-wider text-white shadow-[0_0_24px_rgba(255,255,255,0.06)]">
+          ride4ride.com
+        </span>
+        <p className="mt-8 text-sm text-white/70">
+          yes, it&apos;s completely free • open to everyone
         </p>
-      ) : null}
+        <p className="mt-8 text-sm text-white/85">
+          users joined : {joined}
+        </p>
+      </div>
+
+      <div className="-mx-5 flex h-16 items-center justify-end border-r-[3.75px] border-primary pl-5 pr-3">
+        <p className="text-center text-3xl font-normal italic text-white/90">
+          you can give rides too!
+        </p>
+      </div>
+
+      <div aria-hidden="true" className="h-28" />
+
+      <div className="text-center text-xs leading-relaxed text-white/60">
+        <p>only log in when you&apos;re ready to connect</p>
+        <p>all your info. is kept private</p>
+      </div>
     </main>
   );
 }

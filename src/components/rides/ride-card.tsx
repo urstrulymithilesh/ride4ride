@@ -44,7 +44,7 @@ export function RideCard({ ride }: { ride: RideCardData }) {
               : "bg-primary-soft text-primary"
           }`}
         >
-          {ride.type === "offer" ? "Ride Available" : "Need Ride"}
+          {ride.type === "offer" ? "ride available" : "need ride"}
         </span>
         <p className="wrap-anywhere mt-2 font-semibold text-content">
           {fromLabel} → {toLabel}
@@ -64,7 +64,7 @@ export function RideCard({ ride }: { ride: RideCardData }) {
           href={`/rides/${ride.id}`}
           className="inline-flex min-h-11 items-center text-xs font-medium text-primary"
         >
-          View details →
+          view details →
         </Link>
         <CopyLinkButton path={`/rides/${ride.id}`} compact />
       </div>

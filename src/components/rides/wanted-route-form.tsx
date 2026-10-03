@@ -38,7 +38,7 @@ export function WantedRouteForm({ defaultOpen = false }: { defaultOpen?: boolean
         onClick={() => setOpen(true)}
         className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-dashed border-hairline px-3 text-sm font-medium text-primary"
       >
-        Not finding your route? Tell us
+        not finding your route? tell us
       </button>
     );
   }
@@ -49,68 +49,68 @@ export function WantedRouteForm({ defaultOpen = false }: { defaultOpen?: boolean
     <form action={formAction} className="card mt-3 flex flex-col gap-3 p-4">
       <div>
         <h2 className="text-sm font-semibold text-content">
-          Tell us the route you wanted
+          tell us the route you wanted
         </h2>
         <p className="mt-1 text-xs text-muted">
-          We only open routes people actually ask for. This tells us where to
+          we only open routes people actually ask for. this tells us where to
           go next — no account needed.
         </p>
       </div>
 
       <fieldset className="flex flex-col gap-1.5">
-        <legend className="text-sm font-medium text-content">I wanted to</legend>
+        <legend className="text-sm font-medium text-content">i wanted to</legend>
         <div className="flex gap-2">
           <label className="flex flex-1 cursor-pointer items-center gap-2 rounded-xl border border-hairline px-3 py-2 text-sm text-content">
             <input type="radio" name="role_wanted" value="get" defaultChecked />
-            Get a ride
+            get a ride
           </label>
           <label className="flex flex-1 cursor-pointer items-center gap-2 rounded-xl border border-hairline px-3 py-2 text-sm text-content">
             <input type="radio" name="role_wanted" value="give" />
-            Offer a ride
+            offer a ride
           </label>
         </div>
       </fieldset>
 
       <div className="flex gap-2">
         <TextField
-          label="From city"
+          label="from city"
           name="from_city"
-          placeholder="Chicago"
+          placeholder="chicago"
           error={state.fieldErrors?.from_city}
           required
         />
         <TextField
-          label="State"
+          label="state"
           name="from_state"
-          placeholder="IL"
+          placeholder="il"
           error={state.fieldErrors?.from_state}
           required
         />
         <TextField
-          label="Airport"
+          label="airport"
           name="from_airport"
-          placeholder="ORD"
+          placeholder="ord"
           error={state.fieldErrors?.from_airport}
         />
       </div>
 
       <div className="flex gap-2">
         <TextField
-          label="To city"
+          label="to city"
           name="to_city"
-          placeholder="Naperville"
+          placeholder="naperville"
           error={state.fieldErrors?.to_city}
           required
         />
         <TextField
-          label="State"
+          label="state"
           name="to_state"
-          placeholder="IL"
+          placeholder="il"
           error={state.fieldErrors?.to_state}
           required
         />
         <TextField
-          label="Airport"
+          label="airport"
           name="to_airport"
           placeholder="optional"
           error={state.fieldErrors?.to_airport}
@@ -119,7 +119,7 @@ export function WantedRouteForm({ defaultOpen = false }: { defaultOpen?: boolean
 
       <div className="flex gap-2">
         <TextField
-          label="Any time from"
+          label="any time from"
           name="date_window_start"
           type="date"
           defaultValue={today}
@@ -127,7 +127,7 @@ export function WantedRouteForm({ defaultOpen = false }: { defaultOpen?: boolean
           required
         />
         <TextField
-          label="Until"
+          label="until"
           name="date_window_end"
           type="date"
           defaultValue={today}
@@ -143,13 +143,13 @@ export function WantedRouteForm({ defaultOpen = false }: { defaultOpen?: boolean
       ) : null}
 
       <div className="flex items-center gap-2">
-        <SubmitButton pendingText="Sending…">Send</SubmitButton>
+        <SubmitButton pendingText="sending…">send</SubmitButton>
         <button
           type="button"
           onClick={() => setOpen(false)}
           className="btn btn-ghost"
         >
-          Cancel
+          cancel
         </button>
       </div>
     </form>

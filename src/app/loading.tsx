@@ -7,7 +7,7 @@ export default function Loading() {
       className="flex flex-1 items-center justify-center py-24"
     >
       <span className="h-6 w-6 animate-spin rounded-full border-2 border-hairline border-t-primary" />
-      <span className="sr-only">Loading…</span>
+      <span className="sr-only">loading…</span>
     </div>
   );
 }

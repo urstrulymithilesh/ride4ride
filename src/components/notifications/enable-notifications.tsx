@@ -89,7 +89,7 @@ export function EnableNotifications() {
   if (status === "enabled") {
     return (
       <p className="text-xs text-success">
-        🔔 Expiry reminders are on for this browser.
+        🔔 expiry reminders are on for this browser.
       </p>
     );
   }
@@ -97,7 +97,7 @@ export function EnableNotifications() {
   if (status === "denied") {
     return (
       <p className="text-xs text-muted">
-        Notifications are blocked. Enable them in your browser settings to get
+        notifications are blocked. enable them in your browser settings to get
         expiry reminders.
       </p>
     );
@@ -111,11 +111,11 @@ export function EnableNotifications() {
         disabled={status === "working"}
         className="btn btn-secondary text-xs"
       >
-        {status === "working" ? "Enabling…" : "🔔 Notify me before it expires"}
+        {status === "working" ? "enabling…" : "🔔 notify me before it expires"}
       </button>
       {status === "error" ? (
         <span className="text-xs text-danger" role="alert">
-          Couldn&apos;t enable reminders.
+          couldn&apos;t enable reminders.
         </span>
       ) : null}
     </div>

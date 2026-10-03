@@ -1,5 +1,7 @@
 import "server-only";
 
+import { maskedStreet } from "@/lib/masked-street";
+
 /**
  * Mapbox geocoding + driving-distance, SERVER-ONLY.
  *
@@ -77,21 +79,6 @@ export async function geocodeAddress(
   if (!city && f.place_type?.includes("place")) city = f.text ?? null;
 
   return { lat, lng, city, state, zip, placeName: f.place_name, street: maskedStreet(f) };
-}
-
-/**
- * Masked street name for public display: the street NAME without any house
- * number. Mapbox puts the number in `address` and the name in `text` for
- * `address`-type matches, but the leading-digit strip below is a second
- * barrier so a provider shape change can never promote a house number onto
- * the public `rides.from_street` / `to_street` columns. Non-address matches
- * (POI, neighborhood, place) yield null — no street to mask.
- */
-function maskedStreet(f: { text?: string; place_type?: string[] }): string | null {
-  if (!f.place_type?.includes("address")) return null;
-  const name = (f.text ?? "").replace(/^\d+\s+/, "").trim();
-  if (!name) return null;
-  return name.slice(0, 80);
 }
 
 /** Straight-line distance (meters) — fallback when Directions is unavailable. */

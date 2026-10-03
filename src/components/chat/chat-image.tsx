@@ -32,7 +32,7 @@ export function ChatImage({ path }: { path: string }) {
   if (failed) {
     return (
       <div className="flex h-40 w-full items-center justify-center rounded-lg bg-surface-2 text-xs text-faint">
-        Image unavailable
+        image unavailable
       </div>
     );
   }
@@ -41,7 +41,7 @@ export function ChatImage({ path }: { path: string }) {
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={url ?? undefined}
-      alt="Shared image"
+      alt="shared image"
       className={`h-auto w-full max-w-[240px] rounded-lg ${
         url ? "" : "h-40 animate-pulse bg-surface-2"
       }`}

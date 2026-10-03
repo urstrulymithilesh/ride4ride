@@ -21,7 +21,7 @@ export function CopyLinkButton({
       setTimeout(() => setCopied(false), 1500);
     } catch {
       // Clipboard blocked (e.g. insecure context) — select-and-copy fallback.
-      window.prompt("Copy this link:", url);
+      window.prompt("copy this link:", url);
     }
   }
 
@@ -32,7 +32,7 @@ export function CopyLinkButton({
       aria-live="polite"
       className={`btn btn-secondary ${compact ? "px-3 text-xs" : "text-sm"}`}
     >
-      {copied ? "Copied!" : "Copy link"}
+      {copied ? "copied!" : "copy link"}
     </button>
   );
 }

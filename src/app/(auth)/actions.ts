@@ -38,6 +38,7 @@ export async function signUp(
     email: String(formData.get("email") ?? ""),
     password: String(formData.get("password") ?? ""),
     displayName: String(formData.get("displayName") ?? ""),
+    username: String(formData.get("username") ?? ""),
     // An unchecked checkbox submits nothing at all, so absence is "no".
     ageConfirmed18: formData.get("ageConfirmed18") === "on",
     tosAccepted: formData.get("tosAccepted") === "on",
@@ -45,8 +46,18 @@ export async function signUp(
   if (!result.ok) return { fieldErrors: result.fieldErrors };
 
   const redirectTo = sanitizeRedirect(String(formData.get("redirectTo") ?? ""));
-  const { email, password, displayName } = result.data;
+  const { email, password, displayName, username } = result.data;
   const supabase = await createClient();
+
+  // Unique-handle pre-check for a friendly field error. The unique index
+  // in 0017 is the real guarantee under concurrency; this just avoids
+  // burning a signup attempt on an obviously-taken name.
+  const { data: available } = await supabase.rpc("is_username_available", {
+    p_username: username,
+  });
+  if (available === false) {
+    return { fieldErrors: { username: "that username is taken." } };
+  }
 
   // In "restrict" mode, only allow-listed email domains may create an
   // account. The list lives in the DB (allowed_email_domains) so it can be
@@ -59,7 +70,7 @@ export async function signUp(
     if (!allowed) {
       return {
         fieldErrors: {
-          email: `Sign up with ${await allowedDomainsHint(supabase)}.`,
+          email: `sign up with ${await allowedDomainsHint(supabase)}.`,
         },
       };
     }
@@ -76,6 +87,7 @@ export async function signUp(
       // without its acceptance record.
       data: {
         display_name: displayName,
+        username,
         age_confirmed_18: true,
         tos_version: TOS_VERSION,
       },
@@ -83,7 +95,14 @@ export async function signUp(
     },
   });
 
-  if (error) return { error: error.message };
+  if (error) {
+    // Concurrent signup with the same handle hits the 0017 unique index.
+    // Map it to the field so the user can pick another name.
+    if (/username|duplicate|already exists/i.test(error.message)) {
+      return { fieldErrors: { username: "that username is taken." } };
+    }
+    return { error: error.message };
+  }
 
   // If email confirmation is disabled, a session exists immediately.
   if (data.session) {
@@ -94,7 +113,7 @@ export async function signUp(
   // Otherwise prompt the user to confirm via email.
   return {
     message:
-      "Check your email to confirm your account, then sign in to continue.",
+      "check your email to confirm your account, then sign in to continue.",
   };
 }
 
@@ -116,7 +135,7 @@ export async function signIn(
   );
   if (error) {
     // Keep the message generic to avoid leaking which part was wrong.
-    return { error: "Invalid email or password." };
+    return { error: "invalid email or password." };
   }
 
   // Also claim here, not only on email confirmation: someone may submit a

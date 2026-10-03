@@ -10,6 +10,7 @@
     "check:privacy": "node scripts/check-privacy.mjs",
     "check": "node scripts/check-privacy.mjs --self-test && node scripts/check-privacy.mjs && tsc --noEmit && eslint",
     "check:privacy:self": "node scripts/check-privacy.mjs --self-test",
+    "test": "vitest run",
     "test:sql": "node scripts/run-sql-proofs.mjs",
     "test:sql:self": "node scripts/run-sql-proofs.mjs --self-test",
     "test:rest": "node scripts/test-rest-api.mjs",
@@ -32,6 +33,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   }
 }

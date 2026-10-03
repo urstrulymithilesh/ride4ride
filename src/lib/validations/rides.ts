@@ -17,14 +17,14 @@ export function parseTiming(
 
   if (isFuture) {
     if (!trimmed)
-      return { ok: false, fieldErrors: { ride_date: "Pick a date for the ride." } };
+      return { ok: false, fieldErrors: { ride_date: "pick a date for the ride." } };
     const d = new Date(trimmed + "T00:00:00");
     if (Number.isNaN(d.getTime()))
-      return { ok: false, fieldErrors: { ride_date: "That date isn't valid." } };
+      return { ok: false, fieldErrors: { ride_date: "that date isn't valid." } };
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (d < today)
-      return { ok: false, fieldErrors: { ride_date: "Pick a date in the future." } };
+      return { ok: false, fieldErrors: { ride_date: "pick a date in the future." } };
     return { ok: true, data: { is_future: true, ride_date: trimmed } };
   }
 
@@ -82,16 +82,16 @@ export function validateOffer(
   const to_city = (raw.to_city ?? "").trim();
   const to_state = (raw.to_state ?? "").trim();
 
-  if (!from_city) fieldErrors.from_city = "Enter the origin city.";
-  if (!from_state) fieldErrors.from_state = "Enter the origin state.";
-  if (!to_city) fieldErrors.to_city = "Enter the destination city.";
-  if (!to_state) fieldErrors.to_state = "Enter the destination state.";
+  if (!from_city) fieldErrors.from_city = "enter the origin city.";
+  if (!from_state) fieldErrors.from_state = "enter the origin state.";
+  if (!to_city) fieldErrors.to_city = "enter the destination city.";
+  if (!to_state) fieldErrors.to_state = "enter the destination state.";
 
   // Optional captain airport pick. Validated here (friendlier error) AND
   // by the DB check constraint; normalized to uppercase for the RPC.
   const airportRaw = (raw.from_airport ?? "").trim().toUpperCase();
   if (airportRaw && !/^[A-Z]{3}$/.test(airportRaw)) {
-    fieldErrors.from_airport = "Use a 3-letter airport code, like ORD.";
+    fieldErrors.from_airport = "use a 3-letter airport code, like ord.";
   }
 
   const timing = commonTiming(raw, fieldErrors);
@@ -122,9 +122,9 @@ export function validateGet(
   const to_address = (raw.to_address ?? "").trim();
 
   if (from_address.length < 5)
-    fieldErrors.from_address = "Enter a full pickup address.";
+    fieldErrors.from_address = "enter a full pickup address.";
   if (to_address.length < 5)
-    fieldErrors.to_address = "Enter a full drop-off address.";
+    fieldErrors.to_address = "enter a full drop-off address.";
 
   const timing = commonTiming(raw, fieldErrors);
   if (Object.keys(fieldErrors).length > 0 || !timing)

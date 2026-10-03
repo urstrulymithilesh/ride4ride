@@ -15,50 +15,50 @@ export function OfferForm() {
   return (
     <form action={formAction} className="flex flex-col gap-6">
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-content">From</h2>
+        <h2 className="text-sm font-semibold text-content">from</h2>
         <div className="flex gap-3">
           <div className="min-w-0 flex-1">
-            <TextField label="City" name="from_city" error={fe?.from_city} required />
+            <TextField label="city" name="from_city" error={fe?.from_city} required />
           </div>
           <div className="w-24 shrink-0">
-            <TextField label="State" name="from_state" placeholder="CA" error={fe?.from_state} required />
+            <TextField label="state" name="from_state" placeholder="ca" error={fe?.from_state} required />
           </div>
         </div>
-        <TextField label="ZIP (optional)" name="from_zip" error={fe?.from_zip} />
+        <TextField label="zip (optional)" name="from_zip" error={fe?.from_zip} />
         <div className="w-28 shrink-0">
           <TextField
-            label="Airport (optional)"
+            label="airport (optional)"
             name="from_airport"
-            placeholder="ORD"
+            placeholder="ord"
             error={fe?.from_airport}
           />
         </div>
       </section>
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-content">To</h2>
+        <h2 className="text-sm font-semibold text-content">to</h2>
         <div className="flex gap-3">
           <div className="min-w-0 flex-1">
-            <TextField label="City" name="to_city" error={fe?.to_city} required />
+            <TextField label="city" name="to_city" error={fe?.to_city} required />
           </div>
           <div className="w-24 shrink-0">
-            <TextField label="State" name="to_state" placeholder="CA" error={fe?.to_state} required />
+            <TextField label="state" name="to_state" placeholder="ca" error={fe?.to_state} required />
           </div>
         </div>
-        <TextField label="ZIP (optional)" name="to_zip" error={fe?.to_zip} />
+        <TextField label="zip (optional)" name="to_zip" error={fe?.to_zip} />
       </section>
 
       <WhenFields fieldErrors={fe} />
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="description" className="text-sm font-medium text-content">
-          Description (optional)
+          description (optional)
         </label>
         <textarea
           id="description"
           name="description"
           rows={3}
-          placeholder="Seats available, timing, luggage, etc."
+          placeholder="seats available, timing, luggage, etc."
           className="input wrap-anywhere"
         />
       </div>
@@ -69,8 +69,8 @@ export function OfferForm() {
         </p>
       ) : null}
 
-      <SubmitButton variant="success" pendingText="Posting…">
-        Post ride
+      <SubmitButton variant="success" pendingText="posting…">
+        post ride
       </SubmitButton>
     </form>
   );

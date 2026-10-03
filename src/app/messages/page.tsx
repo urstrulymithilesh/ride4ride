@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatPlace } from "@/lib/utils/format";
 import type { Conversation } from "@/types";
 
-export const metadata: Metadata = { title: "Messages" };
+export const metadata: Metadata = { title: "messages" };
 
 interface RideRoute {
   id: string;
@@ -62,7 +62,7 @@ export default async function MessagesPage() {
 
   return (
     <main className="w-full flex-1 px-4 py-6">
-      <h1 className="mb-4 text-xl font-semibold text-content">Messages</h1>
+      <h1 className="mb-4 text-xl font-semibold text-content">messages</h1>
 
       {convosError ? (
         /* ERROR state, deliberately not the empty state: "no conversations"
@@ -72,27 +72,27 @@ export default async function MessagesPage() {
           className="card border border-danger bg-transparent p-8 text-center"
         >
           <p className="text-sm font-semibold text-content">
-            Couldn&apos;t load your messages.
+            couldn&apos;t load your messages.
           </p>
           <p className="mt-1 text-sm text-muted">
-            Something went wrong on our side. Your conversations are still
+            something went wrong on our side. your conversations are still
             there — we just can&apos;t show them right now.
           </p>
           <Link
             href="/messages"
             className="mt-3 inline-block text-sm font-medium text-primary"
           >
-            Try again
+            try again
           </Link>
         </div>
       ) : convos.length === 0 ? (
         <div className="card border border-dashed border-hairline bg-transparent p-8 text-center">
-          <p className="text-sm text-muted">No conversations yet.</p>
+          <p className="text-sm text-muted">no conversations yet.</p>
           <Link
             href="/rides"
             className="mt-3 inline-block text-sm font-medium text-primary"
           >
-            Browse rides to start one
+            browse rides to start one
           </Link>
         </div>
       ) : (
@@ -100,7 +100,7 @@ export default async function MessagesPage() {
           {convos.map((c) => {
             const otherId =
               c.participant_one === user.id ? c.participant_two : c.participant_one;
-            const other = nameById.get(otherId) ?? "A member";
+            const other = nameById.get(otherId) ?? "a member";
             const ride = c.ride_id ? rideById.get(c.ride_id) : undefined;
             return (
               <li key={c.id}>

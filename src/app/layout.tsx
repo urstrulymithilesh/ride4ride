@@ -1,30 +1,29 @@
 import type { Metadata, Viewport } from "next";
-import { JetBrains_Mono } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/layout/site-header";
-import { SiteFooter } from "@/components/layout/site-footer";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { HideOnLanding } from "@/components/layout/hide-on-landing";
 
-// Consolas-like monospace with a straight lowercase "l" (JetBrains Mono
-// distinguishes l/1/I by construction). Native Consolas kept as the first
-// fallback in the CSS stacks.
-const mono = JetBrains_Mono({
+// Geometric sans for the whole site, normal + italic.
+const mono = Montserrat({
   variable: "--font-geist-mono",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
   title: {
-    default: "Ride4Ride",
-    template: "%s · Ride4Ride",
+    default: "ride4ride",
+    template: "%s · ride4ride",
   },
-  description: "Ride-sharing for the student community.",
+  description: "ride-sharing for the student community.",
 };
 
 // viewport-fit=cover is required for env(safe-area-inset-*) to take effect.
 export const viewport: Viewport = {
-  themeColor: "#e9eef6",
+  themeColor: "#000000",
   viewportFit: "cover",
 };
 
@@ -46,11 +45,12 @@ export default function RootLayout({
           >
             Skip to content
           </a>
-          <SiteHeader />
+          <HideOnLanding>
+            <SiteHeader />
+          </HideOnLanding>
           <div id="main" className="flex flex-1 flex-col pb-24">
             {children}
           </div>
-          <SiteFooter />
           <BottomNav />
         </div>
       </body>

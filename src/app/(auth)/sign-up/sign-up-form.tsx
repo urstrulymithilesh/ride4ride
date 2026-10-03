@@ -19,7 +19,7 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
       >
         {state.message}{" "}
         <Link href="/sign-in" className="font-medium text-success">
-          Go to sign in
+          go to sign in
         </Link>
       </div>
     );
@@ -29,15 +29,24 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="redirectTo" value={redirectTo} />
       <TextField
-        label="Display name"
+        label="display name"
         name="displayName"
         autoComplete="name"
-        placeholder="Alex Rivera"
+        placeholder="alex rivera"
         error={state.fieldErrors?.displayName}
         required
       />
       <TextField
-        label="Email"
+        label="username"
+        name="username"
+        autoComplete="username"
+        placeholder="alex_r123"
+        hint="3–20 characters: letters, numbers, _ — unique to you."
+        error={state.fieldErrors?.username}
+        required
+      />
+      <TextField
+        label="email"
         name="email"
         type="email"
         autoComplete="email"
@@ -46,11 +55,11 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
         required
       />
       <TextField
-        label="Password"
+        label="password"
         name="password"
         type="password"
         autoComplete="new-password"
-        placeholder="At least 8 characters"
+        placeholder="at least 8 characters"
         error={state.fieldErrors?.password}
         required
       />
@@ -75,7 +84,7 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
               }
               className="mt-0.5 size-4 shrink-0"
             />
-            <span>I confirm I am 18 years of age or older.</span>
+            <span>i confirm i am 18 years of age or older.</span>
           </label>
           {state.fieldErrors?.ageConfirmed18 ? (
             <p id="ageConfirmed18-error" className="text-xs text-danger" role="alert">
@@ -100,13 +109,13 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
               className="mt-0.5 size-4 shrink-0"
             />
             <span>
-              I agree to the{" "}
+              i agree to the{" "}
               <Link href="/terms" className="font-medium text-primary underline">
-                Terms
+                terms
               </Link>{" "}
               and{" "}
               <Link href="/privacy" className="font-medium text-primary underline">
-                Privacy Policy
+                privacy policy
               </Link>
               .
             </span>
@@ -124,7 +133,7 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
           {state.error}
         </p>
       ) : null}
-      <SubmitButton pendingText="Creating account…">Create account</SubmitButton>
+      <SubmitButton pendingText="creating account…">create account</SubmitButton>
     </form>
   );
 }

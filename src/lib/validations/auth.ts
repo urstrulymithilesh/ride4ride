@@ -19,6 +19,7 @@ export interface SignUpInput {
   email: string;
   password: string;
   displayName: string;
+  username: string;
   /**
    * Deliberately two separate consents, not one combined checkbox.
    * Bundling "I am 18+" with "I accept the Terms" makes each weaker: a
@@ -36,33 +37,49 @@ export interface SignInInput {
   password: string;
 }
 
+export const USERNAME_RE = /^[a-z][a-z0-9_]{2,19}$/;
+
+/** Single place for the handle rules (DB check + signup form share these). */
+export function validateUsername(username: string): string | null {
+  if (!username) return "choose a username.";
+  if (username.length < 3 || username.length > 20)
+    return "username must be 3–20 characters.";
+  if (!USERNAME_RE.test(username))
+    return "letters, numbers, and _ only, starting with a letter.";
+  return null;
+}
+
 export function validateSignUp(raw: {
   email: string;
   password: string;
   displayName: string;
+  username: string;
   ageConfirmed18: boolean;
   tosAccepted: boolean;
 }): { ok: true; data: SignUpInput } | { ok: false; fieldErrors: FieldErrors } {
   const fieldErrors: FieldErrors = {};
   const email = raw.email.trim().toLowerCase();
   const displayName = raw.displayName.trim();
+  const username = raw.username.trim().toLowerCase();
   const password = raw.password;
 
-  if (!EMAIL_RE.test(email)) fieldErrors.email = "Enter a valid email address.";
+  if (!EMAIL_RE.test(email)) fieldErrors.email = "enter a valid email address.";
   if (displayName.length < 2)
-    fieldErrors.displayName = "Display name must be at least 2 characters.";
+    fieldErrors.displayName = "display name must be at least 2 characters.";
   if (displayName.length > 50)
-    fieldErrors.displayName = "Display name must be 50 characters or fewer.";
+    fieldErrors.displayName = "display name must be 50 characters or fewer.";
+  const usernameError = validateUsername(username);
+  if (usernameError) fieldErrors.username = usernameError;
   if (password.length < 8)
-    fieldErrors.password = "Password must be at least 8 characters.";
+    fieldErrors.password = "password must be at least 8 characters.";
   // Both blocking, not advisory, and checked separately so the user is
   // told which one they missed. Neither can be applied retroactively to a
   // ride that has already happened.
   if (!raw.ageConfirmed18)
-    fieldErrors.ageConfirmed18 = "You must confirm you are 18 or older.";
+    fieldErrors.ageConfirmed18 = "you must confirm you are 18 or older.";
   if (!raw.tosAccepted)
     fieldErrors.tosAccepted =
-      "You must accept the Terms and Privacy Policy to create an account.";
+      "you must accept the terms and privacy policy to create an account.";
 
   if (Object.keys(fieldErrors).length > 0) return { ok: false, fieldErrors };
   return {
@@ -71,6 +88,7 @@ export function validateSignUp(raw: {
       email,
       password,
       displayName,
+      username,
       ageConfirmed18: true,
       tosAccepted: true,
     },
@@ -84,8 +102,8 @@ export function validateSignIn(raw: {
   const fieldErrors: FieldErrors = {};
   const email = raw.email.trim().toLowerCase();
 
-  if (!EMAIL_RE.test(email)) fieldErrors.email = "Enter a valid email address.";
-  if (!raw.password) fieldErrors.password = "Enter your password.";
+  if (!EMAIL_RE.test(email)) fieldErrors.email = "enter a valid email address.";
+  if (!raw.password) fieldErrors.password = "enter your password.";
 
   if (Object.keys(fieldErrors).length > 0) return { ok: false, fieldErrors };
   return { ok: true, data: { email, password: raw.password } };

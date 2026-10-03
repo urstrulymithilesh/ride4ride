@@ -53,8 +53,8 @@ export async function startConversation(formData: FormData): Promise<void> {
   if (existing && existing.length === 0 && ride) {
     const opener =
       ride.type === "get"
-        ? "Hi! I saw your ride request and I can drive this route. Is it still open?"
-        : "Hi! I saw your ride post and I'd love a seat. Is it still available?";
+        ? "hi! i saw your ride request and i can drive this route. is it still open?"
+        : "hi! i saw your ride post and i'd love a seat. is it still available?";
     // Swallowed on purpose (see docblock): a failed opener must never
     // block opening the chat.
     await supabase.from("messages").insert({
@@ -85,19 +85,19 @@ export async function sendMessage(input: {
   imagePath: string | null;
 }): Promise<SendResult> {
   const user = await getUser();
-  if (!user) return { error: "You're not signed in." };
+  if (!user) return { error: "you're not signed in." };
 
   const text = (input.body ?? "").trim();
   const hasImage = Boolean(input.imagePath);
 
-  if (!text && !hasImage) return { error: "Message can't be empty." };
+  if (!text && !hasImage) return { error: "message can't be empty." };
   if (text.length > MAX_MESSAGE_LENGTH)
-    return { error: `Message must be ${MAX_MESSAGE_LENGTH} characters or fewer.` };
+    return { error: `message must be ${MAX_MESSAGE_LENGTH} characters or fewer.` };
   if (
     input.imagePath &&
     !isAllowedImagePath(input.imagePath, input.conversationId)
   ) {
-    return { error: "Only image files are allowed." };
+    return { error: "only image files are allowed." };
   }
 
   const supabase = await createClient();
@@ -112,7 +112,7 @@ export async function sendMessage(input: {
     .select("*")
     .single<Message>();
 
-  if (error) return { error: "Couldn't send the message. Please try again." };
+  if (error) return { error: "couldn't send the message. please try again." };
   return { message: data };
 }
 
@@ -133,7 +133,7 @@ export async function setRevealAgreement(
   agree: boolean,
 ): Promise<RevealResult> {
   const user = await getUser();
-  if (!user) return { error: "You're not signed in." };
+  if (!user) return { error: "you're not signed in." };
 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("set_ride_reveal", {
@@ -141,7 +141,7 @@ export async function setRevealAgreement(
     p_agree: agree,
   });
 
-  if (error) return { error: "Couldn't update the reveal request." };
+  if (error) return { error: "couldn't update the reveal request." };
   const reveal = (Array.isArray(data) ? data[0] : data) as RideReveal;
   return { reveal };
 }

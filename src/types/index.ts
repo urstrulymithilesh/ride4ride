@@ -13,10 +13,14 @@ export type VerificationStatus = "unverified" | "pending" | "verified";
 export interface Profile {
   id: string;
   display_name: string;
+  username: string;
   school: string | null;
   verification: VerificationStatus;
   is_admin: boolean;
   is_banned: boolean;
+  age_confirmed_18: boolean;
+  tos_accepted_at: string | null;
+  tos_version: string | null;
   created_at: string;
   updated_at: string;
 }

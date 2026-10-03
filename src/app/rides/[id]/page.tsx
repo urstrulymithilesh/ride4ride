@@ -38,7 +38,7 @@ export async function generateMetadata({
 }: {
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
-  const fallback: Metadata = { title: "Ride", robots: { index: false } };
+  const fallback: Metadata = { title: "ride", robots: { index: false } };
 
   try {
     const { id } = await params;
@@ -78,10 +78,10 @@ export async function generateMetadata({
     const title = `${stale}${route} · ${when}`;
     const description = [
       ride.type === "offer"
-        ? "Someone is driving this route and has seats."
-        : "Someone is looking for a ride on this route.",
-      distance ? `About ${distance}.` : null,
-      "Ride4Ride is a free board for arranging rides directly with other people.",
+        ? "someone is driving this route and has seats."
+        : "someone is looking for a ride on this route.",
+      distance ? `about ${distance}.` : null,
+      "ride4ride is a free board for arranging rides directly with other people.",
     ]
       .filter(Boolean)
       .join(" ");
@@ -96,7 +96,7 @@ export async function generateMetadata({
         title,
         description,
         type: "website",
-        siteName: "Ride4Ride",
+        siteName: "ride4ride",
         ...(siteUrl ? { url: `${siteUrl}/rides/${id}` } : {}),
       },
       twitter: {
@@ -112,10 +112,16 @@ export async function generateMetadata({
 
 export default async function RideDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ error?: string }>;
 }) {
   const { id } = await params;
+  // Action failure codes are written as ?error= by startConversation
+  // (chat blocked/failed) and repostRide (repost failed). Reading them
+  // here closes the loop: without this the page reloads with no feedback.
+  const actionError = (await searchParams)?.error;
   const supabase = await createClient();
 
   // rides_with_location is RLS-aware: address fields are null unless the
@@ -134,7 +140,7 @@ export default async function RideDetailPage({
   // reaches the server log.
   if (rideError) {
     console.error("[rides/:id] detail query failed:", rideError.message, rideError);
-    throw new Error("Couldn't load this ride.");
+    throw new Error("couldn't load this ride.");
   }
 
   if (!ride) notFound();
@@ -147,7 +153,7 @@ export default async function RideDetailPage({
 
   const isOwner = user?.id === ride.owner_id;
   const distance = formatDistance(ride.distance_meters);
-  const kindLabel = ride.type === "offer" ? "Ride Available" : "Need Ride";
+  const kindLabel = ride.type === "offer" ? "ride available" : "need ride";
 
   // Poster identity is part of "full details" — only fetch/expose to signed-in.
   let posterName: string | null = null;
@@ -157,7 +163,7 @@ export default async function RideDetailPage({
       .select("display_name")
       .eq("id", ride.owner_id)
       .maybeSingle<{ display_name: string }>();
-    posterName = poster?.display_name ?? "A member";
+    posterName = poster?.display_name ?? "a member";
   }
 
   return (
@@ -167,10 +173,29 @@ export default async function RideDetailPage({
           href="/rides"
           className="inline-flex min-h-11 items-center text-sm text-muted hover:text-content"
         >
-          ← Back
+          ← back
         </Link>
         <CopyLinkButton path={`/rides/${ride.id}`} />
       </div>
+
+      {actionError === "chat" ? (
+        <p
+          role="alert"
+          className="card mt-3 border border-danger bg-transparent p-4 text-sm text-content"
+        >
+          Couldn&apos;t open the chat. If messaging is paused between you
+          two, it stays closed until the block is lifted — otherwise try
+          again.
+        </p>
+      ) : null}
+      {actionError === "repost" ? (
+        <p
+          role="alert"
+          className="card mt-3 border border-danger bg-transparent p-4 text-sm text-content"
+        >
+          Couldn&apos;t repost. Please try again.
+        </p>
+      ) : null}
 
       {/* Basic info — public / shareable */}
       <div className="card mt-3 p-5">
@@ -210,14 +235,14 @@ export default async function RideDetailPage({
 
         <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
           <div className="min-w-0">
-            <dt className="text-muted">When</dt>
+            <dt className="text-muted">when</dt>
             <dd className="wrap-anywhere text-content">
               {formatRideWhen(ride.ride_date, ride.is_future)}
             </dd>
           </div>
           {distance ? (
             <div className="min-w-0">
-              <dt className="text-muted">Trip distance</dt>
+              <dt className="text-muted">trip distance</dt>
               <dd className="text-content">{distance}</dd>
             </div>
           ) : null}
@@ -230,14 +255,14 @@ export default async function RideDetailPage({
           <div className="card p-5">
             <dl className="space-y-4 text-sm">
               <div>
-                <dt className="text-muted">Posted by</dt>
+                <dt className="text-muted">posted by</dt>
                 <dd className="flex flex-wrap items-center gap-1.5 text-content">
                   <span className="wrap-anywhere">{posterName}</span>
                 </dd>
               </div>
               {ride.description ? (
                 <div>
-                  <dt className="text-muted">Description</dt>
+                  <dt className="text-muted">description</dt>
                   <dd className="wrap-anywhere whitespace-pre-wrap text-content">
                     {ride.description}
                   </dd>
@@ -256,10 +281,10 @@ export default async function RideDetailPage({
                     <form action={repostRide}>
                       <input type="hidden" name="rideId" value={ride.id} />
                       <button type="submit" className="btn btn-primary w-full">
-                        Repost
+                        repost
                       </button>
                       <p className="mt-2 text-xs text-muted">
-                        Republish this expired post with a fresh expiry.
+                        republish this expired post with a fresh expiry.
                       </p>
                     </form>
                   ) : null}
@@ -271,18 +296,18 @@ export default async function RideDetailPage({
                 <form action={startConversation}>
                   <input type="hidden" name="rideId" value={ride.id} />
                   <button type="submit" className="btn btn-primary w-full">
-                    Message the poster
+                    message the poster
                   </button>
                   <p className="mt-2 text-xs text-muted">
-                    Opens the chat with a quick hello to break the ice.
+                    opens the chat with a quick hello to break the ice.
                   </p>
                   <p className="mt-1 text-xs text-muted">
-                    For &lsquo;get&rsquo; rides, exact addresses are shared only
+                    for &lsquo;get&rsquo; rides, exact addresses are shared only
                     after you both agree in chat.
                   </p>
                 </form>
                 <div className="mt-3">
-                  <ReportButton targetType="post" targetRideId={ride.id} label="Report this post" />
+                  <ReportButton targetType="post" targetRideId={ride.id} label="report this post" />
                 </div>
               </div>
             )}
@@ -310,19 +335,19 @@ function OwnerAddresses({
   return (
     <div className="mt-4 border-t border-hairline pt-4">
       <h2 className="text-sm font-semibold text-content">
-        Your addresses (private)
+        your addresses (private)
       </h2>
       <p className="mt-1 text-xs text-muted">
-        Only you can see these. They&apos;re shared with a rider only after you
+        only you can see these. they&apos;re shared with a rider only after you
         both agree to proceed.
       </p>
       <dl className="mt-3 space-y-2 text-sm">
         <div>
-          <dt className="text-muted">Pickup</dt>
+          <dt className="text-muted">pickup</dt>
           <dd className="wrap-anywhere text-content">{fromAddress}</dd>
         </div>
         <div>
-          <dt className="text-muted">Drop-off</dt>
+          <dt className="text-muted">drop-off</dt>
           <dd className="wrap-anywhere text-content">{toAddress}</dd>
         </div>
       </dl>

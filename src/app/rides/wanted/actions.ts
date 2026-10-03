@@ -55,7 +55,7 @@ export async function submitWantedRoute(
   if (!(await takeRateLimit("wanted_routes"))) {
     return {
       error:
-        "You've sent a few of these already. Please try again in a little while.",
+        "you've sent a few of these already. please try again in a little while.",
     };
   }
 
@@ -89,7 +89,7 @@ export async function submitWantedRoute(
 
   if (error) {
     console.error("[wanted-routes] insert failed:", error.message, error);
-    return { error: "Couldn't save that route. Please try again." };
+    return { error: "couldn't save that route. please try again." };
   }
 
   // Only anonymous rows need remembering; a signed-in row already has an
@@ -98,6 +98,6 @@ export async function submitWantedRoute(
 
   return {
     message:
-      "Thanks — noted. We'll use this to work out which routes to open next.",
+      "thanks — noted. we'll use this to work out which routes to open next.",
   };
 }

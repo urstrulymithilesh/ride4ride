@@ -21,7 +21,7 @@ export function SignInForm({
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="redirectTo" value={redirectTo} />
       <TextField
-        label="Email"
+        label="email"
         name="email"
         type="email"
         autoComplete="email"
@@ -30,7 +30,7 @@ export function SignInForm({
         required
       />
       <TextField
-        label="Password"
+        label="password"
         name="password"
         type="password"
         autoComplete="current-password"
@@ -42,7 +42,7 @@ export function SignInForm({
           {error}
         </p>
       ) : null}
-      <SubmitButton pendingText="Signing in…">Sign in</SubmitButton>
+      <SubmitButton pendingText="signing in…">sign in</SubmitButton>
     </form>
   );
 }

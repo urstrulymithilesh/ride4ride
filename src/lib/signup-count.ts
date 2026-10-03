@@ -1,6 +1,7 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { querySignupCount } from "@/lib/signup-count-query";
 
 /**
  * Live signup total for the homepage counter (v3 pilot).
@@ -14,12 +15,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export const getSignupCount = unstable_cache(
   async (): Promise<number | null> => {
     try {
-      const admin = createAdminClient();
-      const { count, error } = await admin
-        .from("profiles")
-        .select("id", { count: "exact", head: true });
-      if (error || count === null) return null;
-      return count;
+      return await querySignupCount(createAdminClient());
     } catch {
       return null;
     }

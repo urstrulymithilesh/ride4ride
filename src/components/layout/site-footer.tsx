@@ -6,16 +6,16 @@ export function SiteFooter() {
   return (
     <footer className="safe-bottom mt-auto border-t border-hairline">
       <div className="flex flex-col items-center justify-between gap-1 px-4 py-4 text-xs text-muted sm:flex-row">
-        <p>© {new Date().getFullYear()} Ride4Ride</p>
-        <nav aria-label="Legal" className="flex items-center gap-4">
+        <p>© {new Date().getFullYear()} ride4ride</p>
+        <nav aria-label="legal" className="flex items-center gap-4">
           <Link href="/rides" className={link}>
-            Browse
+            browse
           </Link>
           <Link href="/privacy" className={link}>
-            Privacy
+            privacy
           </Link>
           <Link href="/terms" className={link}>
-            Terms
+            terms
           </Link>
         </nav>
       </div>

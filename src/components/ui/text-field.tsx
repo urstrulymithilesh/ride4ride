@@ -6,6 +6,7 @@ export function TextField({
   autoComplete,
   defaultValue,
   placeholder,
+  hint,
   error,
   required,
 }: {
@@ -15,6 +16,7 @@ export function TextField({
   autoComplete?: string;
   defaultValue?: string;
   placeholder?: string;
+  hint?: string;
   error?: string;
   required?: boolean;
 }) {
@@ -40,6 +42,8 @@ export function TextField({
         <p id={`${id}-error`} className="text-xs text-danger" role="alert">
           {error}
         </p>
+      ) : hint ? (
+        <p className="text-xs text-muted">{hint}</p>
       ) : null}
     </div>
   );

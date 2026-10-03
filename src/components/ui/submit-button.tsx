@@ -25,7 +25,7 @@ export function SubmitButton({
       aria-disabled={pending}
       className={`btn btn-${variant} w-full ${className}`}
     >
-      {pending ? (pendingText ?? "Please wait…") : children}
+      {pending ? (pendingText ?? "please wait…") : children}
     </button>
   );
 }

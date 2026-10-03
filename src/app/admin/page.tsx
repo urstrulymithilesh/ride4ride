@@ -7,7 +7,7 @@ import { formatPlace } from "@/lib/utils/format";
 import { setReportStatus, takedownRide, banUser, unbanUser } from "./actions";
 import type { Report } from "@/types";
 
-export const metadata: Metadata = { title: "Admin · Reports", robots: { index: false } };
+export const metadata: Metadata = { title: "admin · reports", robots: { index: false } };
 
 export default async function AdminPage() {
   // Hide the route's existence from non-admins.
@@ -26,7 +26,7 @@ export default async function AdminPage() {
   // Throw rather than show a reassuring empty queue.
   if (reportsError) {
     console.error("[admin] reports query failed:", reportsError.message, reportsError);
-    throw new Error("Couldn't load reports.");
+    throw new Error("couldn't load reports.");
   }
 
   const list = reports ?? [];
@@ -55,14 +55,14 @@ export default async function AdminPage() {
 
   return (
     <main className="w-full flex-1 px-4 py-6">
-      <h1 className="text-xl font-semibold text-content">Reports</h1>
+      <h1 className="text-xl font-semibold text-content">reports</h1>
       <p className="mt-1 mb-4 text-sm text-muted">
         {openCount} open · {list.length} total
       </p>
 
       {list.length === 0 ? (
         <p className="card border border-dashed border-hairline bg-transparent p-8 text-center text-sm text-muted">
-          No reports.
+          no reports.
         </p>
       ) : (
         <ul className="space-y-3">
@@ -97,7 +97,7 @@ export default async function AdminPage() {
                 </div>
 
                 <p className="mt-2 text-sm text-muted">
-                  Reported by {reporter?.display_name ?? "unknown"}.
+                  reported by {reporter?.display_name ?? "unknown"}.
                 </p>
 
                 {/* Target */}
@@ -107,14 +107,14 @@ export default async function AdminPage() {
                       href={`/rides/${r.target_ride_id}`}
                       className="wrap-anywhere text-primary"
                     >
-                      Post: {formatPlace(targetRide.from_city, targetRide.from_state)}{" "}
+                      post: {formatPlace(targetRide.from_city, targetRide.from_state)}{" "}
                       → {formatPlace(targetRide.to_city, targetRide.to_state)} (
                       {targetRide.status})
                     </Link>
                   ) : null}
                   {targetUser ? (
                     <span className="wrap-anywhere text-content">
-                      User: {targetUser.display_name}
+                      user: {targetUser.display_name}
                       {targetUser.is_banned ? " (banned)" : ""}
                     </span>
                   ) : null}
@@ -131,7 +131,7 @@ export default async function AdminPage() {
                   {r.target_ride_id && targetRide?.status !== "cancelled" ? (
                     <form action={takedownRide}>
                       <input type="hidden" name="rideId" value={r.target_ride_id} />
-                      <AdminButton label="Take down post" danger />
+                      <AdminButton label="take down post" danger />
                     </form>
                   ) : null}
 
@@ -139,12 +139,12 @@ export default async function AdminPage() {
                     targetUser?.is_banned ? (
                       <form action={unbanUser}>
                         <input type="hidden" name="userId" value={r.target_user_id} />
-                        <AdminButton label="Unban user" />
+                        <AdminButton label="unban user" />
                       </form>
                     ) : (
                       <form action={banUser}>
                         <input type="hidden" name="userId" value={r.target_user_id} />
-                        <AdminButton label="Ban user" danger />
+                        <AdminButton label="ban user" danger />
                       </form>
                     )
                   ) : null}
@@ -161,7 +161,7 @@ export default async function AdminPage() {
                       <option value="actioned">actioned</option>
                       <option value="dismissed">dismissed</option>
                     </select>
-                    <AdminButton label="Save" />
+                    <AdminButton label="save" />
                   </form>
                 </div>
               </li>

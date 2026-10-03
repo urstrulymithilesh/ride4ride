@@ -109,21 +109,21 @@ export function RevealPanel({
       <div className="mb-4 rounded-2xl bg-success-soft p-4">
         <div className="flex items-center gap-2">
           <span aria-hidden>✅</span>
-          <p className="text-sm font-semibold text-success">Addresses revealed</p>
+          <p className="text-sm font-semibold text-success">addresses revealed</p>
         </div>
         {addresses ? (
           <dl className="mt-3 space-y-2 text-sm">
             <div>
-              <dt className="text-muted">Pickup</dt>
+              <dt className="text-muted">pickup</dt>
               <dd className="wrap-anywhere text-content">{addresses.from_address}</dd>
             </div>
             <div>
-              <dt className="text-muted">Drop-off</dt>
+              <dt className="text-muted">drop-off</dt>
               <dd className="wrap-anywhere text-content">{addresses.to_address}</dd>
             </div>
           </dl>
         ) : (
-          <p className="mt-2 text-sm text-muted">Loading addresses…</p>
+          <p className="mt-2 text-sm text-muted">loading addresses…</p>
         )}
       </div>
     );
@@ -135,25 +135,25 @@ export function RevealPanel({
       <div className="flex items-center gap-2">
         <span aria-hidden>🔒</span>
         <p className="text-sm font-semibold text-content">
-          Addresses hidden until both agree
+          addresses hidden until both agree
         </p>
       </div>
 
       <p className="mt-1 text-sm text-muted">
         {theirAgreed
-          ? `${otherName} agreed to reveal addresses. Confirm to share both exact addresses.`
+          ? `${otherName} agreed to reveal addresses. confirm to share both exact addresses.`
           : myAgreed
-            ? `Waiting for ${otherName} to confirm.`
-            : "When you both agree, the full pickup and drop-off addresses become visible to the two of you only."}
+            ? `waiting for ${otherName} to confirm.`
+            : "when you both agree, the full pickup and drop-off addresses become visible to the two of you only."}
       </p>
 
       <div className="mt-3 rounded-xl bg-surface-2 p-3 text-xs text-muted">
-        <p className="font-medium text-content">Before you share addresses, stay safe:</p>
+        <p className="font-medium text-content">before you share addresses, stay safe:</p>
         <ul className="mt-1 list-disc space-y-0.5 pl-4">
-          <li>Meet in a public place first — don&apos;t go straight to a home.</li>
-          <li>Tell a friend your plans and who you&apos;re meeting.</li>
-          <li>Only reveal once you&apos;re comfortable proceeding.</li>
-          <li>Report anything that feels off — you can block this person anytime.</li>
+          <li>meet in a public place first — don&apos;t go straight to a home.</li>
+          <li>tell a friend your plans and who you&apos;re meeting.</li>
+          <li>only reveal once you&apos;re comfortable proceeding.</li>
+          <li>report anything that feels off — you can block this person anytime.</li>
         </ul>
       </div>
 
@@ -172,10 +172,10 @@ export function RevealPanel({
             className="btn btn-success w-full"
           >
             {theirAgreed
-              ? "Confirm & reveal"
+              ? "confirm & reveal"
               : iAmOwner
-                ? "Agree to share my addresses"
-                : "Request to reveal addresses"}
+                ? "agree to share my addresses"
+                : "request to reveal addresses"}
           </button>
         ) : (
           <button
@@ -184,7 +184,7 @@ export function RevealPanel({
             onClick={() => setAgreement(false)}
             className="btn btn-secondary w-full"
           >
-            Cancel my request
+            cancel my request
           </button>
         )}
       </div>

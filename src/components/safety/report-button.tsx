@@ -5,12 +5,12 @@ import { reportContent, type ReportState } from "@/app/safety/actions";
 import type { ReportReason } from "@/types";
 
 const REASONS: { value: ReportReason; label: string }[] = [
-  { value: "spam", label: "Spam" },
-  { value: "harassment", label: "Harassment" },
-  { value: "scam", label: "Scam / fraud" },
-  { value: "safety", label: "Safety concern" },
-  { value: "inappropriate", label: "Inappropriate content" },
-  { value: "other", label: "Other" },
+  { value: "spam", label: "spam" },
+  { value: "harassment", label: "harassment" },
+  { value: "scam", label: "scam / fraud" },
+  { value: "safety", label: "safety concern" },
+  { value: "inappropriate", label: "inappropriate content" },
+  { value: "other", label: "other" },
 ];
 
 const initial: ReportState = {};
@@ -23,7 +23,7 @@ export function ReportButton({
   targetType,
   targetRideId,
   targetUserId,
-  label = "Report",
+  label = "report",
 }: {
   targetType: "post" | "user";
   targetRideId?: string;
@@ -36,7 +36,7 @@ export function ReportButton({
   if (state.done) {
     return (
       <p className="text-xs text-muted" role="status">
-        Thanks — this report has been sent to our team for review.
+        thanks — this report has been sent to our team for review.
       </p>
     );
   }
@@ -67,7 +67,7 @@ export function ReportButton({
       ) : null}
 
       <label className="text-xs font-medium text-content">
-        Reason
+        reason
         <select
           name="reason"
           defaultValue=""
@@ -75,7 +75,7 @@ export function ReportButton({
           className="input mt-1"
         >
           <option value="" disabled>
-            Select a reason…
+            select a reason…
           </option>
           {REASONS.map((r) => (
             <option key={r.value} value={r.value}>
@@ -93,7 +93,7 @@ export function ReportButton({
       <textarea
         name="details"
         rows={2}
-        placeholder="Add any details (optional)"
+        placeholder="add any details (optional)"
         className="input wrap-anywhere"
       />
 
@@ -105,14 +105,14 @@ export function ReportButton({
 
       <div className="flex gap-2">
         <button type="submit" className="btn btn-danger flex-1">
-          Submit report
+          submit report
         </button>
         <button
           type="button"
           onClick={() => setOpen(false)}
           className="btn btn-ghost"
         >
-          Cancel
+          cancel
         </button>
       </div>
     </form>

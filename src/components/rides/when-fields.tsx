@@ -13,7 +13,7 @@ export function WhenFields({ fieldErrors }: { fieldErrors?: FieldErrors }) {
 
   return (
     <fieldset className="flex flex-col gap-3">
-      <legend className="text-sm font-medium text-content">When</legend>
+      <legend className="text-sm font-medium text-content">when</legend>
 
       <div className="grid grid-cols-2 gap-2">
         <label
@@ -32,8 +32,8 @@ export function WhenFields({ fieldErrors }: { fieldErrors?: FieldErrors }) {
             className="accent-primary"
           />
           <span className="min-w-0">
-            <span className="font-medium text-content">Now</span>
-            <span className="block text-xs text-muted">Current / ASAP</span>
+            <span className="font-medium text-content">now</span>
+            <span className="block text-xs text-muted">current / asap</span>
           </span>
         </label>
 
@@ -53,8 +53,8 @@ export function WhenFields({ fieldErrors }: { fieldErrors?: FieldErrors }) {
             className="accent-primary"
           />
           <span className="min-w-0">
-            <span className="font-medium text-content">On a date</span>
-            <span className="block text-xs text-muted">Future ride</span>
+            <span className="font-medium text-content">on a date</span>
+            <span className="block text-xs text-muted">future ride</span>
           </span>
         </label>
       </div>
@@ -62,7 +62,7 @@ export function WhenFields({ fieldErrors }: { fieldErrors?: FieldErrors }) {
       {mode === "future" ? (
         <div className="flex flex-col gap-1.5">
           <label htmlFor="ride_date" className="text-sm font-medium text-content">
-            Ride date
+            ride date
           </label>
           <input
             id="ride_date"
@@ -77,12 +77,12 @@ export function WhenFields({ fieldErrors }: { fieldErrors?: FieldErrors }) {
             </p>
           ) : null}
           <p className="text-xs text-muted">
-            The post stays up until 7 days after the ride.
+            the post stays up until 7 days after the ride.
           </p>
         </div>
       ) : (
         <p className="text-xs text-muted">
-          The post stays up for 7 days.
+          the post stays up for 7 days.
         </p>
       )}
     </fieldset>

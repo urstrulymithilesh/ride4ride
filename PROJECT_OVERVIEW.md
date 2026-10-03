@@ -2,7 +2,7 @@
 
 Single reference for: what this is, what the plan is, how it is built, what is done, and what is left.
 
-Sources: `README.md`, `docs/designs/v3-one-route-pilot.md` (approved pilot plan, supersedes v2), `docs/designs/v3-spec-source.md` (older spec vision), `docs/designs/v2-identity-first-increment.md` (superseded), `docs/legal/disclaimer-draft.md`, `PRE_LAUNCH_CHECKLIST.md`, `DEPLOYMENT.md`, `TODOS.md`, migrations `supabase/migrations/0001–0014`, app code in `src/`, CI in `.github/workflows/ci.yml`. Verified 2026-10-02: `npm run check` passes (privacy-guard self-test + guard + `tsc --noEmit` + `eslint`).
+Sources: `README.md`, `docs/designs/v3-one-route-pilot.md` (approved pilot plan, supersedes v2), `docs/designs/v3-spec-source.md` (older spec vision), `docs/designs/v2-identity-first-increment.md` (superseded), `docs/legal/disclaimer-draft.md`, `PRE_LAUNCH_CHECKLIST.md`, `DEPLOYMENT.md`, `TODOS.md`, migrations `supabase/migrations/0001–0016`, app code in `src/`, CI in `.github/workflows/ci.yml`. Verified 2026-10-03: `npm run check` passes, `npm test` 26/26 green, production serves repo `main` at `https://ride4ride.com`.
 
 ---
 
@@ -126,45 +126,59 @@ Scaffolding through the pilot backend are shipped. HEAD is `14462ba` on `main` (
 - **Phase 5 expiry/notifications/cleanup (`0006`, `src/app/api/cron/*`, `src/lib/push.ts`, `public/sw.js`):** `expire-rides` (pre-expiry push within 1h + flip past-due to `expired`, every 30 min) and `purge-chats` (delete past-`auto_delete_at` conversations + Storage images, hourly), both requiring `Authorization: Bearer $CRON_SECRET`; VAPID push with per-user subscriptions and contextual prompt on the owner's post; one-click repost of expired posts.
 - **Phase 6 chat (`0004`, `src/app/messages/`):** find-or-create conversation RPC, participant-only RLS, image-only private `chat-images` bucket with per-conversation Storage RLS + signed URLs, `auto_delete_at` triggers (created+24h vs ride_date+24h).
 - **Trust & safety (`0007`):** `reports`, `blocks` (+ RLS blocking across conversations/messages/posting), `allowed_email_domains`, admin page + ban/takedown via service-role after `is_admin` check. Proven by `rls_blocking_and_verify.sql`.
-- **Pilot hardening (`0008–0014`):**
+- **Pilot hardening (`0008–0016`):**
   - `0008` expiry hardening: trigger-derived `expires_at` (ride_date+8d midnight, else created+7d), `p_expires_at` removed from RPCs, `repostRide` reconciled. Proof `supabase/tests/expiry_rule.sql`.
   - `0009` 18+/TOS record: `profiles.age_confirmed_18/tos_accepted_at/tos_version`, atomic signup-trigger write from `raw_user_meta_data` (`TOS_VERSION` in `src/lib/validations/auth.ts`), client UPDATE locked to `display_name` only, `profiles_missing_tos()` report.
   - `0010–0012` wanted-routes: `wanted_routes` (coarse city/state + IATA airport codes + date window + role, anonymous inserts with `created_by = null`, no UPDATE/DELETE policies, claim via service-role cookie flow in `src/lib/wanted-routes.ts`), standing `WantedRouteForm` on the feed, `0012` fixing the anon-insert policy. Proof `wanted_routes_rls.sql`.
   - `0011` rate limiting: `rate_limit_hits` (salted IP hash only, no policies, service-role only) + `rate_limit_take()`; currently wired to the anonymous wanted-routes endpoint (5/hour). Proof `rate_limit.sql`.
   - `0013` open signup: `allowed_email_domains` seeded with gmail/outlook/hotmail/yahoo/icloud alongside `.edu`; student-badge function dropped and `verification`/`school` columns left inert; signup-allowlist meaning only.
   - `0014` arrival tracking: `arrival_events` (salted IP hash + `feed`/`post` surface + optional `user_id` + day, unique per visitor/surface/day), RLS-on-with-no-policies, `arrival_report()` for day-3/day-21 gates, `recordArrival()` called on feed and post pages with bot/IP filtering. Proof `arrival_tracking.sql`.
+  - `0015` masked street display: public `rides.from_street`/`to_street` (street name only, never a number), get-only check constraints, `create_get_ride` extended, `maskedStreet()` derived server-side from Mapbox's street-name field with a leading-digit strip, shown as "Main St · Riverside, CA" on cards/detail. `rides_with_location` dropped + recreated (REPLACE fails with 42P16 since 0006 widened `rides` after 0002). Proof `masked_street.sql` (6 assertions). Live-verified ("Bromley Lane", no number).
+  - `0016` airports: public `airports` reference table (IATA/lat/lng/40 km catchment, seeded ORD/MDW + 8 hubs, open SELECT), `nearest_airport()` haversine function, `rides.from_airport` (IATA check), rider posts derive it in `create_get_ride`, captains pick explicitly (new offer-form field + RPC param), ✈ chip on cards/detail, `?airport=` feed filter. Airport is display/filter aid, never a match key (T-2 two-sources-of-truth risk accepted). Proof `airports.sql` (6 assertions). Live-verified (offer posted with ORD).
   - Feed/detail error-vs-empty split, `noindex` on post detail + admin, OG share metadata, `check-privacy` extended to chat contents, full-stack CI with migration replay + REST tests, `notFound()`-returns-200 investigated and closed as works-as-designed (root `loading.tsx` streams 200 + framework `noindex`).
+- **Post-pilot app additions (no migration):** one-tap quick message (`startConversation` sends a canned opener into empty conversations, copy flips by post type), homepage signup counter (service-role count, `unstable_cache` 60 s, hides on failure), IP-suggested FROM city (Vercel geo header as filter-box default only, never a filter or post fill).
+- **Unit tests:** Vitest 3 (`npm test`, 26 tests: ride/wanted-route validations, formatters) wired into CI Static checks. (Vitest 5 refused: needs `@types/node` 22+, repo pins 20.)
+- **Production (live 2026-10-03):** Vercel project reconnected to `urstrulymithilesh/ride4ride` (was linked to a different repo serving foreign code — "Project Link not found"), env vars set (public keys as Config, secrets as Secret), DNS realigned to Vercel's recommended CNAME (apex + www, proxy off), Deployment Protection off, stale Framework-Override deployment replaced, Hobby-legal daily crons in `vercel.json` + real cadence via cron-job.org (both 200-verified). CI green on every push.
 
 ### Known divergence to be aware of
 
-`docs/designs/v3-spec-source.md` §4 specifies **phone + OTP only, no email ever**, with DOB/username/session/OTP-limit details. The **implemented** system is **email + password** (Supabase Auth, confirmation-email flow via `/auth/confirm`, open signup allowlist including consumer domains). Do not treat the spec-source auth section as built. Similarly, the v2 phone-migration plan was superseded and not implemented.
+`docs/designs/v3-spec-source.md` §4 specifies **phone + OTP only, no email ever**, with DOB/username/session/OTP-limit details. The **implemented** system is **email + password** (Supabase Auth, confirmation-email flow via `/auth/confirm`, open signup allowlist including consumer domains). Do not treat the spec-source auth section as built. Similarly, the v2 phone-migration plan was superseded and not implemented. (Update 2026-10-03: unique username handles ARE being built in the parallel session — `0017_usernames`, already applied to prod — but auth itself stays email-based.)
 
 ---
 
 ## 5. What is left to work on
 
-### A. v3 "What Ships" items not yet built (from `v3-one-route-pilot.md` §What Ships)
+### A. v3 "What Ships" items — status 2026-10-03
 
-1. **Masked street display for rider posts** — the asymmetry table requires it (street name + city + state, no number), but `rides` has no street column and `ride_locations.from_address` is the full address. Needs a public-side masked column derived at geocode time, rider-posts only.
-2. **Airports table + wiring** — no `airports` table (IATA/lat/lng/radius), no proximity trigger for rider airport, no explicit airport param on `create_offer_ride`, no IATA display/filter. Only `wanted_routes.from_airport/to_airport` text/IATA-check columns exist. Silent ORD/MDW-style boundary mismatches remain accepted risk (display/filter aid, not join key).
-3. **One-tap quick message** — no canned opener exists; copy must flip by post type (offering to drive on a rider post vs wanting a seat on a captain post). Ships unthrottled (5-conversation cap deferred), so it adds spam/metric risk.
-4. **Signup counter** — no live total component; spec is cached count revalidated ~60s (not per-render `count(*)`, not realtime).
-5. **IP-suggested FROM city** — feed FROM-city default from visitor IP as a changeable suggestion only (never auto-fills a post); Vercel geo headers, no third-party service. Not built.
-6. **Disclaimer rewrite B2 + B4 before attestation ships** — Terms/Privacy pages are still attorney-review placeholders (undated, bannered). The "free forever, no take rate" line is present in-app, but the pilot requires the corrected text to be version 1 with legal sign-off.
-7. **Tests for the above** — SQL proofs exist for expiry/wanted/rate-limit/arrivals/reveal/privacy/blocking; the v3 plan also called for Vitest server-action/claim-flow tests, but `package.json` has no Vitest dependency — that part is not built.
+DONE since the last revision: masked street (#5), airports table + wiring (#7), one-tap quick message (#8), signup counter (#9), IP-suggested FROM city (#12), Vitest coverage (#11, unit scope — DB behavior stays in `supabase/tests/`).
 
-### B. Pre-launch gate (`PRE_LAUNCH_CHECKLIST.md` — all boxes unchecked)
+Still open:
 
-Privacy/security (blocking): apply `0001–0007` — note the checklist predates `0008–0014`, so include those — to production; run all proofs green against prod; `check:privacy` in CI; manual signed-out/non-revealed address audit; secrets set without `NEXT_PUBLIC_` prefix; RLS enabled on every table; column-lockdown verified; cron auth verified. Core functionality: full click-through (signup→verify→post→browse/filter/sort→share→chat+images→reveal→report/block/admin→repost). Scheduled jobs: crons registered (Vercel Hobby caps at 1/day — needs Pro or external/pg_cron driver for 30-min/1-hour cadences); push received + expiry flip + chat/image purge verified. Notifications: VAPID keys, `/sw.js`, permission prompt, test push with correct click-through. Domain/config: `ride4ride.com`+`www` on Vercel with TLS, `NEXT_PUBLIC_SITE_URL=https://ride4ride.com`, Supabase Auth URLs, at least one `is_admin` account. Legal/content: lawyer-reviewed dated TOS/Privacy (placeholders now), support/abuse mailboxes routed. UX/a11y: loading/empty/error states, keyboard/focus/skip-link, real-phone 375px pass. Ops: error monitoring in `app/error.tsx` (e.g. Sentry), Supabase backups, rate-limit/abuse plan beyond the single wanted-routes bucket (auth, posting, messaging uncovered).
+1. **Disclaimer rewrite B2 + B4 with legal sign-off** — Terms/Privacy pages are still attorney-review placeholders (undated, bannered). The "free forever, no take rate" line is present in-app, but the pilot requires the corrected text to be version 1 with legal sign-off. Needs a lawyer, not code.
+2. **Claim-flow unit tests** — Vitest covers validations/formatters; the wanted-routes claim flow (`lib/wanted-routes.ts`) has no unit coverage (needs DB mocking).
+3. **Rider-derivation live proof** — `nearest_airport()` is proven in SQL but no live Get post has exercised it yet (board currently holds one offer).
 
-### C. Suggested build order
+### B. Pre-launch gate (`PRE_LAUNCH_CHECKLIST.md` — mostly done 2026-10-03)
 
-1. Masked street + airports (both touch geocode/create paths; do together).
-2. Quick-message + signup counter + IP-suggested city (small, independent UI).
-3. Attorney TOS/Privacy pass → set `TOS_VERSION` date → `profiles_missing_tos()` backfill check.
-4. Vitest (or equivalent) for server actions + claim flow; add proofs for airports/masked-street RLS.
-5. Prod apply (migrations in order) + proofs-against-prod + manual privacy audit + cron/push smoke tests + domain/auth-URL cutover.
-6. Then run the pilot: share links into counted groups, watch the day-3 arrival checkpoint, read day-21 gates.
+Done: migrations `0001–0016` on production; RLS proofs green in CI (+ replayed from scratch); `check:privacy` in CI; manual signed-out/non-revealed audit (masked streets + reveal verified on live posts); secrets set (public as Config, secrets as Secret); cron auth verified (both jobs 200 via cron-job.org on real cadence + daily Vercel backstop); domain + TLS + `NEXT_PUBLIC_SITE_URL`; Supabase Auth URLs incl. prod confirm; admin account exists; report → takedown verified; block/unblock + reveal verified; VAPID keys set.
+
+Still open: full click-through re-check after latest deploys, push-delivery + expiry-flip + purge observed live (not just 200s), lawyer-reviewed dated TOS/Privacy, support/abuse mailboxes, mobile 375px pass, error monitoring (`app/error.tsx`), Supabase backups, rate limits beyond wanted-routes.
+
+### C. Suggested build order (remaining)
+
+1. Attorney TOS/Privacy pass → set `TOS_VERSION` date → `profiles_missing_tos()` backfill check.
+2. Claim-flow unit tests (DB-mocked) if the claim path changes; otherwise as-is.
+3. Prod apply of any new migration + proofs-against-prod + cron/push smoke tests.
+4. Then run the pilot: share links into counted groups, watch the day-3 arrival checkpoint, read day-21 gates.
+
+### D. Two-session protocol (added 2026-10-03)
+
+Two sessions share this working tree: this one (backend/product) and a design/layout session (theme, fonts, nav, profile pages, feed rewrite, `0017_usernames`). Rules learned the hard way:
+- Never `git add -A`: a whole-file add sweeps the other session's uncommitted work into your commit (homepage icons shipped inside the label commit this way).
+- Stage exact files only; verify with `git diff --cached --stat` before committing.
+- A pushed commit that must go away means a history rewrite (`push --force-with-lease`) — founder's word required, and the other session must be warned first.
+- New migrations must be replay-safe (CI `db reset` replays all files; preview branches replay onto dirty DBs) — every CREATE needs a preceding DROP-IF-EXISTS (see the 0012/42710 incident).
+- Pushes only on explicit founder confirmation, verified on localhost first.
 
 ### D. Guardrails for any new work
 

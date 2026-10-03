@@ -18,17 +18,17 @@ export default function Error({
   return (
     <main className="flex w-full flex-1 flex-col items-center justify-center px-5 py-24 text-center">
       <h1 className="text-xl font-semibold text-content">
-        Something went wrong
+        something went wrong
       </h1>
       <p className="mt-2 text-sm text-muted">
-        An unexpected error occurred. You can try again.
+        an unexpected error occurred. you can try again.
       </p>
       <button
         type="button"
         onClick={reset}
         className="btn btn-primary mt-6 w-full"
       >
-        Try again
+        try again
       </button>
     </main>
   );

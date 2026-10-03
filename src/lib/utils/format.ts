@@ -7,7 +7,7 @@ export function formatDistance(meters: number | null | undefined): string | null
 
 /** Human-readable ride timing. */
 export function formatRideWhen(rideDate: string | null, isFuture: boolean): string {
-  if (!rideDate) return "Current · ASAP";
+  if (!rideDate) return "current · asap";
   const d = new Date(rideDate + "T00:00:00");
   const label = d.toLocaleDateString("en-US", {
     weekday: "short",
@@ -15,7 +15,7 @@ export function formatRideWhen(rideDate: string | null, isFuture: boolean): stri
     day: "numeric",
     year: "numeric",
   });
-  return isFuture ? label : `Current · ${label}`;
+  return isFuture ? label : `current · ${label}`;
 }
 
 /** e.g. "Riverside, CA 92501" (zip optional). */

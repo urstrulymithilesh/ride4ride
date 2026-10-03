@@ -25,6 +25,11 @@ jobs:
 
       - run: npm ci
 
+      # Unit tests (vitest): pure server-side logic — validations,
+      # formatting. DB-backed behavior is covered by supabase/tests/.
+      - name: npm test
+        run: npm test
+
       # Runs the privacy-guard self-test first, then the guard, then
       # tsc --noEmit, then eslint. See package.json "check".
       - name: npm run check

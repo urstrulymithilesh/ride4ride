@@ -5,7 +5,7 @@ import { getUser } from "@/lib/auth";
 import { sanitizeRedirect } from "@/lib/validations/auth";
 import { SignUpForm } from "./sign-up-form";
 
-export const metadata: Metadata = { title: "Sign up" };
+export const metadata: Metadata = { title: "sign up" };
 
 export default async function SignUpPage({
   searchParams,
@@ -21,22 +21,22 @@ export default async function SignUpPage({
     <div className="flex flex-col gap-6">
       <div className="text-center">
         <h1 className="text-xl font-semibold text-content">
-          Create your account
+          create your account
         </h1>
         <p className="mt-1 text-sm text-muted">
-          Join the community to offer and get rides.
+          join the community to offer and get rides.
         </p>
       </div>
 
       <SignUpForm redirectTo={redirectTo} />
 
       <p className="text-center text-sm text-muted">
-        Already have an account?{" "}
+        already have an account?{" "}
         <Link
           href={`/sign-in${rawRedirect ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ""}`}
           className="font-medium text-primary"
         >
-          Sign in
+          sign in
         </Link>
       </p>
     </div>

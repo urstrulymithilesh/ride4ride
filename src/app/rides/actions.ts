@@ -52,13 +52,13 @@ export async function createOfferRide(
   // "Couldn't create the post", with nothing in the server log to say why.
   if (error) {
     console.error("[rides] create_offer_ride failed:", error.message, error);
-    return { error: "Couldn't create the post. Please try again." };
+    return { error: "couldn't create the post. please try again." };
   }
 
   const ride = Array.isArray(data) ? data[0] : data;
   if (!ride?.id) {
     console.error("[rides] create_offer_ride returned no row:", data);
-    return { error: "Couldn't create the post. Please try again." };
+    return { error: "couldn't create the post. please try again." };
   }
 
   revalidatePath("/rides");
@@ -119,12 +119,12 @@ export async function createGetRide(
       geocodeAddress(d.to_address),
     ]);
   } catch {
-    return { error: "Address lookup is unavailable right now. Please try again." };
+    return { error: "address lookup is unavailable right now. please try again." };
   }
 
   const fieldErrors: FieldErrors = {};
-  if (!from) fieldErrors.from_address = "We couldn't find that pickup address.";
-  if (!to) fieldErrors.to_address = "We couldn't find that drop-off address.";
+  if (!from) fieldErrors.from_address = "we couldn't find that pickup address.";
+  if (!to) fieldErrors.to_address = "we couldn't find that drop-off address.";
   if (!from || !to) return { fieldErrors };
 
   const distance_meters = await drivingDistanceMeters(from, to);
@@ -132,10 +132,10 @@ export async function createGetRide(
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("create_get_ride", {
     // Coarse fields derived from geocoding (safe to show publicly).
-    p_from_city: from.city ?? "Unknown",
+    p_from_city: from.city ?? "unknown",
     p_from_state: from.state ?? "",
     p_from_zip: from.zip ?? "",
-    p_to_city: to.city ?? "Unknown",
+    p_to_city: to.city ?? "unknown",
     p_to_state: to.state ?? "",
     p_to_zip: to.zip ?? "",
     // Sensitive fields -> row-protected ride_locations.
@@ -161,13 +161,13 @@ export async function createGetRide(
   // "Couldn't create the post", with nothing in the server log to say why.
   if (error) {
     console.error("[rides] create_get_ride failed:", error.message, error);
-    return { error: "Couldn't create the post. Please try again." };
+    return { error: "couldn't create the post. please try again." };
   }
 
   const ride = Array.isArray(data) ? data[0] : data;
   if (!ride?.id) {
     console.error("[rides] create_get_ride returned no row:", data);
-    return { error: "Couldn't create the post. Please try again." };
+    return { error: "couldn't create the post. please try again." };
   }
 
   revalidatePath("/rides");

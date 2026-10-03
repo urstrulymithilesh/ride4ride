@@ -95,7 +95,7 @@ export function ChatThread({
           .from(CHAT_BUCKET)
           .upload(path, file, { contentType: file.type, upsert: false });
         if (upErr) {
-          setError("Image upload failed. Please try again.");
+          setError("image upload failed. please try again.");
           setSending(false);
           return;
         }
@@ -122,7 +122,7 @@ export function ChatThread({
       <div className="flex-1 space-y-3 py-4">
         {messages.length === 0 ? (
           <p className="py-8 text-center text-sm text-faint">
-            No messages yet. Say hello.
+            no messages yet. say hello.
           </p>
         ) : (
           messages.map((m) => {
@@ -192,8 +192,8 @@ export function ChatThread({
           <label
             htmlFor="chat-image-input"
             className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-surface text-muted"
-            title="Attach image"
-            aria-label="Attach image"
+            title="attach image"
+            aria-label="attach image"
           >
             🖼️
           </label>
@@ -208,7 +208,7 @@ export function ChatThread({
             }}
             rows={1}
             maxLength={MAX_MESSAGE_LENGTH}
-            placeholder="Type a message…"
+            placeholder="type a message…"
             className="input max-h-32 flex-1 resize-none py-2"
           />
           <button
@@ -216,7 +216,7 @@ export function ChatThread({
             disabled={sending || (!text.trim() && !file)}
             className="btn btn-primary shrink-0 px-4"
           >
-            {sending ? "…" : "Send"}
+            {sending ? "…" : "send"}
           </button>
         </div>
       </form>

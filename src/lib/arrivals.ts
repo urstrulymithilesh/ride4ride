@@ -2,6 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isBotUserAgent } from "@/lib/bot-filter";
 
 /**
  * Arrival tracking: did anyone actually reach the board?
@@ -24,16 +25,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
  */
 
 export type ArrivalSurface = "feed" | "post";
-
-/**
- * Crawlers, preview fetchers and uptime checks are not arrivals. Matching
- * on the UA is imperfect, but the failure mode is mild (a bot counted as a
- * person) and this catches the high-volume ones — including the messenger
- * previews this product's own distribution generates, which would
- * otherwise inflate the number every time a link is pasted.
- */
-const BOT_RE =
-  /bot|crawler|spider|crawling|facebookexternalhit|whatsapp|telegram|slackbot|discord|twitterbot|linkedinbot|embedly|quora|pinterest|vkshare|preview|scanner|monitor|uptime|curl|wget|headless|lighthouse|pagespeed|gtmetrix/i;
 
 let warnedAboutSalt = false;
 
@@ -67,7 +58,7 @@ export async function recordArrival(
     const h = await headers();
 
     const ua = h.get("user-agent") ?? "";
-    if (BOT_RE.test(ua)) return;
+    if (isBotUserAgent(ua)) return;
 
     const xff = h.get("x-forwarded-for");
     const ip = (xff?.split(",")[0] ?? h.get("x-real-ip") ?? "").trim();

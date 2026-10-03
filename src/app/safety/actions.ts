@@ -30,7 +30,7 @@ export async function reportContent(
   formData: FormData,
 ): Promise<ReportState> {
   const user = await getUser();
-  if (!user) return { error: "Please sign in to report." };
+  if (!user) return { error: "please sign in to report." };
 
   const targetType = String(formData.get("targetType") ?? "");
   const reason = String(formData.get("reason") ?? "") as ReportReason;
@@ -39,13 +39,13 @@ export async function reportContent(
   const targetUserId = String(formData.get("targetUserId") ?? "") || null;
 
   if (targetType !== "post" && targetType !== "user")
-    return { error: "Invalid report target." };
+    return { error: "invalid report target." };
   if (!REASONS.includes(reason))
-    return { fieldErrors: { reason: "Choose a reason." } };
+    return { fieldErrors: { reason: "choose a reason." } };
   if (targetType === "post" && !targetRideId)
-    return { error: "Missing post to report." };
+    return { error: "missing post to report." };
   if (targetType === "user" && !targetUserId)
-    return { error: "Missing user to report." };
+    return { error: "missing user to report." };
 
   const supabase = await createClient();
   const { error } = await supabase.from("reports").insert({
@@ -57,7 +57,7 @@ export async function reportContent(
     details: details || null,
   });
 
-  if (error) return { error: "Couldn't submit the report. Please try again." };
+  if (error) return { error: "couldn't submit the report. please try again." };
   return { done: true };
 }
 

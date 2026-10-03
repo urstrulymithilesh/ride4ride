@@ -56,30 +56,30 @@ export function validateWantedRoute(
   const to_city = (raw.to_city ?? "").trim();
   const to_state = (raw.to_state ?? "").trim();
 
-  if (!from_city) fieldErrors.from_city = "Where were you starting from?";
-  if (!from_state) fieldErrors.from_state = "Enter the state.";
-  if (!to_city) fieldErrors.to_city = "Where were you going?";
-  if (!to_state) fieldErrors.to_state = "Enter the state.";
+  if (!from_city) fieldErrors.from_city = "where were you starting from?";
+  if (!from_state) fieldErrors.from_state = "enter the state.";
+  if (!to_city) fieldErrors.to_city = "where were you going?";
+  if (!to_state) fieldErrors.to_state = "enter the state.";
 
   const from_airport = parseAirport(raw.from_airport ?? "");
   const to_airport = parseAirport(raw.to_airport ?? "");
   if (from_airport === undefined)
-    fieldErrors.from_airport = "Use a 3-letter airport code, like ORD.";
+    fieldErrors.from_airport = "use a 3-letter airport code, like ord.";
   if (to_airport === undefined)
-    fieldErrors.to_airport = "Use a 3-letter airport code, like ORD.";
+    fieldErrors.to_airport = "use a 3-letter airport code, like ord.";
 
   const start = parseDate(raw.date_window_start ?? "");
   const end = parseDate(raw.date_window_end ?? "");
-  if (!start) fieldErrors.date_window_start = "Pick a start date.";
-  if (!end) fieldErrors.date_window_end = "Pick an end date.";
+  if (!start) fieldErrors.date_window_start = "pick a start date.";
+  if (!end) fieldErrors.date_window_end = "pick an end date.";
 
   if (start && end) {
     if (end < start) {
-      fieldErrors.date_window_end = "The end date is before the start date.";
+      fieldErrors.date_window_end = "the end date is before the start date.";
     } else {
       const spanDays = (end.getTime() - start.getTime()) / 86_400_000;
       if (spanDays > MAX_WINDOW_DAYS)
-        fieldErrors.date_window_end = "Keep the window within a year.";
+        fieldErrors.date_window_end = "keep the window within a year.";
     }
   }
 

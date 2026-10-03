@@ -20,7 +20,7 @@ interface RideForChat {
   to_state: string;
 }
 
-export const metadata: Metadata = { title: "Conversation" };
+export const metadata: Metadata = { title: "conversation" };
 
 export default async function ConversationPage({
   params,
@@ -43,7 +43,7 @@ export default async function ConversationPage({
   // the read failed. Throw so error.tsx renders a real error instead.
   if (convoError) {
     console.error("[messages/:id] conversation query failed:", convoError.message, convoError);
-    throw new Error("Couldn't load this conversation.");
+    throw new Error("couldn't load this conversation.");
   }
 
   if (!convo) notFound();
@@ -128,10 +128,10 @@ export default async function ConversationPage({
             href="/messages"
             className="inline-flex min-h-11 items-center text-xs text-muted hover:text-content"
           >
-            ← All messages
+            ← all messages
           </Link>
           <h1 className="flex items-center gap-1.5 font-semibold text-content">
-            <span className="truncate">{other?.display_name ?? "A member"}</span>
+            <span className="truncate">{other?.display_name ?? "a member"}</span>
           </h1>
         </div>
         {ride ? (
@@ -150,7 +150,7 @@ export default async function ConversationPage({
         {iBlocked ? (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-danger-soft p-2 text-xs">
             <span className="text-content">
-              You blocked this person. Messaging is paused.
+              you blocked this person. messaging is paused.
             </span>
             <form action={unblockUser}>
               <input type="hidden" name="targetUserId" value={otherId} />
@@ -159,14 +159,14 @@ export default async function ConversationPage({
                 type="submit"
                 className="inline-flex min-h-11 items-center font-medium text-primary"
               >
-                Unblock
+                unblock
               </button>
             </form>
           </div>
         ) : (
           <details className="text-xs text-muted">
             <summary className="inline-flex min-h-11 cursor-pointer select-none items-center">
-              Safety
+              safety
             </summary>
             <div className="mt-1 flex flex-col gap-2 rounded-xl border border-hairline p-3">
               <form action={blockUser}>
@@ -176,10 +176,10 @@ export default async function ConversationPage({
                   type="submit"
                   className="inline-flex min-h-11 items-center font-medium text-danger"
                 >
-                  Block this person
+                  block this person
                 </button>
               </form>
-              <ReportButton targetType="user" targetUserId={otherId} label="Report this person" />
+              <ReportButton targetType="user" targetUserId={otherId} label="report this person" />
             </div>
           </details>
         )}

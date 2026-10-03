@@ -95,6 +95,8 @@ export interface Ride {
   description: string | null;
   status: RideStatus;
   distance_meters: number | null; // 'get' rides only; safe to show
+  from_street: string | null; // masked street name, no number; 'get' only
+  to_street: string | null; // masked street name, no number; 'get' only
   expires_at: string;
   created_at: string;
   updated_at: string;

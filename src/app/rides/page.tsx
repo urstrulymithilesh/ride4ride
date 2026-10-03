@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Browse rides" };
 // columns (those live in the row-protected `ride_locations` table), and
 // listing them explicitly keeps that guarantee obvious and the query lean.
 const CARD_COLUMNS =
-  "id, type, from_city, from_state, to_city, to_state, ride_date, is_future, distance_meters";
+  "id, type, from_city, from_state, to_city, to_state, ride_date, is_future, distance_meters, from_street, to_street";
 
 type When = "current" | "future";
 type Sort = "newest" | "oldest";

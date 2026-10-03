@@ -144,6 +144,11 @@ export async function createGetRide(
     p_to_lat: to.lat,
     p_to_lng: to.lng,
     p_distance_meters: distance_meters,
+    // Masked street names (public by design, never house numbers — see
+    // maskedStreet() in lib/geocoding.ts). Empty string => stored as NULL
+    // by the RPC's nullif().
+    p_from_street: from.street ?? "",
+    p_to_street: to.street ?? "",
     p_description: d.description,
     p_ride_date: d.timing.ride_date,
     p_is_future: d.timing.is_future,

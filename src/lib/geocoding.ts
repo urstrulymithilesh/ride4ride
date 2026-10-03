@@ -17,6 +17,14 @@ export interface GeocodeResult {
   state: string | null; // 2-letter, e.g. "CA"
   zip: string | null;
   placeName: string;
+  /**
+   * PUBLIC masked street name (e.g. "Main St") — never a house number.
+   * Null unless the match is a street address. Stored on `rides.from_street`
+   * / `to_street`, which are world-readable by design (v3 pilot asymmetry
+   * table), so this must stay number-free. The full address stays in
+   * row-protected `ride_locations`.
+   */
+  street: string | null;
 }
 
 function requireToken(): string {
@@ -45,6 +53,7 @@ export async function geocodeAddress(
       center: [number, number];
       place_name: string;
       text?: string;
+      address?: string; // house number, e.g. "123" — NEVER stored publicly
       place_type?: string[];
       context?: Array<{ id: string; text: string; short_code?: string }>;
     }>;
@@ -67,7 +76,22 @@ export async function geocodeAddress(
   // If the matched feature is itself a place, use its name as the city.
   if (!city && f.place_type?.includes("place")) city = f.text ?? null;
 
-  return { lat, lng, city, state, zip, placeName: f.place_name };
+  return { lat, lng, city, state, zip, placeName: f.place_name, street: maskedStreet(f) };
+}
+
+/**
+ * Masked street name for public display: the street NAME without any house
+ * number. Mapbox puts the number in `address` and the name in `text` for
+ * `address`-type matches, but the leading-digit strip below is a second
+ * barrier so a provider shape change can never promote a house number onto
+ * the public `rides.from_street` / `to_street` columns. Non-address matches
+ * (POI, neighborhood, place) yield null — no street to mask.
+ */
+function maskedStreet(f: { text?: string; place_type?: string[] }): string | null {
+  if (!f.place_type?.includes("address")) return null;
+  const name = (f.text ?? "").replace(/^\d+\s+/, "").trim();
+  if (!name) return null;
+  return name.slice(0, 80);
 }
 
 /** Straight-line distance (meters) — fallback when Directions is unavailable. */

@@ -17,10 +17,21 @@ export interface RideCardData {
   ride_date: string | null;
   is_future: boolean;
   distance_meters: number | null;
+  from_street: string | null; // masked, no number; 'get' only
+  to_street: string | null; // masked, no number; 'get' only
 }
 
 export function RideCard({ ride }: { ride: RideCardData }) {
   const distance = formatDistance(ride.distance_meters);
+  // Masked street tier (v3): rider posts show "Main St · Riverside, CA".
+  const fromLabel =
+    ride.type === "get" && ride.from_street
+      ? `${ride.from_street} · ${formatPlace(ride.from_city, ride.from_state)}`
+      : formatPlace(ride.from_city, ride.from_state);
+  const toLabel =
+    ride.type === "get" && ride.to_street
+      ? `${ride.to_street} · ${formatPlace(ride.to_city, ride.to_state)}`
+      : formatPlace(ride.to_city, ride.to_state);
 
   return (
     <article className="card flex flex-col p-0">
@@ -35,8 +46,7 @@ export function RideCard({ ride }: { ride: RideCardData }) {
           {ride.type === "offer" ? "Offer" : "Get"} a ride
         </span>
         <p className="wrap-anywhere mt-2 font-semibold text-content">
-          {formatPlace(ride.from_city, ride.from_state)} →{" "}
-          {formatPlace(ride.to_city, ride.to_state)}
+          {fromLabel} → {toLabel}
         </p>
         <p className="mt-1 text-sm text-muted">
           {formatRideWhen(ride.ride_date, ride.is_future)}

@@ -194,6 +194,14 @@ export default async function RideDetailPage({
           {formatPlace(ride.to_city, ride.to_state)}
         </h1>
 
+        {ride.type === "get" && (ride.from_street || ride.to_street) ? (
+          <p className="mt-2 text-sm text-muted">
+            {ride.from_street ? `${ride.from_street} → ` : ""}
+            {ride.to_street ?? ""}
+            <span className="text-xs"> (street names only, no house numbers)</span>
+          </p>
+        ) : null}
+
         <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
           <div className="min-w-0">
             <dt className="text-muted">When</dt>

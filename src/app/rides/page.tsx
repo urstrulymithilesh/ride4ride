@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Browse rides" };
 // columns (those live in the row-protected `ride_locations` table), and
 // listing them explicitly keeps that guarantee obvious and the query lean.
 const CARD_COLUMNS =
-  "id, type, from_city, from_state, to_city, to_state, ride_date, is_future, distance_meters, from_street, to_street";
+  "id, type, from_city, from_state, to_city, to_state, ride_date, is_future, distance_meters, from_street, to_street, from_airport";
 
 type When = "current" | "future";
 type Sort = "newest" | "oldest";
@@ -22,6 +22,7 @@ interface Params {
   zip?: string;
   city?: string;
   state?: string;
+  airport?: string;
   sort?: string;
 }
 
@@ -36,11 +37,13 @@ export default async function BrowseRidesPage({
   const zip = sp.zip?.trim() ?? "";
   const city = sp.city?.trim() ?? "";
   const state = sp.state?.trim() ?? "";
-  const hasFilters = Boolean(zip || city || state);
+  // Airport filter aid (display twin on the card). Upper-cased: IATA only.
+  const airport = sp.airport?.trim().toUpperCase() ?? "";
+  const hasFilters = Boolean(zip || city || state || airport);
 
   // Build an href preserving current params, dropping empties.
   const hrefWith = (next: Partial<Params>) => {
-    const merged = { when, sort, zip, city, state, ...next };
+    const merged = { when, sort, zip, city, state, airport, ...next };
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(merged)) {
       if (v && !(k === "when" && v === "current") && !(k === "sort" && v === "newest")) {
@@ -68,6 +71,7 @@ export default async function BrowseRidesPage({
   if (zip) query = query.eq("from_zip", zip);
   if (city) query = query.ilike("from_city", city);
   if (state) query = query.ilike("from_state", state);
+  if (airport) query = query.eq("from_airport", airport);
 
   // Capture the error. Discarding it here is how a totally broken database
   // rendered as "0 current rides" with HTTP 200 and nothing in the logs:
@@ -145,6 +149,7 @@ export default async function BrowseRidesPage({
           <FilterInput label="From city" name="city" defaultValue={city} placeholder="Riverside" />
           <FilterInput label="State" name="state" defaultValue={state} placeholder="CA" className="w-20 shrink-0" />
           <FilterInput label="ZIP" name="zip" defaultValue={zip} placeholder="92521" className="w-24 shrink-0" />
+          <FilterInput label="Airport" name="airport" defaultValue={airport} placeholder="ORD" className="w-20 shrink-0" />
         </div>
         <div className="flex items-center gap-2">
           <button type="submit" className="btn btn-primary flex-1">
@@ -152,7 +157,7 @@ export default async function BrowseRidesPage({
           </button>
           {hasFilters ? (
             <Link
-              href={hrefWith({ zip: "", city: "", state: "" })}
+              href={hrefWith({ zip: "", city: "", state: "", airport: "" })}
               className="btn btn-ghost"
             >
               Clear
@@ -207,7 +212,7 @@ export default async function BrowseRidesPage({
           </p>
           {hasFilters ? (
             <Link
-              href={hrefWith({ zip: "", city: "", state: "" })}
+              href={hrefWith({ zip: "", city: "", state: "", airport: "" })}
               className="mt-3 inline-block text-sm font-medium text-primary"
             >
               Clear filters

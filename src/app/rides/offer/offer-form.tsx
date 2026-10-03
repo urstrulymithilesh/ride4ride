@@ -25,6 +25,14 @@ export function OfferForm() {
           </div>
         </div>
         <TextField label="ZIP (optional)" name="from_zip" error={fe?.from_zip} />
+        <div className="w-28 shrink-0">
+          <TextField
+            label="Airport (optional)"
+            name="from_airport"
+            placeholder="ORD"
+            error={fe?.from_airport}
+          />
+        </div>
       </section>
 
       <section className="flex flex-col gap-3">

@@ -43,6 +43,8 @@ export async function createOfferRide(
     p_description: d.description,
     p_ride_date: d.timing.ride_date,
     p_is_future: d.timing.is_future,
+    // Explicit airport pick (validated + uppercased above; "" => NULL).
+    p_from_airport: d.from_airport ?? "",
   });
 
   // Log before returning the friendly message. Without this the real cause

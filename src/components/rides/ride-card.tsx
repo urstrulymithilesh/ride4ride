@@ -19,6 +19,7 @@ export interface RideCardData {
   distance_meters: number | null;
   from_street: string | null; // masked, no number; 'get' only
   to_street: string | null; // masked, no number; 'get' only
+  from_airport: string | null; // public IATA display/filter aid
 }
 
 export function RideCard({ ride }: { ride: RideCardData }) {
@@ -48,6 +49,11 @@ export function RideCard({ ride }: { ride: RideCardData }) {
         <p className="wrap-anywhere mt-2 font-semibold text-content">
           {fromLabel} → {toLabel}
         </p>
+        {ride.from_airport ? (
+          <p className="mt-1 text-xs font-medium text-muted">
+            ✈ {ride.from_airport}
+          </p>
+        ) : null}
         <p className="mt-1 text-sm text-muted">
           {formatRideWhen(ride.ride_date, ride.is_future)}
           {distance ? ` · ${distance}` : ""}

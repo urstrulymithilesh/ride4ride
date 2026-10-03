@@ -1,17 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { BottomNav } from "@/components/layout/bottom-nav";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
+// Consolas-like monospace with a straight lowercase "l" (JetBrains Mono
+// distinguishes l/1/I by construction). Native Consolas kept as the first
+// fallback in the CSS stacks.
+const mono = JetBrains_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 
 // viewport-fit=cover is required for env(safe-area-inset-*) to take effect.
 export const viewport: Viewport = {
-  themeColor: "#000000",
+  themeColor: "#e9eef6",
   viewportFit: "cover",
 };
 
@@ -36,7 +36,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${mono.variable} h-full antialiased`}
     >
       <body className="min-h-full">
         <div className="app-shell">
@@ -47,10 +47,11 @@ export default function RootLayout({
             Skip to content
           </a>
           <SiteHeader />
-          <div id="main" className="flex flex-1 flex-col">
+          <div id="main" className="flex flex-1 flex-col pb-24">
             {children}
           </div>
           <SiteFooter />
+          <BottomNav />
         </div>
       </body>
     </html>

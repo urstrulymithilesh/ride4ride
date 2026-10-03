@@ -3,29 +3,36 @@
 /* ==================================================================
    Design tokens — the ONLY place colors are defined. Components must
    use these (bg-surface, text-muted, bg-primary, …), never raw hexes.
+   Light theme sampled from the landing mock:
+   pale blue-grey canvas, white app column, navy ink, bright blue accent.
    ================================================================== */
 @theme {
-  --color-canvas: #0d0d0d; /* subtle backdrop behind the app column (desktop) */
-  --color-app: #000000; /* the app column background (pure black) */
-  --color-surface: #1a1a1a; /* elevated: cards, nav, inputs, incoming bubbles */
-  --color-surface-2: #2a2a2a; /* more elevated: outgoing bubbles, selected, hover */
-  --color-hairline: rgba(255, 255, 255, 0.1); /* dividers & borders */
+  --color-canvas: #e9eef6; /* pale blue-grey backdrop behind the app column */
+  --color-app: #ffffff; /* the app column background (white card) */
+  --color-surface: #ffffff; /* elevated: cards, nav, inputs */
+  --color-surface-2: #eef3fa; /* soft blue-grey: hover, secondary buttons */
+  --color-hairline: #e3e9f2; /* dividers & borders */
 
-  --color-content: #ffffff; /* primary text */
-  --color-muted: rgba(255, 255, 255, 0.65); /* secondary text */
-  --color-faint: rgba(255, 255, 255, 0.45); /* tertiary text / placeholders */
+  --color-content: #0e1e33; /* navy ink — primary text */
+  --color-muted: #5d6f89; /* slate — secondary text */
+  --color-faint: #8ca0b8; /* tertiary text / placeholders */
 
-  --color-primary: #007aff; /* blue  = interactive / primary / active */
-  --color-success: #34c759; /* green = positive / confirm / success */
-  --color-danger: #ff3b30; /* red   = destructive / alert / error */
+  --color-primary: #2563eb; /* royal blue = interactive / icon tiles */
+  --color-success: #16a34a; /* green = positive / confirm / success */
+  --color-danger: #dc2626; /* red   = destructive / alert / error */
 
-  --color-primary-soft: rgba(0, 122, 255, 0.15);
-  --color-success-soft: rgba(52, 199, 89, 0.15);
-  --color-danger-soft: rgba(255, 59, 48, 0.15);
+  --color-primary-soft: #e7efff;
+  --color-success-soft: #e5f6ec;
+  --color-danger-soft: #fdecec;
+
+  --font-sans: "JetBrains Mono", Consolas, Menlo, "DejaVu Sans Mono",
+    monospace;
+  --font-mono: "JetBrains Mono", Consolas, Menlo, "DejaVu Sans Mono",
+    monospace;
 }
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 /* Prevent flex/grid children from refusing to shrink (the #1 overflow cause).
@@ -41,7 +48,8 @@ html {
 body {
   background: var(--color-canvas);
   color: var(--color-content);
-  font-family: var(--font-sans), system-ui, -apple-system, Arial, sans-serif;
+  font-family: "JetBrains Mono", Consolas, Menlo, "DejaVu Sans Mono",
+    ui-monospace, monospace;
   overflow-wrap: break-word;
   -webkit-text-size-adjust: 100%;
 }

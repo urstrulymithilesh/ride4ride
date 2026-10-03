@@ -35,7 +35,7 @@ export function RideCard({ ride }: { ride: RideCardData }) {
       : formatPlace(ride.to_city, ride.to_state);
 
   return (
-    <article className="card flex flex-col p-0">
+    <article className="card flex flex-col overflow-hidden border border-hairline p-0 shadow-[0_10px_28px_-18px_rgba(14,30,51,0.25)] transition-shadow hover:shadow-[0_18px_36px_-18px_rgba(37,99,235,0.35)]">
       <Link href={`/rides/${ride.id}`} className="block flex-1 p-4">
         <span
           className={`chip ${
@@ -44,7 +44,7 @@ export function RideCard({ ride }: { ride: RideCardData }) {
               : "bg-primary-soft text-primary"
           }`}
         >
-          {ride.type === "offer" ? "Offer" : "Get"} a ride
+          {ride.type === "offer" ? "Ride Available" : "Need Ride"}
         </span>
         <p className="wrap-anywhere mt-2 font-semibold text-content">
           {fromLabel} → {toLabel}

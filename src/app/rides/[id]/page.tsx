@@ -147,7 +147,7 @@ export default async function RideDetailPage({
 
   const isOwner = user?.id === ride.owner_id;
   const distance = formatDistance(ride.distance_meters);
-  const kindLabel = ride.type === "offer" ? "Offer a ride" : "Get a ride";
+  const kindLabel = ride.type === "offer" ? "Ride Available" : "Need Ride";
 
   // Poster identity is part of "full details" — only fetch/expose to signed-in.
   let posterName: string | null = null;
@@ -274,6 +274,9 @@ export default async function RideDetailPage({
                     Message the poster
                   </button>
                   <p className="mt-2 text-xs text-muted">
+                    Opens the chat with a quick hello to break the ice.
+                  </p>
+                  <p className="mt-1 text-xs text-muted">
                     For &lsquo;get&rsquo; rides, exact addresses are shared only
                     after you both agree in chat.
                   </p>

@@ -4,9 +4,8 @@ import type { FieldErrors } from "@/lib/validations/auth";
  * Validation for the "tell us the route you wanted" form.
  *
  * Deliberately permissive about the route itself: the whole point is to
- * capture routes the board cannot serve, including places we have no
- * inventory for and airports we have never heard of. Rejecting a route
- * for being unfamiliar would defeat the feature.
+ * capture routes the board cannot serve. Rejecting a route for being
+ * unfamiliar would defeat the feature.
  */
 
 export type RoleWanted = "get" | "give";
@@ -17,25 +16,14 @@ const MAX_WINDOW_DAYS = 365;
 export interface WantedRouteInput {
   from_city: string;
   from_state: string;
-  from_airport: string | null;
   to_city: string;
   to_state: string;
-  to_airport: string | null;
   date_window_start: string; // YYYY-MM-DD
   date_window_end: string; // YYYY-MM-DD
   role_wanted: RoleWanted;
 }
 
-const IATA_RE = /^[A-Za-z]{3}$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-
-/** Uppercase a 3-letter code, or null if blank. Invalid input returns undefined. */
-function parseAirport(raw: string): string | null | undefined {
-  const t = raw.trim();
-  if (!t) return null;
-  if (!IATA_RE.test(t)) return undefined;
-  return t.toUpperCase();
-}
 
 function parseDate(raw: string): Date | null {
   const t = raw.trim();
@@ -61,13 +49,6 @@ export function validateWantedRoute(
   if (!to_city) fieldErrors.to_city = "where were you going?";
   if (!to_state) fieldErrors.to_state = "enter the state.";
 
-  const from_airport = parseAirport(raw.from_airport ?? "");
-  const to_airport = parseAirport(raw.to_airport ?? "");
-  if (from_airport === undefined)
-    fieldErrors.from_airport = "use a 3-letter airport code, like ord.";
-  if (to_airport === undefined)
-    fieldErrors.to_airport = "use a 3-letter airport code, like ord.";
-
   const start = parseDate(raw.date_window_start ?? "");
   const end = parseDate(raw.date_window_end ?? "");
   if (!start) fieldErrors.date_window_start = "pick a start date.";
@@ -92,10 +73,8 @@ export function validateWantedRoute(
     data: {
       from_city,
       from_state,
-      from_airport: from_airport as string | null,
       to_city,
       to_state,
-      to_airport: to_airport as string | null,
       date_window_start: (raw.date_window_start ?? "").trim(),
       date_window_end: (raw.date_window_end ?? "").trim(),
       role_wanted,

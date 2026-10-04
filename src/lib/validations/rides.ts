@@ -50,8 +50,6 @@ export interface OfferInput {
   to_zip: string;
   description: string;
   timing: Timing;
-  /** Captain's explicit airport pick (IATA, uppercase) or null. */
-  from_airport: string | null;
 }
 
 export interface GetInput {
@@ -87,13 +85,6 @@ export function validateOffer(
   if (!to_city) fieldErrors.to_city = "enter the destination city.";
   if (!to_state) fieldErrors.to_state = "enter the destination state.";
 
-  // Optional captain airport pick. Validated here (friendlier error) AND
-  // by the DB check constraint; normalized to uppercase for the RPC.
-  const airportRaw = (raw.from_airport ?? "").trim().toUpperCase();
-  if (airportRaw && !/^[A-Z]{3}$/.test(airportRaw)) {
-    fieldErrors.from_airport = "use a 3-letter airport code, like ord.";
-  }
-
   const timing = commonTiming(raw, fieldErrors);
   if (Object.keys(fieldErrors).length > 0 || !timing)
     return { ok: false, fieldErrors };
@@ -109,7 +100,6 @@ export function validateOffer(
       to_zip: (raw.to_zip ?? "").trim(),
       description: (raw.description ?? "").trim(),
       timing,
-      from_airport: airportRaw || null,
     },
   };
 }

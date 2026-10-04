@@ -86,12 +86,6 @@ export function WantedRouteForm({ defaultOpen = false }: { defaultOpen?: boolean
           error={state.fieldErrors?.from_state}
           required
         />
-        <TextField
-          label="airport"
-          name="from_airport"
-          placeholder="ord"
-          error={state.fieldErrors?.from_airport}
-        />
       </div>
 
       <div className="flex gap-2">
@@ -108,12 +102,6 @@ export function WantedRouteForm({ defaultOpen = false }: { defaultOpen?: boolean
           placeholder="il"
           error={state.fieldErrors?.to_state}
           required
-        />
-        <TextField
-          label="airport"
-          name="to_airport"
-          placeholder="optional"
-          error={state.fieldErrors?.to_airport}
         />
       </div>
 

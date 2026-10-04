@@ -219,12 +219,6 @@ export default async function RideDetailPage({
           {formatPlace(ride.to_city, ride.to_state)}
         </h1>
 
-        {ride.from_airport ? (
-          <p className="mt-2 text-sm font-medium text-muted">
-            ✈ {ride.from_airport}
-          </p>
-        ) : null}
-
         {ride.type === "get" && (ride.from_street || ride.to_street) ? (
           <p className="mt-2 text-sm text-muted">
             {ride.from_street ? `${ride.from_street} → ` : ""}

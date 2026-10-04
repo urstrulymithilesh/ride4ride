@@ -58,25 +58,10 @@ describe("validateOffer", () => {
     description: "",
     mode: "current",
     ride_date: "",
-    from_airport: "",
   };
 
-  it("accepts a minimal valid offer with no airport", () => {
-    const r = validateOffer({ ...base });
-    expect(r.ok).toBe(true);
-    if (r.ok) expect(r.data.from_airport).toBeNull();
-  });
-
-  it("upper-cases a valid airport pick", () => {
-    const r = validateOffer({ ...base, from_airport: "ord" });
-    expect(r.ok).toBe(true);
-    if (r.ok) expect(r.data.from_airport).toBe("ORD");
-  });
-
-  it("rejects a malformed airport code", () => {
-    const r = validateOffer({ ...base, from_airport: "ohare" });
-    expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.fieldErrors.from_airport).toBeDefined();
+  it("accepts a minimal valid offer", () => {
+    expect(validateOffer({ ...base }).ok).toBe(true);
   });
 
   it("requires both cities and states", () => {

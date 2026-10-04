@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "browse rides" };
 // columns (those live in the row-protected `ride_locations` table), and
 // listing them explicitly keeps that guarantee obvious and the query lean.
 const CARD_COLUMNS =
-  "id, type, from_city, from_state, to_city, to_state, ride_date, is_future, distance_meters, from_street, to_street, from_airport";
+  "id, type, from_city, from_state, to_city, to_state, ride_date, is_future, distance_meters, from_street, to_street";
 
 type When = "current" | "future";
 type Sort = "newest" | "oldest";
@@ -25,7 +25,6 @@ interface Params {
   zip?: string;
   city?: string;
   state?: string;
-  airport?: string;
   sort?: string;
   type?: string;
 }
@@ -44,9 +43,7 @@ export default async function BrowseRidesPage({
   const zip = sp.zip?.trim() ?? "";
   const city = sp.city?.trim() ?? "";
   const state = sp.state?.trim() ?? "";
-  // Airport filter aid (display twin on the card). Upper-cased: IATA only.
-  const airport = sp.airport?.trim().toUpperCase() ?? "";
-  const hasFilters = Boolean(zip || city || state || airport || typeExplicit);
+  const hasFilters = Boolean(zip || city || state || typeExplicit);
 
   // IP-suggested FROM city (v3 pilot): Vercel supplies a geo city header,
   // offered as the filter box's starting text — always changeable, and it
@@ -64,7 +61,7 @@ export default async function BrowseRidesPage({
 
   // Build an href preserving current params, dropping empties.
   const hrefWith = (next: Partial<Params>) => {
-    const merged = { when, sort, type: rideType, zip, city, state, airport, ...next };
+    const merged = { when, sort, type: rideType, zip, city, state, ...next };
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(merged)) {
       if (v && !(k === "when" && v === "current") && !(k === "sort" && v === "newest") && !(k === "type" && v === "get")) {
@@ -92,7 +89,6 @@ export default async function BrowseRidesPage({
   if (zip) query = query.eq("from_zip", zip);
   if (city) query = query.ilike("from_city", city);
   if (state) query = query.ilike("from_state", state);
-  if (airport) query = query.eq("from_airport", airport);
   if (rideType !== "all") query = query.eq("type", rideType);
 
   // Capture the error. Discarding it here is how a totally broken database
@@ -188,7 +184,6 @@ export default async function BrowseRidesPage({
           <FilterInput label="from city" name="city" defaultValue={cityInputDefault} placeholder="riverside" />
           <FilterInput label="state" name="state" defaultValue={state} placeholder="ca" className="w-20 shrink-0" />
           <FilterInput label="zip" name="zip" defaultValue={zip} placeholder="92521" className="w-24 shrink-0" />
-          <FilterInput label="airport" name="airport" defaultValue={airport} placeholder="ord" className="w-20 shrink-0" />
         </div>
         <div className="flex items-center gap-2">
           <button type="submit" className="btn btn-primary flex-1">
@@ -196,7 +191,7 @@ export default async function BrowseRidesPage({
           </button>
           {hasFilters ? (
             <Link
-              href={hrefWith({ zip: "", city: "", state: "", airport: "", type: "get" })}
+              href={hrefWith({ zip: "", city: "", state: "", type: "get" })}
               className="btn btn-ghost"
             >
               clear
@@ -223,7 +218,6 @@ export default async function BrowseRidesPage({
                 zip,
                 city,
                 state,
-                airport,
               }).filter(([, v]) => Boolean(v)),
             )}
           />
@@ -236,7 +230,6 @@ export default async function BrowseRidesPage({
                 zip,
                 city,
                 state,
-                airport,
               }).filter(([, v]) => Boolean(v)),
             )}
           />
@@ -273,7 +266,7 @@ export default async function BrowseRidesPage({
           </p>
           {hasFilters ? (
             <Link
-              href={hrefWith({ zip: "", city: "", state: "", airport: "", type: "get" })}
+              href={hrefWith({ zip: "", city: "", state: "", type: "get" })}
               className="mt-3 inline-block text-sm font-medium text-primary"
             >
               clear filters

@@ -38,9 +38,9 @@ select set_config(
   true);
 
 insert into public.wanted_routes (
-  from_city, from_state, from_airport, to_city, to_state,
+  from_city, from_state, to_city, to_state,
   date_window_start, date_window_end, role_wanted, created_by
-) values ('Chicago','IL','ORD','Naperville','IL',
+) values ('Chicago','IL','Naperville','IL',
           current_date, current_date + 3, 'get', null);
 
 select 'PASS' as test_1_anon_can_insert_unowned_row;

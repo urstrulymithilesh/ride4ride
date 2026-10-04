@@ -1,9 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
-import { SiteHeader } from "@/components/layout/site-header";
 import { BottomNav } from "@/components/layout/bottom-nav";
-import { HideOnLanding } from "@/components/layout/hide-on-landing";
 
 // Geometric sans for the whole site, normal + italic.
 const mono = Montserrat({
@@ -45,10 +43,7 @@ export default function RootLayout({
           >
             Skip to content
           </a>
-          <HideOnLanding>
-            <SiteHeader />
-          </HideOnLanding>
-          <div id="main" className="flex flex-1 flex-col pb-24">
+          <div id="main" className="flex flex-1 flex-col pb-24 pt-6">
             {children}
           </div>
           <BottomNav />

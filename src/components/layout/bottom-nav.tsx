@@ -24,22 +24,30 @@ function PlusIcon() {
 
 interface Active {
   rides: boolean;
-  post: boolean;
   chats: boolean;
+  post: boolean;
+  profile: boolean;
+  settings: boolean;
 }
 
-const NONE: Active = { rides: false, post: false, chats: false };
+const NONE: Active = {
+  rides: false,
+  chats: false,
+  post: false,
+  profile: false,
+  settings: false,
+};
 
 function DockLinks({ active }: { active: Active }) {
   const item = (isActive: boolean) =>
-    `flex min-h-11 min-w-16 flex-1 items-center justify-center rounded-full text-sm font-medium ${
-      isActive ? "text-primary" : "text-muted"
+    `flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-full ${
+      isActive ? "text-[17.5px] font-bold text-white" : "text-sm font-medium text-muted"
     }`;
 
   return (
     <nav
       aria-label="ride navigation"
-      className="flex min-h-[64px] items-center justify-between rounded-full border border-hairline bg-surface/90 px-6 backdrop-blur"
+      className="safe-bottom flex items-center justify-between rounded-t-[16px] border border-b-0 border-white/20 bg-app/95 px-2 pt-2 backdrop-blur"
     >
       <Link
         href="/rides"
@@ -49,13 +57,20 @@ function DockLinks({ active }: { active: Active }) {
         rides
       </Link>
       <Link
+        href="/messages"
+        aria-current={active.chats ? "page" : undefined}
+        className={item(active.chats)}
+      >
+        chats
+      </Link>
+      <Link
         href="/rides/new"
         aria-label="post a ride"
         aria-current={active.post ? "page" : undefined}
         className="flex flex-1 items-center justify-center"
       >
         <span
-          className={`flex h-14 w-14 items-center justify-center rounded-full text-white shadow-[0_8px_20px_-6px_rgba(37,99,235,0.6)] ${
+          className={`flex h-16 w-16 -mt-5 items-center justify-center rounded-full text-white shadow-[0_8px_20px_-6px_rgba(37,99,235,0.6)] ${
             active.post ? "bg-content" : "bg-primary"
           }`}
         >
@@ -63,11 +78,18 @@ function DockLinks({ active }: { active: Active }) {
         </span>
       </Link>
       <Link
-        href="/messages"
-        aria-current={active.chats ? "page" : undefined}
-        className={item(active.chats)}
+        href="/profile"
+        aria-current={active.profile ? "page" : undefined}
+        className={item(active.profile)}
       >
-        chat
+        profile
+      </Link>
+      <Link
+        href="/settings"
+        aria-current={active.settings ? "page" : undefined}
+        className={item(active.settings)}
+      >
+        settings
       </Link>
     </nav>
   );
@@ -84,23 +106,27 @@ function BottomNavInner() {
 
   const active: Active = {
     rides: pathname === "/rides",
+    chats: pathname === "/messages",
     post:
       pathname === "/rides/new" ||
       pathname === "/rides/offer" ||
       pathname === "/rides/get",
-    chats: pathname === "/messages",
+    profile: pathname === "/profile",
+    settings: pathname === "/settings",
   };
 
   return (
-    <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-[480px] -translate-x-1/2 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+    <div className="fixed bottom-0 left-1/2 z-40 w-full max-w-[480px] -translate-x-1/2">
       <DockLinks active={active} />
     </div>
   );
 }
 
 /**
- * Phone-app bottom dock. Floating rounded bar: rides | + | chat.
- * Hidden on chat thread pages, which have their own sticky bottom input.
+ * Phone-app bottom dock. Full-width bar with rounded top corners only:
+ * rides | chats | + | profile | settings. The + button straddles the
+ * top edge. Hidden on chat thread pages, which have their own sticky
+ * bottom input.
  */
 export function BottomNav() {
   return (

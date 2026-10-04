@@ -35,10 +35,8 @@ export async function submitWantedRoute(
     [
       "from_city",
       "from_state",
-      "from_airport",
       "to_city",
       "to_state",
-      "to_airport",
       "date_window_start",
       "date_window_end",
       "role_wanted",

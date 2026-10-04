@@ -74,7 +74,6 @@ const MIN_ASSERTIONS = {
   "rls_reveal_handshake.sql": 3,
   "wanted_routes_rls.sql": 7,
   "masked_street.sql": 6,
-  "airports.sql": 6,
 };
 
 /** Proofs are ordered so a broken schema fails on the cheapest one first. */

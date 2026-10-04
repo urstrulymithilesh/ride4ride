@@ -17,7 +17,7 @@ export default async function Home() {
   const joined = await getJoinedCount();
 
   return (
-    <main className="flex w-full flex-1 flex-col bg-black px-5 pb-6 pt-14 text-white">
+    <main className="flex w-full flex-1 flex-col bg-black px-5 pb-6 pt-8 text-white">
       <div className="-mx-5 flex h-16 items-center border-l-[3.75px] border-primary pl-3 pr-5">
         <div className="flex flex-wrap items-center gap-x-3">
           <p className="whitespace-nowrap text-4xl font-normal italic text-white/90">

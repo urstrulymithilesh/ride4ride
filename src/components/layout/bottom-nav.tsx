@@ -47,7 +47,7 @@ function DockLinks({ active }: { active: Active }) {
   return (
     <nav
       aria-label="ride navigation"
-      className="safe-bottom flex items-center justify-between rounded-t-[16px] border border-b-0 border-white/20 bg-app/95 px-2 pt-2 backdrop-blur"
+      className="flex items-center justify-between rounded-t-[16px] border border-b-0 border-white/20 bg-app/95 px-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur"
     >
       <Link
         href="/rides"

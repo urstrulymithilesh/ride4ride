@@ -27,13 +27,13 @@ const state = {
 
 function messagesQuery() {
   return {
-    select(_c: string) {
+    select() {
       return this;
     },
-    eq(_c: string, _v: string) {
+    eq() {
       return this;
     },
-    limit(_n: number) {
+    limit() {
       return Promise.resolve({ data: state.existing });
     },
     async insert(row: object) {
@@ -46,10 +46,10 @@ function messagesQuery() {
 
 function ridesQuery() {
   return {
-    select(_c: string) {
+    select() {
       return this;
     },
-    eq(_c: string, _v: string) {
+    eq() {
       return this;
     },
     async maybeSingle() {

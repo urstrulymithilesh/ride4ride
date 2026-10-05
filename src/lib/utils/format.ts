@@ -12,7 +12,7 @@ export function formatMiles(meters: number | null | undefined): string | null {
   return short.endsWith("1 mi") ? "1 mile" : short.replace(" mi", " miles");
 }
 
-/** Posted time, e.g. "today • 10:05 a.m". Days compare in server time. */
+/** Posted time, e.g. "Today • 10:05 a.m". Days compare in server time. */
 export function formatPostedAt(iso: string): string {
   const d = new Date(iso);
   const now = new Date();
@@ -23,12 +23,10 @@ export function formatPostedAt(iso: string): string {
   );
   const day =
     dayDiff <= 0
-      ? "today"
+      ? "Today"
       : dayDiff === 1
-        ? "yesterday"
-        : d
-            .toLocaleDateString("en-US", { month: "short", day: "numeric" })
-            .toLowerCase();
+        ? "Yesterday"
+        : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   const h24 = d.getHours();
   const suffix = h24 < 12 ? "a.m" : "p.m";
   const h = h24 % 12 || 12;

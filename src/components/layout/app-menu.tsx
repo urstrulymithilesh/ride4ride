@@ -10,7 +10,7 @@ import { MenuButton } from "./menu-button";
 export async function AppMenu() {
   const [user, profile] = await Promise.all([getUser(), getProfile()]);
   const joined = profile?.created_at
-    ? new Date(profile.created_at).toLocaleDateString().toLowerCase()
+    ? `Joined ${new Date(profile.created_at).toLocaleDateString("en-US", { month: "short" })}, ${new Date(profile.created_at).getFullYear()}`
     : null;
 
   const item =
@@ -21,13 +21,26 @@ export async function AppMenu() {
         <div className="w-64 overflow-hidden rounded-2xl border border-hairline bg-surface shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)]">
           {user && profile ? (
             <div className="border-b border-hairline px-4 py-3">
-              <p className="wrap-anywhere text-sm font-semibold text-content">
-                @{profile.username}
+              <p className="wrap-anywhere flex items-center gap-1.5 text-sm font-semibold text-content">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  className="shrink-0"
+                >
+                  <circle cx="12" cy="8" r="3.5" />
+                  <path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6" />
+                </svg>
+                <span className="truncate">{profile.username}</span>
               </p>
               {joined ? (
-                <p className="mt-0.5 text-xs text-muted">
-                  date joined : {joined}
-                </p>
+                <p className="mt-0.5 text-xs text-muted">{joined}</p>
               ) : null}
             </div>
           ) : null}

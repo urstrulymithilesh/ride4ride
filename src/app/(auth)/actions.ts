@@ -129,9 +129,7 @@ export async function signIn(
   const redirectTo = sanitizeRedirect(String(formData.get("redirectTo") ?? ""));
   const supabase = await createClient();
 
-  const { data: signedIn, error } = await supabase.auth.signInWithPassword(
-    result.data,
-  );
+  const { error } = await supabase.auth.signInWithPassword(result.data);
   if (error) {
     // Keep the message generic to avoid leaking which part was wrong.
     return { error: "invalid email or password." };

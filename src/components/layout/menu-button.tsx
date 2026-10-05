@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 
 function HamburgerIcon({ open }: { open: boolean }) {
@@ -40,9 +40,14 @@ export function MenuButton({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   // Close on navigation (covers link taps, back/forward gestures).
-  useEffect(() => {
+  // Render-time adjustment, not an effect: setting state during render
+  // for this compare-and-reset is the sanctioned pattern and avoids a
+  // cascading render.
+  const [lastPath, setLastPath] = useState(pathname);
+  if (pathname !== lastPath) {
+    setLastPath(pathname);
     setOpen(false);
-  }, [pathname]);
+  }
 
   return (
     <>

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { RideCard, type RideCardData } from "@/components/rides/ride-card";
 import { recordArrival } from "@/lib/arrivals";
@@ -33,7 +33,8 @@ export default async function BrowseRidesPage({
   const when: When = sp.when === "future" ? "future" : "current";
   const rideType: RideType =
     sp.type === "offer" || sp.type === "get" ? sp.type : "all";
-  const from = sp.from?.trim() ?? "";
+  const from =
+    sp.from !== undefined ? sp.from.trim() : ((await cookies()).get("r4r-city")?.value.trim() ?? "");
   const to = sp.to?.trim() ?? "";
   const hasFilters = Boolean(from || to);
 
@@ -78,8 +79,10 @@ export default async function BrowseRidesPage({
     .gt("expires_at", new Date().toISOString())
     .eq("is_future", when === "future");
 
-  if (from) query = query.or(endOr("from", from));
-  if (to) query = query.or(endOr("to", to));
+  const fromOr = from ? endOr("from", from) : null;
+  const toOr = to ? endOr("to", to) : null;
+  if (fromOr) query = query.or(fromOr);
+  if (toOr) query = query.or(toOr);
   if (rideType !== "all") query = query.eq("type", rideType);
 
   // Capture the error. Discarding it here is how a totally broken database
@@ -301,12 +304,20 @@ export default async function BrowseRidesPage({
 }
 
 /**
- * One search box matches a city name, a zip, or (when it looks like one) a
- * state code — e.g. "aurora", "60505", "il".
+ * One search box matches a city name, a zip, a state code, or a
+ * "city, st" pair — e.g. "aurora", "60505", "il", "chicago, il".
  */
-function endOr(prefix: "from" | "to", q: string): string {
-  const parts = [`${prefix}_city.ilike.%${q}%`];
-  if (/^\d+$/.test(q)) parts.push(`${prefix}_zip.eq.${q}`);
-  if (/^[a-zA-Z]{2}$/.test(q)) parts.push(`${prefix}_state.ilike.${q}`);
-  return parts.join(",");
+function endOr(prefix: "from" | "to", raw: string | null): string | null {
+  if (!raw) return null;
+  const tokens = raw
+    .split(",")
+    .flatMap((part) => part.split(/\s+/).map((t) => t.trim()))
+    .filter(Boolean);
+  const parts: string[] = [];
+  for (const t of tokens) {
+    if (/^\d+$/.test(t)) parts.push(`${prefix}_zip.eq.${t}`);
+    else if (/^[a-zA-Z]{2}$/.test(t)) parts.push(`${prefix}_state.ilike.${t}`);
+    else parts.push(`${prefix}_city.ilike.%${t}%`);
+  }
+  return parts.length > 0 ? parts.join(",") : null;
 }

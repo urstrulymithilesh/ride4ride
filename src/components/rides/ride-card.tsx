@@ -43,29 +43,44 @@ export function RideCard({ ride }: { ride: RideCardData }) {
       : `need ride${miles ? ` for ${miles}` : ""}`;
 
   return (
-    <article>
-      <div className="flex items-center gap-3 rounded-[20px] border border-white/15 bg-surface p-4">
-        <div className="min-w-0 flex-1">
-          <p className="wrap-anywhere text-xl font-semibold">
-            <span className={ride.type === "offer" ? "text-primary" : "text-success"}>
-              {headline}
-            </span>
-          </p>
-          <div className="mt-2 flex flex-col gap-1 text-[13px] leading-snug text-muted">
-            <p className="wrap-anywhere">pick up : {fromLabel}</p>
-            <p className="wrap-anywhere">drop off : {toLabel}</p>
-          </div>
-        </div>
+    <article className="rounded-[20px] border border-white/15 bg-surface p-3">
+      <div className="flex items-center gap-3">
+        <p className="wrap-anywhere min-w-0 flex-1 text-xl font-semibold">
+          <span className={ride.type === "offer" ? "text-primary" : "text-success"}>
+            {headline}
+          </span>
+        </p>
         <Link
           href={`/rides/${ride.id}`}
-          className="btn btn-primary min-h-11 shrink-0 self-center rounded-[10px] px-5 text-sm"
+          className="btn btn-primary min-h-8 shrink-0 self-center rounded-[10px] px-5 text-sm"
         >
           request
         </Link>
       </div>
-      <div className="mt-2 flex items-center justify-between gap-2">
-        <p className="wrap-anywhere truncate text-sm text-white/80">
-          {ride.username ? `@${ride.username}` : ""}
+      <div className="mt-2 flex flex-col gap-1 text-[13px] leading-snug text-white/80">
+        <p className="wrap-anywhere">pick up : {fromLabel}</p>
+        <p className="wrap-anywhere">drop off : {toLabel}</p>
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/10 pt-2">
+        <p className="wrap-anywhere flex min-w-0 items-center gap-1.5 truncate text-sm text-white/80">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            className="shrink-0"
+          >
+            <circle cx="12" cy="8" r="3.5" />
+            <path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6" />
+          </svg>
+          <span className="truncate">
+            {ride.username ?? ""}
+          </span>
         </p>
         <p className="shrink-0 text-xs text-muted">
           {formatPostedAt(ride.created_at)}

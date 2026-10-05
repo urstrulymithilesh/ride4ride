@@ -10,7 +10,7 @@
  * command with `npm run geo:update && ` so deploys refresh the file.
  */
 import { execFileSync } from "node:child_process";
-import { createWriteStream, existsSync, mkdirSync, readdirSync, copyFileSync, rmSync } from "node:fs";
+import { createWriteStream, mkdirSync, readdirSync, copyFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pipeline } from "node:stream/promises";

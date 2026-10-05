@@ -28,12 +28,6 @@ interface Active {
   post: boolean;
 }
 
-const NONE: Active = {
-  rides: false,
-  chats: false,
-  post: false,
-};
-
 function DockLinks({ active }: { active: Active }) {
   const item = (isActive: boolean) =>
     `flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-full ${

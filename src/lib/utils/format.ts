@@ -5,6 +5,37 @@ export function formatDistance(meters: number | null | undefined): string | null
   return `${miles < 10 ? miles.toFixed(1) : Math.round(miles)} mi`;
 }
 
+/** Same distance in words, e.g. 1931 -> "1.2 miles", 1609 -> "1 mile". */
+export function formatMiles(meters: number | null | undefined): string | null {
+  const short = formatDistance(meters);
+  if (!short) return null;
+  return short.endsWith("1 mi") ? "1 mile" : short.replace(" mi", " miles");
+}
+
+/** Posted time, e.g. "today • 10:05 a.m". Days compare in server time. */
+export function formatPostedAt(iso: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  const startOfDay = (x: Date) =>
+    new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const dayDiff = Math.round(
+    (startOfDay(now) - startOfDay(d)) / (24 * 60 * 60 * 1000),
+  );
+  const day =
+    dayDiff <= 0
+      ? "today"
+      : dayDiff === 1
+        ? "yesterday"
+        : d
+            .toLocaleDateString("en-US", { month: "short", day: "numeric" })
+            .toLowerCase();
+  const h24 = d.getHours();
+  const suffix = h24 < 12 ? "a.m" : "p.m";
+  const h = h24 % 12 || 12;
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${day} • ${h}:${mm} ${suffix}`;
+}
+
 /** Human-readable ride timing. */
 export function formatRideWhen(rideDate: string | null, isFuture: boolean): string {
   if (!rideDate) return "current · asap";

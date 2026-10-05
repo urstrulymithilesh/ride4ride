@@ -3,8 +3,6 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { RideCard, type RideCardData } from "@/components/rides/ride-card";
-import { TypeFilterSelect, SortSelect } from "./type-filter";
-import { WantedRouteForm } from "@/components/rides/wanted-route-form";
 import { recordArrival } from "@/lib/arrivals";
 import { getUser } from "@/lib/auth";
 
@@ -14,18 +12,15 @@ export const metadata: Metadata = { title: "browse rides" };
 // columns (those live in the row-protected `ride_locations` table), and
 // listing them explicitly keeps that guarantee obvious and the query lean.
 const CARD_COLUMNS =
-  "id, type, from_city, from_state, to_city, to_state, ride_date, is_future, distance_meters, from_street, to_street";
+  "id, type, owner_id, created_at, from_city, from_state, to_city, to_state, ride_date, is_future, distance_meters, from_street, to_street";
 
 type When = "current" | "future";
-type Sort = "newest" | "oldest";
 type RideType = "all" | "offer" | "get";
 
 interface Params {
   when?: string;
-  zip?: string;
-  city?: string;
-  state?: string;
-  sort?: string;
+  from?: string;
+  to?: string;
   type?: string;
 }
 
@@ -36,19 +31,16 @@ export default async function BrowseRidesPage({
 }) {
   const sp = await searchParams;
   const when: When = sp.when === "future" ? "future" : "current";
-  const sort: Sort = sp.sort === "oldest" ? "oldest" : "newest";
   const rideType: RideType =
-    sp.type === "offer" || sp.type === "all" ? sp.type : "get";
-  const typeExplicit = sp.type === "offer" || sp.type === "all" || sp.type === "get";
-  const zip = sp.zip?.trim() ?? "";
-  const city = sp.city?.trim() ?? "";
-  const state = sp.state?.trim() ?? "";
-  const hasFilters = Boolean(zip || city || state || typeExplicit);
+    sp.type === "offer" || sp.type === "get" ? sp.type : "all";
+  const from = sp.from?.trim() ?? "";
+  const to = sp.to?.trim() ?? "";
+  const hasFilters = Boolean(from || to);
 
   // IP-suggested FROM city (v3 pilot): Vercel supplies a geo city header,
   // offered as the filter box's starting text — always changeable, and it
   // never acts as a filter by itself (the query above uses only the
-  // explicit `city` param). Never auto-fills a post (P-2). Absent locally
+  // explicit `from` param). Never auto-fills a post (P-2). Absent locally
   // and behind some proxies, in which case there is simply no suggestion.
   let geoCity = "";
   try {
@@ -57,14 +49,14 @@ export default async function BrowseRidesPage({
   } catch {
     geoCity = "";
   }
-  const cityInputDefault = city || geoCity;
+  const cityInputDefault = from || geoCity;
 
   // Build an href preserving current params, dropping empties.
   const hrefWith = (next: Partial<Params>) => {
-    const merged = { when, sort, type: rideType, zip, city, state, ...next };
+    const merged = { when, type: rideType, from, to, ...next };
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(merged)) {
-      if (v && !(k === "when" && v === "current") && !(k === "sort" && v === "newest") && !(k === "type" && v === "get")) {
+      if (v && !(k === "when" && v === "current") && !(k === "type" && v === "all")) {
         qs.set(k, String(v));
       }
     }
@@ -86,9 +78,8 @@ export default async function BrowseRidesPage({
     .gt("expires_at", new Date().toISOString())
     .eq("is_future", when === "future");
 
-  if (zip) query = query.eq("from_zip", zip);
-  if (city) query = query.ilike("from_city", city);
-  if (state) query = query.ilike("from_state", state);
+  if (from) query = query.or(endOr("from", from));
+  if (to) query = query.or(endOr("to", to));
   if (rideType !== "all") query = query.eq("type", rideType);
 
   // Capture the error. Discarding it here is how a totally broken database
@@ -98,7 +89,7 @@ export default async function BrowseRidesPage({
   // is answering "did anyone post", a silent failure produces exactly the
   // reading that says nobody did.
   const { data: rides, error: ridesError } = await query
-    .order("created_at", { ascending: sort === "oldest" })
+    .order("created_at", { ascending: false })
     .limit(60)
     .returns<RideCardData[]>();
 
@@ -111,129 +102,144 @@ export default async function BrowseRidesPage({
   // can never be produced by a failure.
   const list = rides ?? [];
 
-  const tab = (value: When, label: string, icon: React.ReactNode) => (
+  // Poster handles are full-details material: only resolve them for
+  // signed-in viewers (same rule as the detail page). Signed-out viewers
+  // get cards with no handle line rather than a wrong one.
+  let handleById = new Map<string, string>();
+  if (viewer && list.length > 0) {
+    const { data: posters } = await supabase
+      .from("profiles")
+      .select("id, username")
+      .in(
+        "id",
+        [...new Set(list.map((r) => r.owner_id))],
+      )
+      .returns<{ id: string; username: string }[]>();
+    handleById = new Map((posters ?? []).map((p) => [p.id, p.username]));
+  }
+  const withHandles = list.map((r) => ({
+    ...r,
+    username: handleById.get(r.owner_id) ?? null,
+  }));
+
+  const tab = (value: When, label: string) => (
     <Link
       href={hrefWith({ when: value })}
       aria-current={when === value ? "page" : undefined}
-      className={`inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg px-3 text-sm ${
+      className={`inline-flex min-h-10 flex-1 items-center justify-center px-3 text-lg ${
         when === value
-          ? "bg-primary font-semibold text-white shadow-sm"
+          ? "font-bold text-white"
           : "font-medium text-muted hover:text-content"
       }`}
     >
-      {icon}
       {label}
     </Link>
   );
 
+  // Ride-type tabs: plain labels on a shared hairline; the active one goes
+  // bold white with a blue segment sitting on the line.
+  const typeTab = (value: RideType, label: string) => {
+    const isActive = rideType === value;
+    return (
+      <Link
+        href={hrefWith({ type: value })}
+        aria-current={isActive ? "page" : undefined}
+        className={`relative flex-1 pb-2 text-center text-sm ${
+          isActive ? "font-bold text-white" : "font-medium text-muted hover:text-content"
+        }`}
+      >
+        <span className="relative inline-block">
+          {label}
+          {isActive ? (
+            <span
+              aria-hidden="true"
+              className="absolute -bottom-2 left-0 right-0 h-[3px] bg-primary"
+            />
+          ) : null}
+        </span>
+      </Link>
+    );
+  };
+
   return (
     <main className="w-full flex-1 px-4">
-      {/* Current / Future tabs — segmented control: grey track so the
-          inactive tab reads as a tab, not stray text. */}
-      <div className="mb-4 flex gap-1 rounded-xl bg-surface-2 p-1">
-        {tab(
-          "current",
-          "current rides",
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <circle cx="12" cy="12" r="8.5" />
-            <path d="M12 7.5V12l3 2" />
-          </svg>,
-        )}
-        {tab(
-          "future",
-          "future rides",
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <rect x="4" y="5.5" width="16" height="15" rx="2.5" />
-            <path d="M4 10h16" />
-            <path d="M8.5 3.5v4" />
-            <path d="M15.5 3.5v4" />
-          </svg>,
-        )}
+      {/* Current / Future tabs */}
+      <div className="mb-6 flex rounded-2xl border border-white/20">
+        {tab("current", "current rides")}
+        {tab("future", "future rides")}
       </div>
 
-      {/* Filters (GET form → shareable URL) */}
+      {/* Search (GET form → shareable URL) */}
       <form
         method="get"
         action="/rides"
-        className="card mb-4 flex flex-col gap-3"
+        className="mb-6 flex items-center gap-2"
       >
         <input type="hidden" name="when" value={when} />
-        <input type="hidden" name="sort" value={sort} />
         <input type="hidden" name="type" value={rideType} />
-        <div className="flex gap-2">
-          <FilterInput label="from city" name="city" defaultValue={cityInputDefault} placeholder="riverside" />
-          <FilterInput label="state" name="state" defaultValue={state} placeholder="ca" className="w-20 shrink-0" />
-          <FilterInput label="zip" name="zip" defaultValue={zip} placeholder="92521" className="w-24 shrink-0" />
-        </div>
-        <div className="flex items-center gap-2">
-          <button type="submit" className="btn btn-primary flex-1">
-            apply
-          </button>
-          {hasFilters ? (
-            <Link
-              href={hrefWith({ zip: "", city: "", state: "", type: "get" })}
-              className="btn btn-ghost"
+        <input
+          name="from"
+          defaultValue={cityInputDefault}
+          placeholder="city, zip or airport"
+          aria-label="from"
+          className="input min-w-0 flex-1 rounded-full px-4 text-center text-sm"
+        />
+        <span className="shrink-0 text-sm text-content">to</span>
+        <input
+          name="to"
+          defaultValue={to}
+          placeholder="city, zip or airport"
+          aria-label="to"
+          className="input min-w-0 flex-1 rounded-full px-4 text-center text-sm"
+        />
+        <button
+          type="submit"
+          aria-label="search"
+          className="btn btn-primary min-h-11 shrink-0 rounded-[10px] px-4 text-sm"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+          </svg>
+        </button>
+        {hasFilters ? (
+          <Link
+            href={hrefWith({ from: "", to: "" })}
+            aria-label="clear"
+            className="btn btn-ghost shrink-0 px-3"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              aria-hidden="true"
             >
-              clear
-            </Link>
-          ) : null}
-        </div>
+              <path d="M6 6l12 12" />
+              <path d="M18 6L6 18" />
+            </svg>
+          </Link>
+        ) : null}
       </form>
 
-      {/* Sort + type filter + count. On failure we show no count at all:
-          "0 rides" would be a claim about the board we cannot actually make. */}
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm text-muted">
-        <span>
-          {ridesError
-            ? "couldn't load rides"
-            : `${list.length} ${when} ride${list.length === 1 ? "" : "s"}`}
-        </span>
-        <div className="flex flex-wrap items-center gap-2">
-          <TypeFilterSelect
-            value={rideType}
-            preserved={Object.fromEntries(
-              Object.entries({
-                when: when === "future" ? when : "",
-                sort: sort === "oldest" ? sort : "",
-                zip,
-                city,
-                state,
-              }).filter(([, v]) => Boolean(v)),
-            )}
-          />
-          <SortSelect
-            value={sort}
-            preserved={Object.fromEntries(
-              Object.entries({
-                when: when === "future" ? when : "",
-                type: rideType === "get" ? "" : rideType,
-                zip,
-                city,
-                state,
-              }).filter(([, v]) => Boolean(v)),
-            )}
-          />
-        </div>
+      {/* Ride type tabs */}
+      <div className="mb-6 flex border-b border-hairline">
+        {typeTab("get", "need ride")}
+        {typeTab("all", "all")}
+        {typeTab("offer", "ride available")}
       </div>
 
       {ridesError ? (
@@ -266,7 +272,7 @@ export default async function BrowseRidesPage({
           </p>
           {hasFilters ? (
             <Link
-              href={hrefWith({ zip: "", city: "", state: "", type: "get" })}
+              href={hrefWith({ from: "", to: "" })}
               className="mt-3 inline-block text-sm font-medium text-primary"
             >
               clear filters
@@ -279,11 +285,10 @@ export default async function BrowseRidesPage({
               be the first to post one
             </Link>
           )}
-          <WantedRouteForm defaultOpen />
         </div>
       ) : (
         <ul className="flex flex-col gap-3">
-          {list.map((r) => (
+          {withHandles.map((r) => (
             <li key={r.id}>
               <RideCard ride={r} />
             </li>
@@ -291,36 +296,17 @@ export default async function BrowseRidesPage({
         </ul>
       )}
 
-      {/* Standing entry point, always reachable. The rows we most need are
-          for routes the board cannot serve, so this must not be gated
-          behind a zero-result search. */}
-      {!ridesError && list.length > 0 ? <WantedRouteForm /> : null}
     </main>
   );
 }
 
-function FilterInput({
-  label,
-  name,
-  defaultValue,
-  placeholder,
-  className = "",
-}: {
-  label: string;
-  name: string;
-  defaultValue: string;
-  placeholder?: string;
-  className?: string;
-}) {
-  return (
-    <label className={`flex min-w-0 flex-1 flex-col gap-1 text-xs text-muted ${className}`}>
-      {label}
-      <input
-        name={name}
-        defaultValue={defaultValue}
-        placeholder={placeholder}
-        className="input"
-      />
-    </label>
-  );
+/**
+ * One search box matches a city name, a zip, or (when it looks like one) a
+ * state code — e.g. "aurora", "60505", "il".
+ */
+function endOr(prefix: "from" | "to", q: string): string {
+  const parts = [`${prefix}_city.ilike.%${q}%`];
+  if (/^\d+$/.test(q)) parts.push(`${prefix}_zip.eq.${q}`);
+  if (/^[a-zA-Z]{2}$/.test(q)) parts.push(`${prefix}_state.ilike.${q}`);
+  return parts.join(",");
 }

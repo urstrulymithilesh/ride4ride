@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { TopBar } from "@/components/layout/top-bar";
+import { AppMenu } from "@/components/layout/app-menu";
+import { getLocationFromHeaders } from "@/lib/location-server";
 
 // Geometric sans for the whole site, normal + italic.
 const mono = Montserrat({
@@ -25,11 +28,12 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const location = await getLocationFromHeaders();
   return (
     <html
       lang="en"
@@ -43,6 +47,7 @@ export default function RootLayout({
           >
             Skip to content
           </a>
+          <TopBar initial={location} menu={<AppMenu />} />
           <div id="main" className="flex flex-1 flex-col pb-24 pt-6">
             {children}
           </div>

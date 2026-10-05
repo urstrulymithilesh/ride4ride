@@ -37,6 +37,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# maxmind geoip database (large, refreshed via `npm run geo:update`)
+geo/*.mmdb
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

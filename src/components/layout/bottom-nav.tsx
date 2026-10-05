@@ -26,16 +26,12 @@ interface Active {
   rides: boolean;
   chats: boolean;
   post: boolean;
-  profile: boolean;
-  settings: boolean;
 }
 
 const NONE: Active = {
   rides: false,
   chats: false,
   post: false,
-  profile: false,
-  settings: false,
 };
 
 function DockLinks({ active }: { active: Active }) {
@@ -57,13 +53,6 @@ function DockLinks({ active }: { active: Active }) {
         rides
       </Link>
       <Link
-        href="/messages"
-        aria-current={active.chats ? "page" : undefined}
-        className={item(active.chats)}
-      >
-        chats
-      </Link>
-      <Link
         href="/rides/new"
         aria-label="post a ride"
         aria-current={active.post ? "page" : undefined}
@@ -78,18 +67,11 @@ function DockLinks({ active }: { active: Active }) {
         </span>
       </Link>
       <Link
-        href="/profile"
-        aria-current={active.profile ? "page" : undefined}
-        className={item(active.profile)}
+        href="/messages"
+        aria-current={active.chats ? "page" : undefined}
+        className={item(active.chats)}
       >
-        profile
-      </Link>
-      <Link
-        href="/settings"
-        aria-current={active.settings ? "page" : undefined}
-        className={item(active.settings)}
-      >
-        settings
+        chats
       </Link>
     </nav>
   );
@@ -111,8 +93,6 @@ function BottomNavInner() {
       pathname === "/rides/new" ||
       pathname === "/rides/offer" ||
       pathname === "/rides/get",
-    profile: pathname === "/profile",
-    settings: pathname === "/settings",
   };
 
   return (
@@ -124,9 +104,8 @@ function BottomNavInner() {
 
 /**
  * Phone-app bottom dock. Full-width bar with rounded top corners only:
- * rides | chats | + | profile | settings. The + button straddles the
- * top edge. Hidden on chat thread pages, which have their own sticky
- * bottom input.
+ * rides | + | chats. The + button straddles the top edge. Hidden on
+ * chat thread pages, which have their own sticky bottom input.
  */
 export function BottomNav() {
   return (

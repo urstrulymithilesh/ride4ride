@@ -15,6 +15,7 @@
     "test:sql:self": "node scripts/run-sql-proofs.mjs --self-test",
     "test:rest": "node scripts/test-rest-api.mjs",
     "geo:update": "node scripts/update-geodb.mjs",
+    "places:update": "node scripts/download-places.mjs",
     "supabase:env": "node scripts/resolve-supabase-env.mjs"
   },
   "dependencies": {

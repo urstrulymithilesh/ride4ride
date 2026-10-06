@@ -3,6 +3,7 @@ import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { TopBar } from "@/components/layout/top-bar";
+import { getSignupCount } from "@/lib/signup-count";
 import { AppMenu } from "@/components/layout/app-menu";
 import { getLocationFromHeaders } from "@/lib/location-server";
 
@@ -34,6 +35,9 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const location = await getLocationFromHeaders();
+  // Live member total for the top-bar center. Cached ~60s; null hides
+  // the slot rather than showing a wrong number.
+  const memberCount = await getSignupCount();
   return (
     <html
       lang="en"
@@ -47,7 +51,11 @@ export default async function RootLayout({
           >
             Skip to content
           </a>
-          <TopBar initial={location} menu={<AppMenu />} />
+          <TopBar
+            initial={location}
+            menu={<AppMenu />}
+            memberCount={memberCount}
+          />
           <div id="main" className="flex flex-1 flex-col pb-24 pt-6">
             {children}
           </div>

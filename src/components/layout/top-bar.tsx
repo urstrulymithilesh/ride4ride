@@ -28,9 +28,11 @@ function readCache(): GeoLocation | null {
 export function TopBar({
   initial,
   menu,
+  memberCount,
 }: {
   initial: GeoLocation | null;
   menu: React.ReactNode;
+  memberCount: number | null;
 }) {
   const [loc, setLoc] = useState<GeoLocation | null>(initial);
 
@@ -86,8 +88,13 @@ export function TopBar({
 
   return (
     <header className="safe-top sticky top-0 z-40 bg-app/95 backdrop-blur">
-      <div className="flex h-16 items-center justify-between pl-5 pr-2">
+      <div className="relative flex h-16 items-center justify-between pl-5 pr-2">
         <span className="relative">{menu}</span>
+        {memberCount !== null && memberCount > 0 ? (
+          <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-sm text-muted">
+            members joined: {memberCount}
+          </span>
+        ) : null}
         <LocationPicker detected={loc} />
       </div>
     </header>

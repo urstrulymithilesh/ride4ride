@@ -58,8 +58,14 @@ export function RideCard({ ride }: { ride: RideCardData }) {
         </Link>
       </div>
       <div className="mt-2 flex flex-col gap-1 text-[13px] leading-snug text-white/80">
-        <p className="wrap-anywhere">pick up : {fromLabel}</p>
-        <p className="wrap-anywhere">drop off : {toLabel}</p>
+        <p className="wrap-anywhere">
+          {ride.type === "offer" ? "from : " : "pick up : "}
+          {fromLabel}
+        </p>
+        <p className="wrap-anywhere">
+          {ride.type === "offer" ? "to : " : "drop off : "}
+          {toLabel}
+        </p>
       </div>
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/10 pt-2">
         <p className="wrap-anywhere flex min-w-0 items-center gap-1.5 truncate text-sm text-white/80">

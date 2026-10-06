@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { GeoLocation } from "@/lib/location";
 import { formatLocation } from "@/lib/location";
+import { PlaceAutocomplete } from "@/components/places/place-autocomplete";
 
 const COOKIE = "r4r-city";
 const STORAGE_KEY = "r4r-city";
@@ -48,7 +49,7 @@ function CrosshairIcon() {
 
 /**
  * Detected city display that doubles as a picker. IP detection is the
- * default; any typed "city, st" overrides it everywhere (cookie + storage)
+ * default; any typed override replaces it everywhere (cookie + storage)
  * and re-scopes the feed. Reset returns to the detected city.
  */
 export function LocationPicker({
@@ -115,18 +116,22 @@ export function LocationPicker({
           />
           <span className="absolute right-0 top-12 block w-64 overflow-hidden rounded-2xl border border-hairline bg-surface shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)]">
             <span className="block px-4 pt-3 text-xs text-muted">
-              {override ? "selected city" : "detected city"}
+              {override ? "selected city" : "detected"}
             </span>
-            <span className="block px-4 pb-3 pt-2">
-              <input
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                save();
+              }}
+              className="block px-4 pb-3 pt-2"
+            >
+              <PlaceAutocomplete
                 value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") save();
-                }}
-                placeholder="city, st"
-                aria-label="city and state"
-                className="input text-sm"
+                onValueChange={setDraft}
+                placeholder="city, university or airport"
+                ariaLabel="city and state"
+                kind="city,airport"
+                inputClassName="input w-full text-sm"
               />
               <span className="mt-2 flex gap-2">
                 <button
@@ -146,7 +151,7 @@ export function LocationPicker({
                   </button>
                 ) : null}
               </span>
-            </span>
+            </form>
           </span>
         </>
       ) : null}

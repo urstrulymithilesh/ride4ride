@@ -10,7 +10,7 @@ import { MenuButton } from "./menu-button";
 export async function AppMenu() {
   const [user, profile] = await Promise.all([getUser(), getProfile()]);
   const joined = profile?.created_at
-    ? `Joined ${new Date(profile.created_at).toLocaleDateString("en-US", { month: "short" })}, ${new Date(profile.created_at).getFullYear()}`
+    ? `member since ${new Date(profile.created_at).toLocaleDateString("en-US", { month: "short" }).toLowerCase()}, ${new Date(profile.created_at).getFullYear()}`
     : null;
 
   const item =

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { RideCard, type RideCardData } from "@/components/rides/ride-card";
+import { SearchForm } from "@/components/places/search-form";
 import { recordArrival } from "@/lib/arrivals";
 import { getUser } from "@/lib/auth";
 
@@ -172,71 +173,16 @@ export default async function BrowseRidesPage({
         {tab("future", "future rides")}
       </div>
 
-      {/* Search (GET form → shareable URL) */}
-      <form
-        method="get"
-        action="/rides"
-        className="mb-6 flex items-center gap-2"
-      >
-        <input type="hidden" name="when" value={when} />
-        <input type="hidden" name="type" value={rideType} />
-        <input
-          name="from"
-          defaultValue={cityInputDefault}
-          placeholder="city, zip or airport"
-          aria-label="from"
-          className="input min-w-0 flex-1 rounded-full px-4 text-center text-sm"
-        />
-        <span className="shrink-0 text-sm text-content">to</span>
-        <input
-          name="to"
-          defaultValue={to}
-          placeholder="city, zip or airport"
-          aria-label="to"
-          className="input min-w-0 flex-1 rounded-full px-4 text-center text-sm"
-        />
-        <button
-          type="submit"
-          aria-label="search"
-          className="btn btn-primary min-h-11 shrink-0 rounded-[10px] px-4 text-sm"
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <circle cx="11" cy="11" r="7" />
-            <path d="m20 20-3.5-3.5" />
-          </svg>
-        </button>
-        {hasFilters ? (
-          <Link
-            href={hrefWith({ from: "", to: "" })}
-            aria-label="clear"
-            className="btn btn-ghost shrink-0 px-3"
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              aria-hidden="true"
-            >
-              <path d="M6 6l12 12" />
-              <path d="M18 6L6 18" />
-            </svg>
-          </Link>
-        ) : null}
-      </form>
+      {/* Search — client form with autocomplete dropdowns; the query
+          itself stays in shareable ?from=&to= params. */}
+      <SearchForm
+        when={when}
+        type={rideType}
+        fromDefault={cityInputDefault}
+        toDefault={to}
+        clearHref={hrefWith({ from: "", to: "" })}
+        showClear={hasFilters}
+      />
 
       {/* Ride type tabs */}
       <div className="mb-6 flex border-b border-hairline">

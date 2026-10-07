@@ -54,7 +54,7 @@ export function RideCard({ ride }: { ride: RideCardData }) {
     <article className="rounded-[20px] border border-white/15 bg-surface p-3">
       <div className="flex items-center gap-3">
         <p className="wrap-anywhere min-w-0 flex-1 text-xl font-semibold">
-          <span className={ride.type === "offer" ? "text-primary" : "text-success"}>
+          <span className="text-success">
             {headline}
           </span>
         </p>

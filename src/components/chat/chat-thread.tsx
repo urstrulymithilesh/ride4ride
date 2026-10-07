@@ -134,7 +134,7 @@ export function ChatThread({
               >
                 <div
                   className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
-                    mine ? "bg-primary text-white" : "bg-surface text-content"
+                    mine ? "bg-primary text-black" : "bg-surface text-content"
                   }`}
                 >
                   {m.image_url ? (

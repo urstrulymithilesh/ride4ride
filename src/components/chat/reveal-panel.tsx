@@ -109,7 +109,7 @@ export function RevealPanel({
       <div className="mb-4 rounded-2xl bg-success-soft p-4">
         <div className="flex items-center gap-2">
           <span aria-hidden>✅</span>
-          <p className="text-sm font-semibold text-success">addresses revealed</p>
+          <p className="text-sm font-semibold text-white">addresses revealed</p>
         </div>
         {addresses ? (
           <dl className="mt-3 space-y-2 text-sm">

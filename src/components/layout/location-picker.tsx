@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { GeoLocation } from "@/lib/location";
 import { formatLocation } from "@/lib/location";
 import { PlaceAutocomplete } from "@/components/places/place-autocomplete";
@@ -59,7 +59,22 @@ export function LocationPicker({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [override, setOverride] = useState(readStored);
+  // Override lives in localStorage, which doesn't exist during SSR — so
+  // the first render is always empty (matching the server) and the stored
+  // value loads in a microtask after mount. Reading it in the useState
+  // initializer instead would hydrate mismatched HTML and crash React.
+  const [override, setOverride] = useState("");
+  useEffect(() => {
+    let live = true;
+    Promise.resolve()
+      .then(() => readStored())
+      .then((stored) => {
+        if (live) setOverride(stored);
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
   const [draft, setDraft] = useState("");
 
   const shown = override

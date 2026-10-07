@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
+import { getLocationFromHeaders } from "@/lib/location-server";
+import { formatLocation } from "@/lib/location";
 import { createClient } from "@/lib/supabase/server";
 import { RideCard, type RideCardData } from "@/components/rides/ride-card";
 import { SearchForm } from "@/components/places/search-form";
@@ -39,24 +41,19 @@ export default async function BrowseRidesPage({
   const when: When = sp.when === "future" ? "future" : "current";
   const rideType: RideType =
     sp.type === "offer" || sp.type === "get" ? sp.type : "all";
+  // Scoping vs search. The feed is always scoped: explicit ?from= wins,
+  // else the saved city override, else the IP-detected city. An explicit
+  // empty ?from= (clear) means unscoped. Only typed text counts as
+  // "searched" for the X button and empty-state copy.
+  const cookieCity = ((await cookies()).get("r4r-city")?.value ?? "").trim();
+  const detected = await getLocationFromHeaders();
+  const detectedLabel = detected ? formatLocation(detected) : "";
   const from =
-    sp.from !== undefined ? sp.from.trim() : ((await cookies()).get("r4r-city")?.value.trim() ?? "");
+    sp.from !== undefined ? sp.from.trim() : cookieCity || detectedLabel;
   const to = sp.to?.trim() ?? "";
-  const hasFilters = Boolean(from || to);
-
-  // IP-suggested FROM city (v3 pilot): Vercel supplies a geo city header,
-  // offered as the filter box's starting text — always changeable, and it
-  // never acts as a filter by itself (the query above uses only the
-  // explicit `from` param). Never auto-fills a post (P-2). Absent locally
-  // and behind some proxies, in which case there is simply no suggestion.
-  let geoCity = "";
-  try {
-    const rawGeo = (await headers()).get("x-vercel-ip-city");
-    if (rawGeo) geoCity = decodeURIComponent(rawGeo).trim();
-  } catch {
-    geoCity = "";
-  }
-  const cityInputDefault = from || geoCity;
+  const searched = Boolean(sp.from?.trim() || to);
+  const scopedNote = !searched && from ? ` near ${from}` : "";
+  const hasFilters = searched;
 
   // Build an href preserving current params, dropping empties.
   const hrefWith = (next: Partial<Params>) => {
@@ -88,10 +85,18 @@ export default async function BrowseRidesPage({
       .gt("expires_at", new Date().toISOString())
       .eq("is_future", when === "future");
 
-    const fromOr = from ? endOr("from", from) : null;
-    const toOr = to ? endOr("to", to) : null;
-    if (fromOr) q = q.or(fromOr);
-    if (toOr) q = q.or(toOr);
+    const fromTokens = endTokens(from);
+    const toTokens = endTokens(to);
+    for (const t of fromTokens) {
+      if (/^\d+$/.test(t)) q = q.eq("from_zip", t);
+      else if (/^[a-zA-Z]{2}$/.test(t)) q = q.ilike("from_state", t);
+      else q = q.ilike("from_city", `%${t}%`);
+    }
+    for (const t of toTokens) {
+      if (/^\d+$/.test(t)) q = q.eq("to_zip", t);
+      else if (/^[a-zA-Z]{2}$/.test(t)) q = q.ilike("to_state", t);
+      else q = q.ilike("to_city", `%${t}%`);
+    }
     if (rideType !== "all") q = q.eq("type", rideType);
 
     return q
@@ -218,7 +223,7 @@ export default async function BrowseRidesPage({
       <SearchForm
         when={when}
         type={rideType}
-        fromDefault={cityInputDefault}
+        fromDefault={sp.from?.trim() ?? ""}
         toDefault={to}
         clearHref={hrefWith({ from: "", to: "" })}
         showClear={hasFilters}
@@ -257,7 +262,9 @@ export default async function BrowseRidesPage({
           <p className="text-sm text-muted">
             {hasFilters
               ? "no rides match these filters."
-              : `no ${when} rides posted yet.`}
+              : scopedNote
+                ? `no ${when} rides${scopedNote} yet.`
+                : `no ${when} rides posted yet.`}
           </p>
           {hasFilters ? (
             <Link
@@ -290,20 +297,15 @@ export default async function BrowseRidesPage({
 }
 
 /**
- * One search box matches a city name, a zip, a state code, or a
- * "city, st" pair — e.g. "aurora", "60505", "il", "chicago, il".
+ * Split one search box into match tokens: a city name, a zip, a state
+ * code, or a "city, st" pair — e.g. "aurora", "60505", "il",
+ * "chicago, il". Callers AND the tokens together ("Lemont, IL" needs the
+ * city AND the state — OR-ing them matches the whole state).
  */
-function endOr(prefix: "from" | "to", raw: string | null): string | null {
-  if (!raw) return null;
-  const tokens = raw
+function endTokens(raw: string | null): string[] {
+  if (!raw) return [];
+  return raw
     .split(",")
     .flatMap((part) => part.split(/\s+/).map((t) => t.trim()))
     .filter(Boolean);
-  const parts: string[] = [];
-  for (const t of tokens) {
-    if (/^\d+$/.test(t)) parts.push(`${prefix}_zip.eq.${t}`);
-    else if (/^[a-zA-Z]{2}$/.test(t)) parts.push(`${prefix}_state.ilike.${t}`);
-    else parts.push(`${prefix}_city.ilike.%${t}%`);
-  }
-  return parts.length > 0 ? parts.join(",") : null;
 }

@@ -15,7 +15,7 @@ export default async function NewRidePage() {
       <div className="flex flex-col gap-4">
         <Link
           href="/rides/offer"
-          className="card border-l-4 border-l-success"
+          className="card border-l-4 border-l-white"
         >
           <h2 className="font-semibold text-content">offer a ride</h2>
           <p className="mt-1 text-sm text-muted">

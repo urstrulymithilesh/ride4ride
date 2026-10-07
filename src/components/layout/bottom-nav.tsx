@@ -53,7 +53,7 @@ function DockLinks({ active }: { active: Active }) {
         className="flex flex-1 items-center justify-center"
       >
         <span
-          className={`flex h-16 w-16 -mt-5 items-center justify-center rounded-full text-white shadow-[0_8px_20px_-6px_rgba(37,99,235,0.6)] ${
+          className={`flex h-16 w-16 -mt-5 items-center justify-center rounded-full text-black shadow-[0_8px_20px_-6px_rgba(255,255,255,0.35)] ${
             active.post ? "bg-content" : "bg-primary"
           }`}
         >

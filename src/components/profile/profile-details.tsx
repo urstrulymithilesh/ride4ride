@@ -128,7 +128,7 @@ export function ProfileDetails({
             </p>
           ) : null}
           {state.message ? (
-            <p className="text-sm text-success" role="status">
+            <p className="text-sm text-white" role="status">
               {state.message}
             </p>
           ) : null}
@@ -170,7 +170,7 @@ export function PasswordForm() {
           </p>
         ) : null}
         {state.message ? (
-          <p className="text-sm text-success" role="status">
+          <p className="text-sm text-white" role="status">
             {state.message}
           </p>
         ) : null}

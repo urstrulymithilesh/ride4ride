@@ -88,7 +88,7 @@ export function EnableNotifications() {
 
   if (status === "enabled") {
     return (
-      <p className="text-xs text-success">
+      <p className="text-xs text-white">
         🔔 expiry reminders are on for this browser.
       </p>
     );

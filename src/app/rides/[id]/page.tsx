@@ -203,7 +203,7 @@ export default async function RideDetailPage({
           <span
             className={`chip ${
               ride.type === "offer"
-                ? "bg-success-soft text-success"
+                ? "bg-white/10 text-white"
                 : "bg-primary-soft text-primary"
             }`}
           >

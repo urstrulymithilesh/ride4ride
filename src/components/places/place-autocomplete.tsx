@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { PlaceKind } from "@/lib/places";
 
 export interface PlaceOption {
@@ -38,14 +38,23 @@ export function PlaceAutocomplete({
   const [options, setOptions] = useState<PlaceOption[]>([]);
   const [highlight, setHighlight] = useState(-1);
   const boxRef = useRef<HTMLSpanElement>(null);
+  const listboxId = `places-${useId()}`;
+
+  // Render-time adjustment: a query too short to search can't have results,
+  // so drop any stale list immediately instead of waiting for the effect's
+  // microtask. Sanctioned pattern, no cascading render.
+  const [lastQuery, setLastQuery] = useState(value);
+  if (value !== lastQuery) {
+    setLastQuery(value);
+    if (value.trim().length < 2 && options.length > 0) {
+      setOptions([]);
+      setOpen(false);
+    }
+  }
 
   useEffect(() => {
     const q = value.trim();
-    if (q.length < 2) {
-      setOptions([]);
-      setOpen(false);
-      return;
-    }
+    if (q.length < 2) return;
     const controller = new AbortController();
     const timer = setTimeout(() => {
       fetch(`/api/places?q=${encodeURIComponent(q)}&kind=${kind}`, {
@@ -117,6 +126,10 @@ export function PlaceAutocomplete({
         placeholder={placeholder}
         aria-label={ariaLabel}
         aria-expanded={open}
+        aria-controls={open && options.length > 0 ? listboxId : undefined}
+        aria-activedescendant={
+          open && highlight >= 0 ? `${listboxId}-opt-${highlight}` : undefined
+        }
         role="combobox"
         aria-autocomplete="list"
         autoComplete="off"
@@ -124,12 +137,13 @@ export function PlaceAutocomplete({
       />
       {open ? (
         <span className="absolute left-0 right-0 top-full z-30 mt-1 block max-h-60 overflow-y-auto rounded-xl border border-hairline bg-surface shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)]">
-          <ul role="listbox" aria-label={ariaLabel}>
+          <ul role="listbox" id={listboxId} aria-label={ariaLabel}>
             {options.map((opt, i) => (
               <li key={`${opt.kind}:${opt.title}:${opt.sub}`}>
                 <button
                   type="button"
                   role="option"
+                  id={`${listboxId}-opt-${i}`}
                   aria-selected={i === highlight}
                   onMouseDown={(e) => {
                     e.preventDefault();

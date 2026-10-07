@@ -14,6 +14,8 @@ export interface Profile {
   id: string;
   display_name: string;
   username: string;
+  date_of_birth: string | null; // YYYY-MM-DD
+  phone: string | null;
   school: string | null;
   verification: VerificationStatus;
   is_admin: boolean;
@@ -96,6 +98,8 @@ export interface Ride {
   to_zip: string | null;
   ride_date: string | null; // null => "current"/ASAP
   is_future: boolean;
+  time_mode: "asap" | "anytime" | "at";
+  ride_time: string | null; // 'HH:MM' 24h, only when time_mode is 'at'
   description: string | null;
   status: RideStatus;
   distance_meters: number | null; // 'get' rides only; safe to show

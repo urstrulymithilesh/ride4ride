@@ -6,11 +6,31 @@ import { createClient } from "@/lib/supabase/server";
 import { getUser } from "@/lib/auth";
 import { geocodeAddress, drivingDistanceMeters } from "@/lib/geocoding";
 import { validateOffer, validateGet } from "@/lib/validations/rides";
+import type { Timing } from "@/lib/validations/rides";
 import type { FieldErrors } from "@/lib/validations/auth";
 
 export interface RideFormState {
   error?: string;
   fieldErrors?: FieldErrors;
+}
+
+/**
+ * Timing rides on the post right after the create RPC returns its id.
+ * Kept out of the RPCs on purpose: their signatures are covered by SQL
+ * proofs, and owner-only UPDATE is already the RLS rule. The column
+ * DEFAULT ('asap') keeps the row valid even if this write ever fails,
+ * so a failure logs and moves on instead of failing the whole post.
+ */
+async function saveTiming(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  rideId: string,
+  timing: Timing,
+): Promise<void> {
+  const { error } = await supabase
+    .from("rides")
+    .update({ time_mode: timing.time_mode, ride_time: timing.ride_time })
+    .eq("id", rideId);
+  if (error) console.error("[rides] timing update failed:", error.message, error);
 }
 
 function formToRecord(formData: FormData): Record<string, string> {
@@ -58,6 +78,8 @@ export async function createOfferRide(
     console.error("[rides] create_offer_ride returned no row:", data);
     return { error: "couldn't create the post. please try again." };
   }
+
+  await saveTiming(supabase, ride.id, d.timing);
 
   revalidatePath("/rides");
   redirect(`/rides/${ride.id}`);
@@ -167,6 +189,8 @@ export async function createGetRide(
     console.error("[rides] create_get_ride returned no row:", data);
     return { error: "couldn't create the post. please try again." };
   }
+
+  await saveTiming(supabase, ride.id, d.timing);
 
   revalidatePath("/rides");
   redirect(`/rides/${ride.id}`);

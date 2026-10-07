@@ -23,10 +23,18 @@ describe("searchPlaces (vendored datasets)", () => {
     expect(res[0].value).toBe("Chicago, IL");
   });
 
-  it("finds universities by name", () => {
-    const res = searchPlaces("northwestern", "university");
+  it("resolves university picks to their nearest city", () => {
+    const res = searchPlaces("university of north texas", "university");
     expect(res.length).toBeGreaterThan(0);
-    expect(res.every((r) => r.kind === "university")).toBe(true);
+    expect(res[0].title).toBe("University of North Texas");
+    expect(res[0].value).toBe("Denton, TX");
+  });
+
+  it("finds university of west florida", () => {
+    const res = searchPlaces("west florida", "university");
+    expect(res.some((r) => r.title === "University of West Florida")).toBe(
+      true,
+    );
   });
 
   it("returns [] for short queries", () => {

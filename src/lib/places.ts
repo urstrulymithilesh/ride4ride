@@ -69,6 +69,31 @@ function norm(s: string): string {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+/** Nearest vendored city to a point (simple equirectangular distance). */
+function nearestCity(lat: number, lon: number): CityRow | null {
+  const cos = Math.cos((lat * Math.PI) / 180) || 1;
+  let best: CityRow | null = null;
+  let bestD = Infinity;
+  for (const r of load<CityRow>("cities.json")) {
+    const dx = (r.lon - lon) * cos;
+    const dy = r.lat - lat;
+    const d = dx * dx + dy * dy;
+    if (d < bestD) {
+      bestD = d;
+      best = r;
+    }
+  }
+  return best;
+}
+
+/** University picks resolve to their nearest city so the value stays
+ *  feed-searchable ("University of North Texas" -> "Denton, TX"). */
+function universityValue(r: UniversityRow): string {
+  const near = nearestCity(r.lat, r.lon);
+  if (!near) return r.name;
+  return near.region ? `${near.name}, ${near.region}` : near.name;
+}
+
 /**
  * Prefix matches first, then substring matches. Cities break ties by
  * population (file is pre-sorted). Capped — this backs an autocomplete.
@@ -178,7 +203,7 @@ export function searchPlaces(
         kind: "university",
         title: r.name,
         sub: r.country,
-        value: r.name,
+        value: universityValue(r),
         lat: r.lat,
         lon: r.lon,
       });

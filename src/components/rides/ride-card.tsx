@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatMiles, formatPlace, formatPostedAt } from "@/lib/utils/format";
+import { formatClock, formatMiles, formatPlace, formatPostedAt } from "@/lib/utils/format";
 
 /**
  * The subset of `rides` shown on a public card. Deliberately NO address /
@@ -19,6 +19,8 @@ export interface RideCardData {
   to_state: string;
   ride_date: string | null;
   is_future: boolean;
+  time_mode: "asap" | "anytime" | "at";
+  ride_time: string | null;
   distance_meters: number | null;
   from_street: string | null; // masked, no number; 'get' only
   to_street: string | null; // masked, no number; 'get' only
@@ -41,6 +43,12 @@ export function RideCard({ ride }: { ride: RideCardData }) {
     ride.type === "offer"
       ? `ride available${miles ? ` for ${miles}` : ""}`
       : `need ride${miles ? ` for ${miles}` : ""}`;
+  const clockLabel =
+    ride.time_mode === "at" && ride.ride_time
+      ? formatClock(ride.ride_time)
+      : ride.time_mode === "anytime"
+        ? "anytime"
+        : "now";
 
   return (
     <article className="rounded-[20px] border border-white/15 bg-surface p-3">
@@ -57,6 +65,24 @@ export function RideCard({ ride }: { ride: RideCardData }) {
           request
         </Link>
       </div>
+      <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-white">
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+          className="shrink-0"
+        >
+          <circle cx="12" cy="12" r="8.5" />
+          <path d="M12 7.5V12l3 2" />
+        </svg>
+        {clockLabel}
+      </p>
       <div className="mt-2 flex flex-col gap-1 text-[13px] leading-snug text-white/80">
         <p className="wrap-anywhere">
           {ride.type === "offer" ? "from : " : "pick up : "}

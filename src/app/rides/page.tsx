@@ -13,6 +13,11 @@ export const metadata: Metadata = { title: "browse rides" };
 // columns (those live in the row-protected `ride_locations` table), and
 // listing them explicitly keeps that guarantee obvious and the query lean.
 const CARD_COLUMNS =
+  "id, type, owner_id, created_at, from_city, from_state, to_city, to_state, ride_date, is_future, time_mode, ride_time, distance_meters, from_street, to_street";
+
+// Same columns minus migration 0019's timing pair — the degraded fallback
+// when those columns don't exist yet.
+const BASE_CARD_COLUMNS =
   "id, type, owner_id, created_at, from_city, from_state, to_city, to_state, ride_date, is_future, distance_meters, from_street, to_street";
 
 type When = "current" | "future";
@@ -73,18 +78,27 @@ export default async function BrowseRidesPage({
   await recordArrival("feed", viewer?.id);
 
   const supabase = await createClient();
-  let query = supabase
-    .from("rides")
-    .select(CARD_COLUMNS)
-    .eq("status", "active")
-    .gt("expires_at", new Date().toISOString())
-    .eq("is_future", when === "future");
+  // Columns from migration 0019. Factored so the feed can retry without
+  // them when the migration hasn't applied yet (degraded timing: ASAP).
+  const buildQuery = (columns: string) => {
+    let q = supabase
+      .from("rides")
+      .select(columns)
+      .eq("status", "active")
+      .gt("expires_at", new Date().toISOString())
+      .eq("is_future", when === "future");
 
-  const fromOr = from ? endOr("from", from) : null;
-  const toOr = to ? endOr("to", to) : null;
-  if (fromOr) query = query.or(fromOr);
-  if (toOr) query = query.or(toOr);
-  if (rideType !== "all") query = query.eq("type", rideType);
+    const fromOr = from ? endOr("from", from) : null;
+    const toOr = to ? endOr("to", to) : null;
+    if (fromOr) q = q.or(fromOr);
+    if (toOr) q = q.or(toOr);
+    if (rideType !== "all") q = q.eq("type", rideType);
+
+    return q
+      .order("created_at", { ascending: false })
+      .limit(60)
+      .returns<RideCardData[]>();
+  };
 
   // Capture the error. Discarding it here is how a totally broken database
   // rendered as "0 current rides" with HTTP 200 and nothing in the logs:
@@ -92,14 +106,40 @@ export default async function BrowseRidesPage({
   // empty result unless you look at `error`. On a board whose entire purpose
   // is answering "did anyone post", a silent failure produces exactly the
   // reading that says nobody did.
-  const { data: rides, error: ridesError } = await query
-    .order("created_at", { ascending: false })
-    .limit(60)
-    .returns<RideCardData[]>();
+  let { data: rides, error: ridesError } = await buildQuery(CARD_COLUMNS);
 
-  if (ridesError) {
-    // Server-side log: this is the signal that was missing entirely before.
+  // A missing timing column is an expected state until migration 0019 is
+  // applied, so it warns instead of erroring (a red console for every page
+  // view trains you to ignore red). Any other failure keeps the loud log —
+  // that is the signal that was missing entirely before.
+  const timingPending = Boolean(
+    ridesError && /time_mode|ride_time/i.test(ridesError.message),
+  );
+  if (ridesError && !timingPending) {
     console.error("[rides] feed query failed:", ridesError.message, ridesError);
+  }
+
+  if (timingPending && ridesError) {
+    // Migration 0019 hasn't applied: the timing columns don't exist yet.
+    // Retry without them (cards fall back to ASAP) instead of blanking
+    // the whole board.
+    console.warn(
+      "[rides] timing columns missing — apply migration 0019 (run supabase/migrations/0019_ride_timing.sql).",
+    );
+    const retry = await buildQuery(BASE_CARD_COLUMNS);
+    rides = (retry.data ?? []).map((r) => ({
+      ...r,
+      time_mode: "asap" as const,
+      ride_time: null,
+    }));
+    ridesError = retry.error;
+    if (ridesError) {
+      console.error(
+        "[rides] fallback feed query failed:",
+        ridesError.message,
+        ridesError,
+      );
+    }
   }
 
   // Only meaningful when ridesError is null. Kept separate so an empty list

@@ -1,17 +1,36 @@
 import type { FieldErrors } from "@/lib/validations/auth";
 
 export type RideMode = "current" | "future";
+export type TimeMode = "asap" | "anytime" | "at";
 
 export interface Timing {
   is_future: boolean;
   ride_date: string | null; // YYYY-MM-DD
+  time_mode: TimeMode;
+  ride_time: string | null; // 'HH:MM' 24h, only when time_mode is 'at'
 }
 
-/** Parse the current/future toggle + optional date into DB-shaped timing. */
+/** Parse the asap/anytime/specific-time radios into DB-shaped timing. */
+export function parseRideTiming(
+  timing: string,
+  time: string,
+): { ok: true; data: Pick<Timing, "time_mode" | "ride_time"> } | { ok: false; fieldErrors: FieldErrors } {
+  const t = timing.trim() || "asap";
+  if (t === "anytime") return { ok: true, data: { time_mode: "anytime", ride_time: null } };
+  if (t === "at") {
+    const m = /^([01][0-9]|2[0-3]):([0-5][0-9])$/.exec(time.trim());
+    if (!m)
+      return { ok: false, fieldErrors: { ride_time: "pick a time for the ride." } };
+    return { ok: true, data: { time_mode: "at", ride_time: `${m[1]}:${m[2]}` } };
+  }
+  return { ok: true, data: { time_mode: "asap", ride_time: null } };
+}
+
+/** Parse the current/future toggle + optional date (time handled separately). */
 export function parseTiming(
   mode: string,
   date: string,
-): { ok: true; data: Timing } | { ok: false; fieldErrors: FieldErrors } {
+): { ok: true; data: Pick<Timing, "is_future" | "ride_date"> } | { ok: false; fieldErrors: FieldErrors } {
   const isFuture = mode === "future";
   const trimmed = date.trim();
 
@@ -68,7 +87,12 @@ function commonTiming(
     Object.assign(fieldErrors, t.fieldErrors);
     return null;
   }
-  return t.data;
+  const rt = parseRideTiming(raw.timing ?? "asap", raw.ride_time ?? "");
+  if (!rt.ok) {
+    Object.assign(fieldErrors, rt.fieldErrors);
+    return null;
+  }
+  return { ...t.data, ...rt.data };
 }
 
 export function validateOffer(

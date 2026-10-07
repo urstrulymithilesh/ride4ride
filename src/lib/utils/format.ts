@@ -12,6 +12,15 @@ export function formatMiles(meters: number | null | undefined): string | null {
   return short.endsWith("1 mi") ? "1 mile" : short.replace(" mi", " miles");
 }
 
+/** 'HH:MM' 24h -> 'h:mm a.m', e.g. "14:30" -> "2:30 p.m". */
+export function formatClock(hhmm: string): string {
+  const m = /^([01][0-9]|2[0-3]):([0-5][0-9])$/.exec(hhmm.trim());
+  if (!m) return hhmm;
+  const h24 = Number(m[1]);
+  const suffix = h24 < 12 ? "a.m" : "p.m";
+  return `${h24 % 12 || 12}:${m[2]} ${suffix}`;
+}
+
 /** Posted time, e.g. "Today • 10:05 a.m". Days compare in server time. */
 export function formatPostedAt(iso: string): string {
   const d = new Date(iso);

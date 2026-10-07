@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  parseRideTiming,
   parseTiming,
   validateGet,
   validateOffer,
@@ -44,6 +45,42 @@ describe("parseTiming", () => {
     if (r.ok) {
       expect(r.data).toEqual({ is_future: false, ride_date: futureDate });
     }
+  });
+});
+
+describe("parseRideTiming", () => {
+  it("defaults to asap", () => {
+    const r = parseRideTiming("", "");
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.data).toEqual({ time_mode: "asap", ride_time: null });
+    }
+  });
+
+  it("accepts anytime", () => {
+    const r = parseRideTiming("anytime", "");
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.data).toEqual({ time_mode: "anytime", ride_time: null });
+    }
+  });
+
+  it("accepts a specific time", () => {
+    const r = parseRideTiming("at", "10:30");
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.data).toEqual({ time_mode: "at", ride_time: "10:30" });
+    }
+  });
+
+  it("rejects specific time without a time", () => {
+    const r = parseRideTiming("at", "");
+    expect(r.ok).toBe(false);
+  });
+
+  it("rejects a malformed time", () => {
+    const r = parseRideTiming("at", "25:99");
+    expect(r.ok).toBe(false);
   });
 });
 

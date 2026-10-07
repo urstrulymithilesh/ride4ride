@@ -123,7 +123,7 @@ export function PlaceAutocomplete({
         className={inputClassName}
       />
       {open ? (
-        <span className="absolute left-0 right-0 top-full z-30 mt-1 block overflow-hidden rounded-xl border border-hairline bg-surface shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)]">
+        <span className="absolute left-0 right-0 top-full z-30 mt-1 block max-h-60 overflow-y-auto rounded-xl border border-hairline bg-surface shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)]">
           <ul role="listbox" aria-label={ariaLabel}>
             {options.map((opt, i) => (
               <li key={`${opt.kind}:${opt.title}:${opt.sub}`}>

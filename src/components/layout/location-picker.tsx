@@ -130,7 +130,7 @@ export function LocationPicker({
                 onValueChange={setDraft}
                 placeholder="city, university or airport"
                 ariaLabel="city and state"
-                kind="city,airport"
+                kind="all"
                 inputClassName="input w-full text-sm"
               />
               <span className="mt-2 flex gap-2">

@@ -45,19 +45,19 @@ export function SearchForm({
       <PlaceAutocomplete
         value={from}
         onValueChange={setFrom}
-        placeholder="city, zip or airport"
+        placeholder="city, university or airport"
         ariaLabel="from"
-        kind="city,airport"
-        inputClassName="input min-w-0 w-full rounded-full px-4 text-center text-sm"
+        kind="all"
+        inputClassName="input min-w-0 w-full rounded-full px-4 text-center text-sm placeholder:text-[10px]"
       />
       <span className="shrink-0 text-sm text-content">to</span>
       <PlaceAutocomplete
         value={to}
         onValueChange={setTo}
-        placeholder="city, zip or airport"
+        placeholder="city, university or airport"
         ariaLabel="to"
-        kind="city,airport"
-        inputClassName="input min-w-0 w-full rounded-full px-4 text-center text-sm"
+        kind="all"
+        inputClassName="input min-w-0 w-full rounded-full px-4 text-center text-sm placeholder:text-[10px]"
       />
       <button
         type="submit"

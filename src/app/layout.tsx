@@ -5,7 +5,6 @@ import { BottomNav } from "@/components/layout/bottom-nav";
 import { TopBar } from "@/components/layout/top-bar";
 import { getSignupCount } from "@/lib/signup-count";
 import { AppMenu } from "@/components/layout/app-menu";
-import { getLocationFromHeaders } from "@/lib/location-server";
 
 // Geometric sans for the whole site, normal + italic.
 const mono = Montserrat({
@@ -34,7 +33,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const location = await getLocationFromHeaders();
   // Live member total for the top-bar center. Cached ~60s; null hides
   // the slot rather than showing a wrong number.
   const memberCount = await getSignupCount();
@@ -51,11 +49,7 @@ export default async function RootLayout({
           >
             Skip to content
           </a>
-          <TopBar
-            initial={location}
-            menu={<AppMenu />}
-            memberCount={memberCount}
-          />
+          <TopBar menu={<AppMenu />} memberCount={memberCount} />
           <div id="main" className="flex flex-1 flex-col pb-24 pt-6">
             {children}
           </div>

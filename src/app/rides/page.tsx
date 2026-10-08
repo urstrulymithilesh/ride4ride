@@ -6,6 +6,7 @@ import { formatLocation } from "@/lib/location";
 import { createClient } from "@/lib/supabase/server";
 import { RideCard, type RideCardData } from "@/components/rides/ride-card";
 import { SearchForm } from "@/components/places/search-form";
+import { LocationPicker } from "@/components/layout/location-picker";
 import { recordArrival } from "@/lib/arrivals";
 import { getUser } from "@/lib/auth";
 
@@ -56,8 +57,16 @@ export default async function BrowseRidesPage({
   const hasFilters = searched;
 
   // Build an href preserving current params, dropping empties.
+  // Only explicitly typed text travels in URLs — the implicit scoped
+  // city must never leak in, or every tab switch would look "searched".
   const hrefWith = (next: Partial<Params>) => {
-    const merged = { when, type: rideType, from, to, ...next };
+    const merged = {
+      when,
+      type: rideType,
+      from: sp.from?.trim() ?? "",
+      to: sp.to?.trim() ?? "",
+      ...next,
+    };
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(merged)) {
       if (v && !(k === "when" && v === "current") && !(k === "type" && v === "all")) {
@@ -230,10 +239,15 @@ export default async function BrowseRidesPage({
       />
 
       {/* Ride type tabs */}
-      <div className="mb-6 flex border-b border-hairline">
+      <div className="mb-4 flex border-b border-hairline">
         {typeTab("get", "need ride")}
         {typeTab("all", "all")}
         {typeTab("offer", "ride available")}
+      </div>
+
+      {/* Scoped location readout + picker. */}
+      <div className="mb-6 flex justify-center">
+        <LocationPicker detected={detected} />
       </div>
 
       {ridesError ? (

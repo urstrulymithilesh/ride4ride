@@ -8,12 +8,27 @@ import { PlaceAutocomplete } from "@/components/places/place-autocomplete";
 
 const COOKIE = "r4r-city";
 const STORAGE_KEY = "r4r-city";
+const GEO_CACHE_KEY = "r4r-location";
+const GEO_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 function readStored(): string {
   try {
     return localStorage.getItem(STORAGE_KEY) ?? "";
   } catch {
     return "";
+  }
+}
+
+function readGeoCache(): GeoLocation | null {
+  try {
+    const raw = localStorage.getItem(GEO_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { loc: GeoLocation; at: number };
+    if (!parsed?.loc?.city || Date.now() - parsed.at > GEO_CACHE_TTL_MS)
+      return null;
+    return parsed.loc;
+  } catch {
+    return null;
   }
 }
 
@@ -30,6 +45,7 @@ function writeStored(value: string) {
 }
 
 function CrosshairIcon() {
+  // Approved size — do not change without asking.
   return (
     <svg
       width="13"
@@ -75,12 +91,65 @@ export function LocationPicker({
       live = false;
     };
   }, []);
+  // Live detected city: server prop when edge headers exist, otherwise a
+  // one-shot /api/location enhance (cached 24h). Promise chain, no sync
+  // setState in the effect body.
+  const [liveDetected, setLiveDetected] = useState<GeoLocation | null>(
+    detected,
+  );
+  useEffect(() => {
+    if (detected) return;
+    let active = true;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+    Promise.resolve()
+      .then(() => readGeoCache())
+      .then((cached) => {
+        if (!active) return null;
+        if (cached) {
+          clearTimeout(timer);
+          return cached;
+        }
+        return fetch("/api/location", {
+          signal: controller.signal,
+          cache: "no-store",
+        })
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            clearTimeout(timer);
+            if (!active) return null;
+            const next =
+              data?.city != null
+                ? { city: data.city, region: data.region ?? "" }
+                : null;
+            if (!next?.city) return null;
+            try {
+              localStorage.setItem(
+                GEO_CACHE_KEY,
+                JSON.stringify({ loc: next, at: Date.now() }),
+              );
+            } catch {
+              // Private mode etc. — location still shows for this visit.
+            }
+            return next;
+          });
+      })
+      .then((next) => {
+        if (active && next) setLiveDetected(next);
+      })
+      .catch(() => {
+        clearTimeout(timer);
+      });
+    return () => {
+      active = false;
+    };
+  }, [detected]);
   const [draft, setDraft] = useState("");
 
   const shown = override
     ? override
-    : detected
-      ? formatLocation(detected)
+    : liveDetected
+      ? formatLocation(liveDetected)
       : "";
 
   const save = () => {
@@ -93,33 +162,33 @@ export function LocationPicker({
     router.refresh();
   };
 
-  const reset = () => {
-    writeStored("");
-    setOverride("");
-    setDraft("");
-    setOpen(false);
-    router.refresh();
-  };
-
   return (
-    <span className="relative">
-      <button
-        type="button"
-        onClick={() => {
-          setDraft(override);
-          setOpen((v) => !v);
-        }}
-        aria-label={shown ? `location: ${shown}. change city` : "choose city"}
-        aria-expanded={open}
-        className="flex min-h-11 items-center gap-1 pr-2"
-      >
-        <CrosshairIcon />
-        {shown ? (
-          <span className="whitespace-nowrap text-[10px] font-medium tracking-wide">
-            {shown}
-          </span>
-        ) : null}
-      </button>
+    <span className="relative flex w-full justify-center">
+      <span className="flex min-h-11 items-center">
+        {/* Icon + city stay pixel-centered; "change" hangs off the side
+            in absolute position so it can't shift the center. Only
+            "change" opens the picker. */}
+        <span className="relative flex items-center gap-0.5">
+          <CrosshairIcon />
+          {shown ? (
+            <span className="whitespace-nowrap text-xs font-semibold tracking-wide">
+              {shown}
+            </span>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => {
+              setDraft(override);
+              setOpen((v) => !v);
+            }}
+            aria-label="change city"
+            aria-expanded={open}
+            className="absolute left-full ml-2 whitespace-nowrap text-[8px] text-muted underline decoration-1 underline-offset-4"
+          >
+            change
+          </button>
+        </span>
+      </span>
       {open ? (
         <>
           <button
@@ -131,7 +200,7 @@ export function LocationPicker({
           />
           <span className="absolute right-0 top-12 block w-64 overflow-hidden rounded-2xl border border-hairline bg-surface shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)]">
             <span className="block px-4 pt-3 text-xs text-muted">
-              {override ? "selected city" : "detected"}
+              detected
             </span>
             <form
               onSubmit={(e) => {
@@ -156,15 +225,6 @@ export function LocationPicker({
                 >
                   save
                 </button>
-                {override ? (
-                  <button
-                    type="button"
-                    onClick={reset}
-                    className="btn btn-ghost min-h-11 text-sm"
-                  >
-                    reset
-                  </button>
-                ) : null}
               </span>
             </form>
           </span>

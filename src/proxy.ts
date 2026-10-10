@@ -5,8 +5,8 @@ import { updateSession } from "@/lib/supabase/middleware";
 // /need-ride -> need-ride feed, /ride-available -> available feed.
 // Rewrites (not redirects) so the URL stays as typed.
 const TYPE_ROUTES: Record<string, string> = {
-  "/need-ride": "get",
-  "/ride-available": "offer",
+  "/needride": "get",
+  "/rideavailable": "offer",
 };
 
 // Next.js 16 "proxy" convention (formerly "middleware"). Runs on the server

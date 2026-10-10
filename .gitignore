@@ -43,3 +43,6 @@ geo/*.mmdb
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local preview server logs
+.dev*.log

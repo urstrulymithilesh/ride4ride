@@ -9,7 +9,9 @@ import { PlaceAutocomplete } from "@/components/places/place-autocomplete";
 const COOKIE = "r4r-city";
 const STORAGE_KEY = "r4r-city";
 const GEO_CACHE_KEY = "r4r-location";
-const GEO_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+// 15 minutes, not a day: IP-geolocated city has to follow someone who
+// travels or flips a VPN. A long cache left the old city pinned on screen.
+const GEO_CACHE_TTL_MS = 15 * 60 * 1000;
 
 function readStored(): string {
   try {
@@ -92,8 +94,11 @@ export function LocationPicker({
     };
   }, []);
   // Live detected city: server prop when edge headers exist, otherwise a
-  // one-shot /api/location enhance (cached 24h). Promise chain, no sync
-  // setState in the effect body.
+  // one-shot /api/location enhance. Stale-while-revalidate: the cache (if
+  // any) paints instantly, but EVERY mount also fires a fresh lookup that
+  // overwrites it when the answer changed — a traveler who moved cities
+  // sees the new city on refresh instead of waiting out a TTL.
+  // Promise chain, no sync setState in the effect body.
   const [liveDetected, setLiveDetected] = useState<GeoLocation | null>(
     detected,
   );
@@ -102,43 +107,50 @@ export function LocationPicker({
     let active = true;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 5000);
+    const apply = (next: GeoLocation | null) => {
+      if (!active || !next?.city) return;
+      setLiveDetected((cur) =>
+        cur?.city === next.city && cur?.region === next.region ? cur : next,
+      );
+      try {
+        localStorage.setItem(
+          GEO_CACHE_KEY,
+          JSON.stringify({ loc: next, at: Date.now() }),
+        );
+      } catch {
+        // Private mode etc. — location still shows for this visit.
+      }
+    };
     Promise.resolve()
       .then(() => readGeoCache())
       .then((cached) => {
-        if (!active) return null;
-        if (cached) {
+        if (cached) apply(cached);
+      })
+      .catch(() => {
+        // Corrupt cache etc. — the fresh lookup below still runs.
+      })
+      .finally(() => {
+        if (!active) {
           clearTimeout(timer);
-          return cached;
+          return;
         }
-        return fetch("/api/location", {
+        fetch("/api/location", {
           signal: controller.signal,
           cache: "no-store",
         })
           .then((res) => (res.ok ? res.json() : null))
           .then((data) => {
             clearTimeout(timer);
-            if (!active) return null;
-            const next =
+            if (!active) return;
+            apply(
               data?.city != null
                 ? { city: data.city, region: data.region ?? "" }
-                : null;
-            if (!next?.city) return null;
-            try {
-              localStorage.setItem(
-                GEO_CACHE_KEY,
-                JSON.stringify({ loc: next, at: Date.now() }),
-              );
-            } catch {
-              // Private mode etc. — location still shows for this visit.
-            }
-            return next;
+                : null,
+            );
+          })
+          .catch(() => {
+            clearTimeout(timer);
           });
-      })
-      .then((next) => {
-        if (active && next) setLiveDetected(next);
-      })
-      .catch(() => {
-        clearTimeout(timer);
       });
     return () => {
       active = false;
@@ -157,6 +169,18 @@ export function LocationPicker({
     if (!value) return;
     writeStored(value);
     setOverride(value);
+    setDraft("");
+    setOpen(false);
+    router.refresh();
+  };
+
+  // The promised reset: drop the saved override everywhere it lives and
+  // re-render. With no override and no cache entry, the next paint falls
+  // back to fresh IP detection — so a refresh after moving cities shows
+  // the current city instead of a saved or cached one.
+  const reset = () => {
+    writeStored("");
+    setOverride("");
     setDraft("");
     setOpen(false);
     router.refresh();
@@ -225,6 +249,15 @@ export function LocationPicker({
                 >
                   save
                 </button>
+                {override ? (
+                  <button
+                    type="button"
+                    onClick={reset}
+                    className="btn btn-ghost min-h-11 text-sm"
+                  >
+                    reset
+                  </button>
+                ) : null}
               </span>
             </form>
           </span>

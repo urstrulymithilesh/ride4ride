@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
+import { QuickPost } from "@/components/rides/quick-post";
 
 function PlusIcon() {
   return (
@@ -29,45 +30,52 @@ interface Active {
 }
 
 function DockLinks({ active }: { active: Active }) {
+  const [postOpen, setPostOpen] = useState(false);
   const item = (isActive: boolean) =>
     `flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-full ${
       isActive ? "text-[17.5px] font-bold text-white" : "text-sm font-medium text-muted"
     }`;
 
   return (
-    <nav
-      aria-label="ride navigation"
-      className="flex items-center justify-between rounded-t-[16px] border border-b-0 border-white/20 bg-app/95 px-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur"
-    >
-      <Link
-        href="/rides"
-        aria-current={active.rides ? "page" : undefined}
-        className={item(active.rides)}
+    <>
+      <nav
+        aria-label="ride navigation"
+        className="flex items-center justify-between rounded-t-[16px] border border-b-0 border-white/20 bg-app/95 px-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur"
       >
-        rides
-      </Link>
-      <Link
-        href="/rides/new"
-        aria-label="post a ride"
-        aria-current={active.post ? "page" : undefined}
-        className="flex flex-1 items-center justify-center"
-      >
-        <span
-          className={`flex h-16 w-16 -mt-5 items-center justify-center rounded-full text-black shadow-[0_8px_20px_-6px_rgba(255,255,255,0.35)] ${
-            active.post ? "bg-content" : "bg-primary"
-          }`}
+        <Link
+          href="/rides"
+          aria-current={active.rides ? "page" : undefined}
+          className={item(active.rides)}
         >
-          <PlusIcon />
+          rides
+        </Link>
+        <span className="flex flex-1 items-center justify-center">
+          <button
+            type="button"
+            onClick={() => setPostOpen((v) => !v)}
+            aria-label={postOpen ? "close" : "post a ride"}
+            aria-expanded={postOpen}
+            aria-haspopup="dialog"
+            className="flex h-16 w-16 -mt-5 items-center justify-center rounded-full bg-primary text-black shadow-[0_8px_20px_-6px_rgba(255,255,255,0.35)]"
+          >
+            <span
+              aria-hidden="true"
+              className={`flex transition-transform duration-200 ${postOpen ? "rotate-45" : ""}`}
+            >
+              <PlusIcon />
+            </span>
+          </button>
         </span>
-      </Link>
-      <Link
-        href="/messages"
-        aria-current={active.chats ? "page" : undefined}
-        className={item(active.chats)}
-      >
-        chats
-      </Link>
-    </nav>
+        <Link
+          href="/messages"
+          aria-current={active.chats ? "page" : undefined}
+          className={item(active.chats)}
+        >
+          chats
+        </Link>
+      </nav>
+      {postOpen ? <QuickPost /> : null}
+    </>
   );
 }
 

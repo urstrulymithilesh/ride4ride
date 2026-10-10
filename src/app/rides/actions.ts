@@ -123,8 +123,7 @@ export async function repostRide(formData: FormData): Promise<void> {
 export async function createGetRide(
   _prev: RideFormState,
   formData: FormData,
-): Promise<RideFormState> {
-  const user = await getUser();
+): Promise<RideFormState> {  const user = await getUser();
   if (!user) redirect("/sign-in?redirectTo=/rides/get");
 
   const result = validateGet(formToRecord(formData));
@@ -194,4 +193,58 @@ export async function createGetRide(
 
   revalidatePath("/rides");
   redirect(`/rides/${ride.id}`);
+}
+
+/**
+ * Quick-post popup submit. Same address fields for both modes; give-rides
+ * posts derive city/state/zip by geocoding server-side, then delegate to
+ * the regular create actions (which validate, write, time-stamp, and
+ * redirect to the new post — the redirect closes the popup).
+ */
+export async function submitQuickPost(
+  _prev: RideFormState,
+  formData: FormData,
+): Promise<RideFormState> {
+  const postMode = String(formData.get("postMode") ?? "need");
+  if (postMode !== "give") {
+    return await createGetRide(_prev, formData);
+  }
+
+  const fromAddress = String(formData.get("from_address") ?? "").trim();
+  const toAddress = String(formData.get("to_address") ?? "").trim();
+  if (fromAddress.length < 5)
+    return { fieldErrors: { from_address: "enter a full pickup address." } };
+  if (toAddress.length < 5)
+    return { fieldErrors: { to_address: "enter a full drop-off address." } };
+
+  let from, to;
+  try {
+    [from, to] = await Promise.all([
+      geocodeAddress(fromAddress),
+      geocodeAddress(toAddress),
+    ]);
+  } catch {
+    return { error: "address lookup is unavailable right now. please try again." };
+  }
+  if (!from || !to) {
+    return {
+      fieldErrors: {
+        ...(!from ? { from_address: "we couldn't find that pickup address." } : {}),
+        ...(!to ? { to_address: "we couldn't find that drop-off address." } : {}),
+      },
+    };
+  }
+
+  const fd = new FormData();
+  fd.set("from_city", from.city ?? "");
+  fd.set("from_state", from.state ?? "");
+  fd.set("from_zip", from.zip ?? "");
+  fd.set("to_city", to.city ?? "");
+  fd.set("to_state", to.state ?? "");
+  fd.set("to_zip", to.zip ?? "");
+  fd.set("description", String(formData.get("description") ?? ""));
+  fd.set("mode", "current");
+  fd.set("timing", String(formData.get("timing") ?? "asap"));
+  fd.set("ride_time", String(formData.get("ride_time") ?? ""));
+  return await createOfferRide(_prev, fd);
 }

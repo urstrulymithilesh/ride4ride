@@ -10,7 +10,7 @@ function PostButton() {
     <button
       type="submit"
       disabled={pending}
-      className="min-h-12 w-full rounded-xl bg-white text-base font-semibold text-black hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+      className="min-h-11 w-full rounded-xl bg-white text-base font-semibold text-black hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12"
     >
       {pending ? "posting…" : "post"}
     </button>
@@ -89,11 +89,11 @@ export function QuickPost() {
         aria-hidden="true"
         className="absolute inset-0 bg-black/60 backdrop-blur-md"
       />
-      <div className="pointer-events-auto absolute inset-0 overflow-y-auto px-6 py-6">
+      <div className="pointer-events-auto absolute inset-0 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
         <div className="flex min-h-full">
-          <div className="m-auto w-full max-w-sm">
-          <div data-quickpost-panel className="relative rounded-3xl border border-white/15 bg-black p-6">
-            <form action={formAction} className="flex flex-col gap-4">
+          <div className="m-auto w-full max-w-[340px] sm:max-w-sm">
+          <div data-quickpost-panel className="relative rounded-3xl border border-white/15 bg-black p-4 sm:p-6">
+            <form action={formAction} className="flex flex-col gap-3 sm:gap-4">
               <p className="text-center text-xs text-muted">
                 your privacy is most important and respected.
               </p>

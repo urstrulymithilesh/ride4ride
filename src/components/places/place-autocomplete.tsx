@@ -155,14 +155,18 @@ export function PlaceAutocomplete({
                   }`}
                 >
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium text-content">
+                    {/* Names wrap instead of truncating: in the narrow
+                        picker panel ellipsis made every university
+                        unreadable ("Univers…") and unpickable. Rows grow
+                        taller; the list still scrolls at max-h-60. */}
+                    <span className="block wrap-anywhere text-sm font-medium text-content">
                       {opt.title}
                     </span>
-                    <span className="block truncate text-xs text-muted">
+                    <span className="block wrap-anywhere text-xs text-muted">
                       {opt.sub}
                     </span>
                   </span>
-                  <span className="shrink-0 rounded-full bg-surface-2 px-2 py-0.5 text-[10px] text-muted">
+                  <span className="mt-0.5 shrink-0 self-start rounded-full bg-surface-2 px-2 py-0.5 text-[10px] text-muted">
                     {opt.kind}
                   </span>
                 </button>

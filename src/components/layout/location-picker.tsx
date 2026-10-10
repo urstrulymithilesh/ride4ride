@@ -78,21 +78,25 @@ export function LocationPicker({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   // Override lives in localStorage, which doesn't exist during SSR — so
-  // the first render is always empty (matching the server) and the stored
-  // value loads in a microtask after mount. Reading it in the useState
-  // initializer instead would hydrate mismatched HTML and crash React.
+  // the first render is always empty (matching the server). On a full
+  // reload the saved override is cleared instead of loaded: every refresh
+  // falls back to fresh IP detection and scoping, by founder decision.
+  // In-session saves (state + cookie, no reload) keep working until one.
   const [override, setOverride] = useState("");
   useEffect(() => {
     let live = true;
     Promise.resolve()
       .then(() => readStored())
       .then((stored) => {
-        if (live) setOverride(stored);
+        if (!live || !stored) return;
+        writeStored("");
+        setOverride("");
+        router.refresh();
       });
     return () => {
       live = false;
     };
-  }, []);
+  }, [router]);
   // Live detected city: server prop when edge headers exist, otherwise a
   // one-shot /api/location enhance. Stale-while-revalidate: the cache (if
   // any) paints instantly, but EVERY mount also fires a fresh lookup that

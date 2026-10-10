@@ -5,6 +5,7 @@ import { getLocationFromHeaders } from "@/lib/location-server";
 import { formatLocation } from "@/lib/location";
 import { createClient } from "@/lib/supabase/server";
 import { RideCard, type RideCardData } from "@/components/rides/ride-card";
+import { EmptyPostCta } from "@/components/rides/empty-post-cta";
 import { SearchForm } from "@/components/places/search-form";
 import { LocationPicker } from "@/components/layout/location-picker";
 import { recordArrival } from "@/lib/arrivals";
@@ -16,12 +17,12 @@ export const metadata: Metadata = { title: "browse rides" };
 // columns (those live in the row-protected `ride_locations` table), and
 // listing them explicitly keeps that guarantee obvious and the query lean.
 const CARD_COLUMNS =
-  "id, type, owner_id, created_at, from_city, from_state, to_city, to_state, ride_date, is_future, time_mode, ride_time, distance_meters, from_street, to_street";
+  "id, type, owner_id, created_at, from_city, from_state, to_city, to_state, ride_date, is_future, time_mode, ride_time, distance_meters, from_street, to_street, description";
 
 // Same columns minus migration 0019's timing pair — the degraded fallback
 // when those columns don't exist yet.
 const BASE_CARD_COLUMNS =
-  "id, type, owner_id, created_at, from_city, from_state, to_city, to_state, ride_date, is_future, distance_meters, from_street, to_street";
+  "id, type, owner_id, created_at, from_city, from_state, to_city, to_state, ride_date, is_future, distance_meters, from_street, to_street, description";
 
 type When = "current" | "future";
 type RideType = "all" | "offer" | "get";
@@ -288,19 +289,14 @@ export default async function BrowseRidesPage({
               clear filters
             </Link>
           ) : (
-            <Link
-              href="/rides/new"
-              className="mt-3 inline-block text-sm font-medium text-primary"
-            >
-              be the first to post one
-            </Link>
+            <EmptyPostCta />
           )}
         </div>
       ) : (
         <ul className="flex flex-col gap-3">
           {withHandles.map((r) => (
             <li key={r.id}>
-              <RideCard ride={r} />
+              <RideCard ride={r} signedIn={Boolean(viewer)} />
             </li>
           ))}
         </ul>

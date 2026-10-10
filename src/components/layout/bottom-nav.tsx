@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { QuickPost } from "@/components/rides/quick-post";
+import { OPEN_POST_EVENT } from "@/components/rides/empty-post-cta";
 
 function PlusIcon() {
   return (
@@ -31,6 +32,16 @@ interface Active {
 
 function DockLinks({ active }: { active: Active }) {
   const [postOpen, setPostOpen] = useState(false);
+
+  // The empty-feed "be the first to post one" button lives in a server
+  // component, so it can't flip this state directly — it fires an event
+  // and the dock opens the popup in place. setState runs in the event
+  // callback, not the effect body.
+  useEffect(() => {
+    const open = () => setPostOpen(true);
+    window.addEventListener(OPEN_POST_EVENT, open);
+    return () => window.removeEventListener(OPEN_POST_EVENT, open);
+  }, []);
   const item = (isActive: boolean) =>
     `flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-full ${
       isActive ? "text-[17.5px] font-bold text-white" : "text-sm font-medium text-muted"
@@ -40,7 +51,7 @@ function DockLinks({ active }: { active: Active }) {
     <>
       <nav
         aria-label="ride navigation"
-        className="flex items-center justify-between rounded-t-[16px] border border-b-0 border-white/20 bg-app/95 px-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur"
+        className="flex items-center justify-between rounded-t-[16px] border border-b-0 border-white/25 bg-app/70 px-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl"
       >
         <Link
           href="/rides"

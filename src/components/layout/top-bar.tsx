@@ -1,6 +1,10 @@
 /**
  * Slim sticky top bar: hamburger menu (left). Location readout moved to
  * the feed below the type tabs; the picker owns its own detection.
+ *
+ * Glass chrome (per Figma): white/25 inside stroke, frosted translucent
+ * fill so the feed blurs underneath on scroll. 0.25px renders as a 1px
+ * hairline in CSS — the 25% opacity is the visible part of the spec.
  */
 export function TopBar({
   menu,
@@ -10,7 +14,7 @@ export function TopBar({
   memberCount: number | null;
 }) {
   return (
-    <header className="safe-top sticky top-0 z-40 bg-app/95 backdrop-blur">
+    <header className="safe-top sticky top-0 z-40 rounded-b-[16px] border-b border-white/25 bg-app/70 backdrop-blur-xl">
       <div className="relative flex h-16 items-center justify-between pl-5 pr-2">
         <span className="relative">{menu}</span>
         {memberCount !== null && memberCount > 0 ? (

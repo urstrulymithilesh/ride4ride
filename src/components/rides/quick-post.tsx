@@ -10,7 +10,7 @@ function PostButton() {
     <button
       type="submit"
       disabled={pending}
-      className="min-h-11 w-full rounded-xl bg-white text-base font-semibold text-black hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12"
+      className="min-h-11 w-full rounded-xl bg-white text-[15px] font-semibold text-black hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:text-base"
     >
       {pending ? "posting…" : "post"}
     </button>
@@ -71,7 +71,7 @@ export function QuickPost() {
       : "write something..\n'space available for up to 3 people' or\n'split gas money'";
 
   const pill = (active: boolean) =>
-    `min-h-11 flex-1 rounded-xl border px-3 text-sm font-medium ${
+    `min-h-10 flex-1 rounded-xl border px-2 text-[13px] font-medium sm:min-h-11 sm:px-3 sm:text-sm ${
       active
         ? "border-white bg-white text-black"
         : "border-white/20 text-muted"
@@ -92,14 +92,14 @@ export function QuickPost() {
       <div className="pointer-events-auto absolute inset-0 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
         <div className="flex min-h-full">
           <div className="m-auto w-full max-w-[340px] sm:max-w-sm">
-          <div data-quickpost-panel className="relative rounded-3xl border border-white/15 bg-black p-4 sm:p-6">
-            <form action={formAction} className="flex flex-col gap-3 sm:gap-4">
-              <p className="text-center text-xs text-muted">
+          <div data-quickpost-panel className="relative max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain rounded-3xl border border-white/15 bg-black p-3 sm:p-6">
+            <form action={formAction} className="flex flex-col gap-2 sm:gap-4">
+              <p className="text-center text-[11px] text-muted sm:text-xs">
                 your privacy is most important and respected.
               </p>
               <div className="flex items-center justify-around gap-2" role="radiogroup" aria-label="post type">
             <label
-              className={`flex min-h-11 cursor-pointer items-center gap-2 text-sm ${
+              className={`flex min-h-10 cursor-pointer items-center gap-2 text-[13px] sm:min-h-11 sm:text-sm ${
                 postMode === "need" ? "font-semibold text-content" : "text-muted"
               }`}
             >
@@ -114,7 +114,7 @@ export function QuickPost() {
               <RadioDot checked={postMode === "need"} />i need ride
             </label>
             <label
-              className={`flex min-h-11 cursor-pointer items-center gap-2 text-sm ${
+              className={`flex min-h-10 cursor-pointer items-center gap-2 text-[13px] sm:min-h-11 sm:text-sm ${
                 postMode === "give" ? "font-semibold text-content" : "text-muted"
               }`}
             >
@@ -130,32 +130,32 @@ export function QuickPost() {
             </label>
           </div>
 
-          <fieldset className="rounded-2xl border border-white/15 px-3 pb-3">
-            <legend className="px-1 text-xs text-muted">pick up</legend>
+          <fieldset className="rounded-2xl border border-white/15 px-3 pb-2 sm:pb-3">
+            <legend className="px-1 text-[11px] text-muted sm:text-xs">pick up</legend>
             <input
               name="from_address"
               required
               minLength={5}
               placeholder={addrPlaceholder}
               aria-label="pickup address"
-              className="input border-0 bg-transparent text-center text-sm placeholder:truncate placeholder:text-xs"
+              className="input border-0 bg-transparent text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:text-sm sm:placeholder:text-xs"
             />
           </fieldset>
           {postMode === "need" ? (
-            <p className="-mt-2 text-center text-xs text-muted">
+            <p className="-mt-2 text-center text-[11px] text-muted sm:text-xs">
               don&apos;t worry, address information is kept private.
             </p>
           ) : null}
 
-          <fieldset className="rounded-2xl border border-white/15 px-3 pb-3">
-            <legend className="px-1 text-xs text-muted">drop off</legend>
+          <fieldset className="rounded-2xl border border-white/15 px-3 pb-2 sm:pb-3">
+            <legend className="px-1 text-[11px] text-muted sm:text-xs">drop off</legend>
             <input
               name="to_address"
               required
               minLength={5}
               placeholder={addrPlaceholder}
               aria-label="drop-off address"
-              className="input border-0 bg-transparent text-center text-sm placeholder:truncate placeholder:text-xs"
+              className="input border-0 bg-transparent text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:text-sm sm:placeholder:text-xs"
             />
           </fieldset>
 
@@ -176,7 +176,7 @@ export function QuickPost() {
                   onChange={() => setTiming(value)}
                   className="sr-only"
                 />
-                <span className={`${pill(timing === value)} flex min-h-11 items-center justify-center`}>
+                <span className={`${pill(timing === value)} flex min-h-10 items-center justify-center sm:min-h-11`}>
                   {label}
                 </span>
               </label>
@@ -193,14 +193,14 @@ export function QuickPost() {
             />
           ) : null}
 
-          <fieldset className="rounded-2xl border border-white/15 px-3 pb-3">
-            <legend className="px-1 text-xs text-muted">optional</legend>
+          <fieldset className="rounded-2xl border border-white/15 px-3 pb-2 sm:pb-3">
+            <legend className="px-1 text-[11px] text-muted sm:text-xs">optional</legend>
             <textarea
               name="description"
               rows={postMode === "need" ? 5 : 3}
               placeholder={optPlaceholder}
               aria-label="optional details"
-              className="input resize-none border-0 bg-transparent text-center text-xs leading-relaxed placeholder:text-xs"
+              className="input resize-none border-0 bg-transparent text-center text-[11px] leading-relaxed placeholder:text-[11px] sm:text-xs sm:placeholder:text-xs"
             />
           </fieldset>
 

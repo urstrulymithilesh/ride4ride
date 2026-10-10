@@ -243,7 +243,7 @@ export function LocationPicker({
                 placeholder="city, university or airport"
                 ariaLabel="city and state"
                 kind="all"
-                inputClassName="input w-full text-sm"
+                inputClassName="input w-full bg-app text-sm"
               />
               <span className="mt-2 flex gap-2">
                 <button

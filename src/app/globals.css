@@ -86,14 +86,10 @@ summary:focus-visible {
    Reusable component classes (tokens only).
    ================================================================== */
 @layer components {
-  /* Centered single-column mobile frame on every screen size. */
+  /* Centered single-column mobile frame on every screen size. No side
+     strokes — the column edges stay clean on desktop too. */
   .app-shell {
     @apply mx-auto flex min-h-screen w-full max-w-[480px] flex-col bg-app;
-  }
-  @media (min-width: 481px) {
-    .app-shell {
-      @apply border-x border-hairline;
-    }
   }
 
   .safe-top {

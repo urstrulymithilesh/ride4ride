@@ -66,7 +66,13 @@ export function RideCard({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-[13px] font-semibold leading-[20px] text-white">
-            {ride.username ? `@${ride.username}` : "new post"}
+            {ride.username ? (
+              <Link href={`/${ride.username}`} className="hover:underline">
+                @{ride.username}
+              </Link>
+            ) : (
+              "new post"
+            )}
           </p>
           <p className="mt-0.5 text-[9px] leading-[12px] text-muted">
             {formatPostedAt(ride.created_at)}
@@ -96,9 +102,23 @@ export function RideCard({
         </div>
         <Link
           href={`/rides/${ride.id}`}
-          className="btn btn-primary min-h-8 shrink-0 self-center rounded-[10px] px-5 text-sm"
+          aria-label="request"
+          className="btn btn-primary min-h-11 shrink-0 self-center rounded-[10px] px-4 text-sm"
         >
-          request
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M5 12h14" />
+            <path d="M13 6l6 6-6 6" />
+          </svg>
         </Link>
       </div>
       {/* Note box: free text, so same gate as handles — signed-in only.

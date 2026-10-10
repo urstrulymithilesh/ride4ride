@@ -39,6 +39,48 @@ export interface SignInInput {
 
 export const USERNAME_RE = /^[a-z][a-z0-9_]{2,19}$/;
 
+/**
+ * Handles that would collide with app routes or imply official status.
+ * A claimed "admin" or "rides" could never be visited (static routes win),
+ * so reject them at signup instead of minting dead pages. Keep in sync
+ * with the guard in src/app/[username]/page.tsx.
+ */
+export const RESERVED_USERNAMES: ReadonlySet<string> = new Set([
+  "admin",
+  "administrator",
+  "about",
+  "api",
+  "auth",
+  "help",
+  "login",
+  "logout",
+  "messages",
+  "mod",
+  "moderator",
+  "needride",
+  "need-ride",
+  "null",
+  "official",
+  "privacy",
+  "profile",
+  "rideavailable",
+  "ride-available",
+  "ride4ride",
+  "rides",
+  "root",
+  "settings",
+  "sign-in",
+  "signin",
+  "sign-up",
+  "signup",
+  "static",
+  "support",
+  "system",
+  "team",
+  "terms",
+  "undefined",
+]);
+
 /** Single place for the handle rules (DB check + signup form share these). */
 export function validateUsername(username: string): string | null {
   if (!username) return "choose a username.";
@@ -46,6 +88,8 @@ export function validateUsername(username: string): string | null {
     return "username must be 3–20 characters.";
   if (!USERNAME_RE.test(username))
     return "letters, numbers, and _ only, starting with a letter.";
+  if (RESERVED_USERNAMES.has(username))
+    return "that name is reserved. try another.";
   return null;
 }
 

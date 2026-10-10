@@ -130,15 +130,15 @@ export function QuickPost() {
             </label>
           </div>
 
-          <fieldset className="rounded-2xl border border-white/15 px-3 pb-2 sm:pb-3">
-            <legend className="px-1 text-[11px] text-muted sm:text-xs">pick up</legend>
+          <fieldset className="rounded-2xl border border-white/15 px-3 pb-1 sm:pb-3">
+            <legend className="px-1 text-[11px] text-muted sm:text-xs">{postMode === "give" ? "from" : "pick up"}</legend>
             <input
               name="from_address"
               required
               minLength={5}
               placeholder={addrPlaceholder}
               aria-label="pickup address"
-              className="input border-0 bg-transparent text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:text-sm sm:placeholder:text-xs"
+              className="input min-h-[22px] border-0 bg-transparent text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:min-h-11 sm:text-sm sm:placeholder:text-xs"
             />
           </fieldset>
           {postMode === "need" ? (
@@ -147,15 +147,15 @@ export function QuickPost() {
             </p>
           ) : null}
 
-          <fieldset className="rounded-2xl border border-white/15 px-3 pb-2 sm:pb-3">
-            <legend className="px-1 text-[11px] text-muted sm:text-xs">drop off</legend>
+          <fieldset className="rounded-2xl border border-white/15 px-3 pb-1 sm:pb-3">
+            <legend className="px-1 text-[11px] text-muted sm:text-xs">{postMode === "give" ? "to" : "drop off"}</legend>
             <input
               name="to_address"
               required
               minLength={5}
               placeholder={addrPlaceholder}
               aria-label="drop-off address"
-              className="input border-0 bg-transparent text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:text-sm sm:placeholder:text-xs"
+              className="input min-h-[22px] border-0 bg-transparent text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:min-h-11 sm:text-sm sm:placeholder:text-xs"
             />
           </fieldset>
 
@@ -193,14 +193,14 @@ export function QuickPost() {
             />
           ) : null}
 
-          <fieldset className="rounded-2xl border border-white/15 px-3 pb-2 sm:pb-3">
-            <legend className="px-1 text-[11px] text-muted sm:text-xs">optional</legend>
+          <fieldset className="rounded-2xl border border-white/15 px-3 pb-0.5 sm:pb-3">
+            <legend className="px-1 text-[11px] text-muted sm:text-xs">note (optional)</legend>
             <textarea
               name="description"
               rows={postMode === "need" ? 5 : 3}
               placeholder={optPlaceholder}
               aria-label="optional details"
-              className="input resize-none border-0 bg-transparent text-center text-[11px] leading-relaxed placeholder:text-[11px] sm:text-xs sm:placeholder:text-xs"
+              className="input resize-none border-0 bg-transparent py-1 text-center text-[11px] leading-relaxed placeholder:text-[11px] sm:py-2 sm:text-xs sm:placeholder:text-xs"
             />
           </fieldset>
 

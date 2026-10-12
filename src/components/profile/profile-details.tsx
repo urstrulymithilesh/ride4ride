@@ -69,7 +69,7 @@ export function ProfileDetails({
         onClick={() => setEditing((v) => !v)}
         aria-label={editing ? "cancel editing" : "edit profile"}
         aria-expanded={editing}
-        className="absolute right-3 top-3 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-muted hover:bg-surface-2 hover:text-content"
+        className="absolute right-3 top-3 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-muted hover:bg-white/10 hover:text-content"
       >
         <PencilIcon />
       </button>

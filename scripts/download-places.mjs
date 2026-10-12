@@ -10,7 +10,7 @@
  *
  *   npm run places:update
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const DIR = join(process.cwd(), "data", "places");
@@ -130,6 +130,20 @@ try {
       "&format=json",
     { "User-Agent": "ride4ride-places/1.0 (contact: ride4ride.com)" },
   );
+  // Preserve curated city overrides across refreshes: the Wikidata
+  // point is only approximate, and border towns resolve to the wrong
+  // neighbor (Lewis University -> Lockport instead of Romeoville).
+  // Corrections live in universities.json as {city, region} and must
+  // survive regeneration, matched by exact name.
+  let keep = new Map();
+  try {
+    const prev = JSON.parse(readFileSync(join(DIR, "universities.json"), "utf8"));
+    for (const r of prev) {
+      if (r?.name && (r.city || r.region)) keep.set(r.name, { city: r.city, region: r.region });
+    }
+  } catch {
+    // First run — no previous file to preserve from.
+  }
   const out = [];
   for (const b of data.results?.bindings ?? []) {
     const coord = b.coord?.value ?? ""; // "Point(lon lat)"
@@ -137,12 +151,30 @@ try {
     if (!b.itemLabel?.value || !m) continue;
     if (/disambiguation|category/i.test(b.itemLabel.value)) continue;
     if ((b.countryLabel?.value ?? "") !== "United States") continue;
-    out.push({
+    const row = {
       name: b.itemLabel.value,
       country: b.countryLabel?.value ?? "",
       lat: Number(m[2]),
       lon: Number(m[1]),
-    });
+    };
+    const fix = keep.get(row.name);
+    if (fix) Object.assign(row, fix);
+    out.push(row);
+  }
+  // Curated additions Wikidata misses entirely (e.g. Franklin, Aurora):
+  // merged every refresh so they can't be wiped. Dedupe by exact name
+  // in case Wikidata ever returns them.
+  try {
+    const extras = JSON.parse(readFileSync(join(DIR, "university-extras.json"), "utf8"));
+    const seen = new Set(out.map((r) => r.name));
+    for (const r of extras) {
+      if (r?.name && !seen.has(r.name)) {
+        out.push(r);
+        seen.add(r.name);
+      }
+    }
+  } catch {
+    // No extras file — Wikidata output stands alone.
   }
   writeFileSync(join(DIR, "universities.json"), JSON.stringify(out));
   console.log(`universities: ${out.length}`);

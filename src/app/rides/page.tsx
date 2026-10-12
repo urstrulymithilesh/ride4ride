@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { getLocationFromHeaders } from "@/lib/location-server";
+import { searchPlaces } from "@/lib/places";
 import { formatLocation } from "@/lib/location";
 import { createClient } from "@/lib/supabase/server";
 import { RideCard, type RideCardData } from "@/components/rides/ride-card";
@@ -17,7 +18,7 @@ export const metadata: Metadata = { title: "browse rides" };
 // columns (those live in the row-protected `ride_locations` table), and
 // listing them explicitly keeps that guarantee obvious and the query lean.
 const CARD_COLUMNS =
-  "id, type, owner_id, created_at, from_city, from_state, to_city, to_state, ride_date, is_future, time_mode, ride_time, distance_meters, from_street, to_street, description";
+  "id, type, owner_id, created_at, from_city, from_state, to_city, to_state, ride_date, is_future, time_mode, ride_time, distance_meters, from_street, to_street, from_airport, description";
 
 // Same columns minus migration 0019's timing pair — the degraded fallback
 // when those columns don't exist yet.
@@ -50,9 +51,43 @@ export default async function BrowseRidesPage({
   const cookieCity = ((await cookies()).get("r4r-city")?.value ?? "").trim();
   const detected = await getLocationFromHeaders();
   const detectedLabel = detected ? formatLocation(detected) : "";
-  const from =
-    sp.from !== undefined ? sp.from.trim() : cookieCity || detectedLabel;
-  const to = sp.to?.trim() ?? "";
+  // A picked place name resolves to its filterable form — with one
+  // exception: a university title ("Name · City, ST") matches on its
+  // bare name. Rides carry no university column, so city substitution
+  // would match every post in town instead of university posts; the
+  // description text is the literal signal and matching uses the name
+  // ("Lewis University"), never the suffixed title. Anything else
+  // filters literally, as before. Only a full display-name match
+  // resolves, so partial typing keeps the old substring behavior.
+  // Strict-uppercase IATA codes are exempt — the airport branch below
+  // scopes those verbatim. The saved scope goes through the same
+  // resolution, so a stored university title matches by name too.
+  const resolvePlace = (raw: string): { text: string; university: boolean } => {
+    const text = raw.trim();
+    if (!text || /^[A-Z]{3}$/.test(text)) return { text, university: false };
+    const hit = searchPlaces(text, "all", 5).find(
+      (r) => r.title.toLowerCase() === text.toLowerCase(),
+    );
+    if (!hit) return { text, university: false };
+    if (hit.kind === "university") {
+      const name = hit.title.split("·")[0]?.trim() || hit.title;
+      return { text: name, university: true };
+    }
+    // Airport titles read "Name (ORD)"; scope the bare IATA code so the
+    // airport equality below matches tagged posts.
+    if (hit.kind === "airport") {
+      const code = hit.title.match(/\(([A-Z]{3})\)\s*$/)?.[1];
+      return { text: code ?? hit.value, university: false };
+    }
+    return { text: hit.value, university: false };
+  };
+  const fromPlace =
+    sp.from !== undefined
+      ? resolvePlace(sp.from)
+      : resolvePlace(cookieCity || detectedLabel);
+  const toPlace = resolvePlace(sp.to?.trim() ?? "");
+  const from = fromPlace.text;
+  const to = toPlace.text;
   const searched = Boolean(sp.from?.trim() || to);
   const scopedNote = !searched && from ? ` near ${from}` : "";
   const hasFilters = searched;
@@ -87,7 +122,7 @@ export default async function BrowseRidesPage({
   const supabase = await createClient();
   // Columns from migration 0019. Factored so the feed can retry without
   // them when the migration hasn't applied yet (degraded timing: ASAP).
-  const buildQuery = (columns: string) => {
+  const buildQuery = (columns: string, opts?: { noAirport?: boolean }) => {
     let q = supabase
       .from("rides")
       .select(columns)
@@ -97,16 +132,31 @@ export default async function BrowseRidesPage({
 
     const fromTokens = endTokens(from);
     const toTokens = endTokens(to);
-    for (const t of fromTokens) {
-      if (/^\d+$/.test(t)) q = q.eq("from_zip", t);
-      else if (/^[a-zA-Z]{2}$/.test(t)) q = q.ilike("from_state", t);
-      else q = q.ilike("from_city", `%${t}%`);
-    }
-    for (const t of toTokens) {
-      if (/^\d+$/.test(t)) q = q.eq("to_zip", t);
-      else if (/^[a-zA-Z]{2}$/.test(t)) q = q.ilike("to_state", t);
-      else q = q.ilike("to_city", `%${t}%`);
-    }
+    // University scope/search matches post text: with no university
+    // column, the description is the only literal signal. Everything
+    // else keeps the city/state/zip/airport token logic.
+    if (fromPlace.university) q = q.ilike("description", `%${from}%`);
+    else
+      for (const t of fromTokens) {
+        if (/^\d+$/.test(t)) q = q.eq("from_zip", t);
+        // Strict-uppercase 3 letters = a literal airport pick (the picker
+        // scopes IATA codes verbatim). Lowercase 3-letter text falls through
+        // to the city match below, so prefix typing never hijacks to airports.
+        // Skipped in the no-column fallback: filtering on a missing column
+        // fails the whole query, which is how an airport scope became the
+        // error board instead of a degraded list.
+        else if (/^[A-Z]{3}$/.test(t)) {
+          if (!opts?.noAirport) q = q.eq("from_airport", t);
+        } else if (/^[a-zA-Z]{2}$/.test(t)) q = q.ilike("from_state", t);
+        else q = q.ilike("from_city", `%${t}%`);
+      }
+    if (toPlace.university) q = q.ilike("description", `%${to}%`);
+    else
+      for (const t of toTokens) {
+        if (/^\d+$/.test(t)) q = q.eq("to_zip", t);
+        else if (/^[a-zA-Z]{2}$/.test(t)) q = q.ilike("to_state", t);
+        else q = q.ilike("to_city", `%${t}%`);
+      }
     if (rideType !== "all") q = q.eq("type", rideType);
 
     return q
@@ -123,29 +173,34 @@ export default async function BrowseRidesPage({
   // reading that says nobody did.
   let { data: rides, error: ridesError } = await buildQuery(CARD_COLUMNS);
 
-  // A missing timing column is an expected state until migration 0019 is
-  // applied, so it warns instead of erroring (a red console for every page
-  // view trains you to ignore red). Any other failure keeps the loud log —
-  // that is the signal that was missing entirely before.
-  const timingPending = Boolean(
-    ridesError && /time_mode|ride_time/i.test(ridesError.message),
+  // A missing timing or airport column is an expected state until
+  // migrations 0019/0021 are applied, so it warns instead of erroring
+  // (a red console for every page view trains you to ignore red). Any
+  // other failure keeps the loud log — that is the signal that was
+  // missing entirely before.
+  const pendingMigration = Boolean(
+    ridesError && /time_mode|ride_time|from_airport/i.test(ridesError.message),
   );
-  if (ridesError && !timingPending) {
+  if (ridesError && !pendingMigration) {
     console.error("[rides] feed query failed:", ridesError.message, ridesError);
   }
 
-  if (timingPending && ridesError) {
-    // Migration 0019 hasn't applied: the timing columns don't exist yet.
-    // Retry without them (cards fall back to ASAP) instead of blanking
-    // the whole board.
+  if (pendingMigration && ridesError) {
+    // Migration 0019 (timing) or 0021 (airports) hasn't applied: retry
+    // without those columns (cards fall back to ASAP / no airport chip)
+    // instead of blanking the whole board. The airport equality is
+    // dropped too — it names the same missing column, so keeping it
+    // would fail the retry right back into the error board. Airport
+    // scopes stay broad until 0021 applies.
     console.warn(
-      "[rides] timing columns missing — apply migration 0019 (run supabase/migrations/0019_ride_timing.sql).",
+      "[rides] timing/airport columns missing — apply migrations 0019_ride_timing.sql and 0021_airports.sql.",
     );
-    const retry = await buildQuery(BASE_CARD_COLUMNS);
+    const retry = await buildQuery(BASE_CARD_COLUMNS, { noAirport: true });
     rides = (retry.data ?? []).map((r) => ({
       ...r,
       time_mode: "asap" as const,
       ride_time: null,
+      from_airport: null,
     }));
     ridesError = retry.error;
     if (ridesError) {
@@ -181,20 +236,6 @@ export default async function BrowseRidesPage({
     username: handleById.get(r.owner_id) ?? null,
   }));
 
-  const tab = (value: When, label: string) => (
-    <Link
-      href={hrefWith({ when: value })}
-      aria-current={when === value ? "page" : undefined}
-      className={`inline-flex min-h-10 flex-1 items-center justify-center px-3 text-lg ${
-        when === value
-          ? "font-bold text-white"
-          : "font-medium text-muted hover:text-content"
-      }`}
-    >
-      {label}
-    </Link>
-  );
-
   // Ride-type tabs: plain labels on a shared hairline; the active one goes
   // bold white with a blue segment sitting on the line.
   const typeTab = (value: RideType, label: string) => {
@@ -222,12 +263,6 @@ export default async function BrowseRidesPage({
 
   return (
     <main className="w-full flex-1 px-4">
-      {/* Current / Future tabs */}
-      <div className="mb-6 flex rounded-2xl border border-white/20">
-        {tab("current", "current rides")}
-        {tab("future", "future rides")}
-      </div>
-
       {/* Search — client form with autocomplete dropdowns; the query
           itself stays in shareable ?from=&to= params. */}
       <SearchForm

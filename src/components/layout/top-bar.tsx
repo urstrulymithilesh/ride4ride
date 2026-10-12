@@ -20,7 +20,7 @@ export function TopBar({
   return (
     <header className="safe-top sticky top-0 z-40 rounded-b-[16px] border-b border-white/25 bg-app/70 backdrop-blur-xl">
       <div className="relative flex h-13 items-center justify-between pl-5 pr-2">
-        <span className="relative">{menu}</span>
+        {menu}
         {memberCount !== null && memberCount > 0 ? (
           <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-sm text-muted">
             members joined: {memberCount}

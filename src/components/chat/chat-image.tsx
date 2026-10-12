@@ -31,7 +31,7 @@ export function ChatImage({ path }: { path: string }) {
 
   if (failed) {
     return (
-      <div className="flex h-40 w-full items-center justify-center rounded-lg bg-surface-2 text-xs text-faint">
+      <div className="flex h-40 w-full items-center justify-center rounded-lg bg-app/70 text-xs text-faint backdrop-blur-xl">
         image unavailable
       </div>
     );
@@ -43,7 +43,7 @@ export function ChatImage({ path }: { path: string }) {
       src={url ?? undefined}
       alt="shared image"
       className={`h-auto w-full max-w-[240px] rounded-lg ${
-        url ? "" : "h-40 animate-pulse bg-surface-2"
+        url ? "" : "h-40 animate-pulse bg-app/70"
       }`}
     />
   );

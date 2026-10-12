@@ -25,6 +25,7 @@ export interface RideCardData {
   distance_meters: number | null;
   from_street: string | null; // masked, no number; 'get' only
   to_street: string | null; // masked, no number; 'get' only
+  from_airport: string | null; // public IATA tag for airport scoping
   description: string | null;
   username: string | null;
 }
@@ -89,6 +90,11 @@ export function RideCard({
       {/* Always a single sentence: shrinks to fit, ellipsis only if it
           still overflows at the minimum size. */}
       <FitHeadline text={`${headline}${timingSuffix}`} />
+      {ride.from_airport ? (
+        <p className="mt-1 text-xs font-medium text-muted">
+          ✈ {ride.from_airport}
+        </p>
+      ) : null}
       <div className="mt-1.5 flex items-center gap-3">
         <div className="min-w-0 flex-1 text-[13px] leading-snug text-white/80">
           <p className="wrap-anywhere">

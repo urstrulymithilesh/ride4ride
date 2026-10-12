@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ClearIcon } from "@/components/places/search-icons";
 import { PlaceAutocomplete } from "@/components/places/place-autocomplete";
 
 /**
@@ -29,75 +30,89 @@ export function SearchForm({
   const [from, setFrom] = useState(fromDefault);
   const [to, setTo] = useState(toDefault);
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
+  // `next` carries the value just picked, so the very first search after
+  // a pick is correct even though the parent's state hasn't committed
+  // yet. Plain Enter (and submit) has no override and reads state.
+  const runSearch = (next?: { from?: string; to?: string }) => {
+    const f = (next?.from ?? from).trim();
+    const t = (next?.to ?? to).trim();
     const qs = new URLSearchParams();
     if (when !== "current") qs.set("when", when);
     if (type !== "all") qs.set("type", type);
-    if (from.trim()) qs.set("from", from.trim());
-    if (to.trim()) qs.set("to", to.trim());
+    if (f) qs.set("from", f);
+    if (t) qs.set("to", t);
     const s = qs.toString();
     router.push(s ? `/rides?${s}` : "/rides");
   };
 
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    runSearch();
+  };
+
+  // Slim field: no search icon, placeholder/value optically centered. The
+  // clear X is absolutely positioned so it never steals width — a
+  // flex sibling would push the centered text off-center as soon as a
+  // value appeared. Enter submits.
+  const field = (
+    label: string,
+    value: string,
+    setValue: (v: string) => void,
+  ) => (
+    // Legend is pulled out of flow and centered ON the border, so it
+    // stops adding a line of height above the input. The content row
+    // then gets equal vertical padding and centers its contents, and
+    // the X is centered on the box itself rather than anchored to a
+    // bottom edge — that combination is what kept text and X drifting
+    // apart at different heights.
+    <fieldset className="relative rounded-[10px] border border-white/25">
+      <legend className="absolute left-3 top-0 -translate-y-1/2 bg-app px-1 text-[11px] leading-none text-muted">
+        {label}
+      </legend>
+      <div className="flex items-center px-3 py-2">
+        <PlaceAutocomplete
+          value={value}
+          onValueChange={setValue}
+          placeholder="search city, university or airport"
+          ariaLabel={label}
+          kind="all"
+          dropAlign="self"
+          submitOnPick
+          onSubmit={(opt) =>
+            // opt carries the freshly picked name, so the first search
+            // is correct without waiting on state to commit.
+            runSearch(label === "from" ? { from: opt.title } : { to: opt.title })
+          }
+          inputClassName="input min-h-[22px] w-full border-0 bg-transparent p-0 text-center text-[13px] placeholder:text-[13px]"
+        />
+      </div>
+      {value.trim() ? (
+        <button
+          type="button"
+          aria-label={`clear ${label}`}
+          // Clearing is a filter change, so it re-runs the search
+          // immediately instead of leaving a stale filtered board.
+          onClick={() => {
+            setValue("");
+            runSearch(label === "from" ? { from: "" } : { to: "" });
+          }}
+          className="absolute right-2 top-1/2 flex h-[22px] w-6 -translate-y-1/2 items-center justify-center text-muted hover:text-content"
+        >
+          <ClearIcon />
+        </button>
+      ) : null}
+    </fieldset>
+  );
+
   return (
-    <form onSubmit={submit} className="mb-6 flex items-center gap-2">
-      <PlaceAutocomplete
-        value={from}
-        onValueChange={setFrom}
-        placeholder="city, university or airport"
-        ariaLabel="from"
-        kind="all"
-        inputClassName="input min-w-0 w-full rounded-full bg-app px-4 text-center text-sm placeholder:text-[10px]"
-      />
-      <span className="shrink-0 text-sm text-content">to</span>
-      <PlaceAutocomplete
-        value={to}
-        onValueChange={setTo}
-        placeholder="city, university or airport"
-        ariaLabel="to"
-        kind="all"
-        inputClassName="input min-w-0 w-full rounded-full bg-app px-4 text-center text-sm placeholder:text-[10px]"
-      />
-      <button
-        type="submit"
-        aria-label="search"
-        className="btn btn-primary min-h-11 shrink-0 rounded-[10px] px-4 text-sm"
-      >
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <circle cx="11" cy="11" r="7" />
-          <path d="m20 20-3.5-3.5" />
-        </svg>
-      </button>
+    <form onSubmit={submit} className="mb-6 flex flex-col gap-3">
+      {field("from", from, setFrom)}
+      {field("to", to, setTo)}
       {showClear ? (
-        <Link
-          href={clearHref}
-          aria-label="clear"
-          className="btn btn-ghost shrink-0 px-3"
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            aria-hidden="true"
-          >
-            <path d="M6 6l12 12" />
-            <path d="M18 6L6 18" />
-          </svg>
+        // Below the fields: beside them it stole width and broke the
+        // full-bleed boxes the mock shows.
+        <Link href={clearHref} className="self-start text-xs text-muted underline">
+          clear search
         </Link>
       ) : null}
     </form>

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser, getProfile } from "@/lib/auth";
-import { signOut } from "@/app/(auth)/actions";
 import { PasswordForm, ProfileDetails } from "@/components/profile/profile-details";
 
 export const metadata: Metadata = { title: "profile" };
@@ -41,19 +40,11 @@ export default async function ProfilePage() {
       <PasswordForm />
 
       <nav aria-label="account" className="mt-3 flex flex-col gap-2">
-        <Link href="/messages" className="btn btn-secondary w-full">
-          messages
-        </Link>
         {profile.is_admin ? (
           <Link href="/admin" className="btn btn-secondary w-full">
             admin
           </Link>
         ) : null}
-        <form action={signOut}>
-          <button type="submit" className="btn btn-danger w-full">
-            log out
-          </button>
-        </form>
       </nav>
     </main>
   );

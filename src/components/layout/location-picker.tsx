@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { GeoLocation } from "@/lib/location";
 import { formatLocation } from "@/lib/location";
-import { PlaceAutocomplete } from "@/components/places/place-autocomplete";
+import { PlaceAutocomplete, type PlaceOption } from "@/components/places/place-autocomplete";
 
 const COOKIE = "r4r-city";
 const STORAGE_KEY = "r4r-city";
@@ -106,6 +106,8 @@ export function LocationPicker({
   const [liveDetected, setLiveDetected] = useState<GeoLocation | null>(
     detected,
   );
+  // Bumped by reset() to force a fresh IP detect (effect re-runs).
+  const [geoNonce, setGeoNonce] = useState(0);
   useEffect(() => {
     if (detected) return;
     let active = true;
@@ -159,8 +161,18 @@ export function LocationPicker({
     return () => {
       active = false;
     };
-  }, [detected]);
+  }, [detected, geoNonce]);
   const [draft, setDraft] = useState("");
+  // The last picked suggestion, if the text still matches it. A pick
+  // carries the resolved "City, ST" value, so saving it scopes exactly.
+  // Free text (typed, never picked, or edited after picking) resolves
+  // through /api/places at save time instead — see save().
+  const [picked, setPicked] = useState<PlaceOption | null>(null);
+
+  const onDraftChange = (next: string) => {
+    setDraft(next);
+    setPicked(null);
+  };
 
   const shown = override
     ? override
@@ -168,30 +180,98 @@ export function LocationPicker({
       ? formatLocation(liveDetected)
       : "";
 
-  const save = () => {
-    const value = draft.trim();
-    if (!value) return;
+  const persist = (value: string) => {
     writeStored(value);
     setOverride(value);
+    setPicked(null);
     setDraft("");
     setOpen(false);
     router.refresh();
+  };  const save = async () => {
+    const typed = draft.trim();
+    if (!typed) return;
+    // Scope value, literally as picked: an airport pick scopes its IATA
+    // code (titles read "Name (ORD)"; the code is extracted), a
+    // university pick scopes its full "Name · City, ST" title (matching
+    // extracts the bare name — descriptions mention "Lewis University",
+    // never the suffixed title), a city scopes "City, ST".
+    // Posts carry airport tags and description text; matching is
+    // equality/text, never a nearest-city substitution. Free text
+    // resolves server-side the same way.
+    const airportCode = (title: string) =>
+      title.match(/\(([A-Z]{3})\)\s*$/)?.[1] ?? title.trim();
+    const scopeOf = (opt: { kind: string; title: string; value: string }) =>
+      opt.kind === "city"
+        ? opt.value
+        : opt.kind === "airport"
+          ? airportCode(opt.title)
+          : opt.title;
+    let value = picked && scopeOf(picked) === typed ? scopeOf(picked) : null;
+    if (!value) {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 4000);
+        const res = await fetch(
+          `/api/places?q=${encodeURIComponent(typed)}&kind=all&v=2`,
+          { signal: controller.signal },
+        );
+        clearTimeout(timer);
+        if (res.ok) {
+          const data = (await res.json()) as {
+            results?: Array<{ kind: string; title: string; value: string }>;
+          };
+          const first = data?.results?.[0];
+          if (first) {
+            const literal =
+              first.kind === "city"
+                ? first.value.trim() || first.title.trim()
+                : first.kind === "airport"
+                  ? airportCode(first.title) || first.value.trim()
+                  : first.title.trim();
+            if (literal) value = literal;
+          }
+        }
+      } catch {
+        // Offline/aborted — fall through to the literal text.
+      }
+    }
+    persist(value ?? typed);
   };
 
-  // The promised reset: drop the saved override everywhere it lives and
-  // re-render. With no override and no cache entry, the next paint falls
-  // back to fresh IP detection — so a refresh after moving cities shows
-  // the current city instead of a saved or cached one.
+  // Reset = refresh = detect IP → city name → posts. Clears the saved
+  // override AND the cached geo result, then forces a live /api/location
+  // lookup so the readout and the feed re-scope to the current IP.
   const reset = () => {
     writeStored("");
+    try {
+      localStorage.removeItem(GEO_CACHE_KEY);
+    } catch {
+      // Private mode etc. — next paint still re-detects.
+    }
     setOverride("");
+    setPicked(null);
     setDraft("");
+    setLiveDetected(null);
+    setGeoNonce((n) => n + 1);
     setOpen(false);
     router.refresh();
   };
 
   return (
-    <span className="relative flex w-full justify-center">
+    <>
+      {/* Feed-only backdrop: absolute against #main (now relative), so the
+          dim + blur cover exactly the feed column between the bars — never
+          painted behind TopBar/BottomNav, which keep their normal look. */}
+      {open ? (
+        <button
+          type="button"
+          aria-hidden="true"
+          tabIndex={-1}
+          onClick={() => setOpen(false)}
+          className="absolute inset-0 cursor-default bg-black/60 backdrop-blur-md"
+        />
+      ) : null}
+      <span className="relative flex w-full justify-center">
       <span className="flex min-h-11 items-center">
         {/* Icon + city stay pixel-centered; "change" hangs off the side
             in absolute position so it can't shift the center. Only
@@ -218,16 +298,11 @@ export function LocationPicker({
         </span>
       </span>
       {open ? (
-        <>
-          <button
-            type="button"
-            aria-hidden="true"
-            tabIndex={-1}
-            onClick={() => setOpen(false)}
-            className="fixed inset-0 cursor-default"
-          />
-          <span className="absolute right-0 top-12 block w-64 overflow-hidden rounded-2xl border border-hairline bg-surface shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)]">
-            <span className="block px-4 pt-3 text-xs text-muted">
+          /* Roomy centered panel (per mock): input and results share one
+              bordered box, tapping a result saves immediately — no save
+              button, no nested dropdown. */
+          <span className="absolute left-1/2 top-12 z-10 block w-[min(92vw,26rem)] -translate-x-1/2 rounded-2xl border border-hairline bg-app/70 p-4 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)] backdrop-blur-xl">
+            <span className="block px-1 pb-3 text-xs text-muted">
               detected
             </span>
             <form
@@ -235,38 +310,47 @@ export function LocationPicker({
                 e.preventDefault();
                 save();
               }}
-              className="block px-4 pb-3 pt-2"
+              className="block overflow-hidden rounded-2xl border border-hairline bg-app"
             >
               <PlaceAutocomplete
                 value={draft}
-                onValueChange={setDraft}
+                onValueChange={onDraftChange}
+                onPick={(opt) => setPicked(opt)}
                 placeholder="city, university or airport"
                 ariaLabel="city and state"
                 kind="all"
-                inputClassName="input w-full bg-app text-sm"
+                variant="panel"
+                inputClassName="input border-0 bg-transparent px-4 py-3 text-center text-sm placeholder:text-xs"
               />
-              <span className="mt-2 flex gap-2">
+            </form>
+            <span className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="btn btn-ghost min-h-11 border border-white/25 text-sm"
+              >
+                close
+              </button>
+              <button
+                type="button"
+                onClick={save}
+                className="btn btn-primary min-h-11 flex-1 text-sm"
+              >
+                save
+              </button>
+              {override ? (
                 <button
                   type="button"
-                  onClick={save}
-                  className="btn btn-primary min-h-11 flex-1 text-sm"
+                  onClick={reset}
+                  className="btn btn-ghost min-h-11 text-sm"
                 >
-                  save
+                  reset
                 </button>
-                {override ? (
-                  <button
-                    type="button"
-                    onClick={reset}
-                    className="btn btn-ghost min-h-11 text-sm"
-                  >
-                    reset
-                  </button>
-                ) : null}
-              </span>
-            </form>
+              ) : null}
+            </span>
           </span>
-        </>
       ) : null}
-    </span>
+      </span>
+    </>
   );
 }

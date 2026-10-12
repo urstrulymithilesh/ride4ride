@@ -210,7 +210,7 @@ export default async function RideDetailPage({
             {kindLabel}
           </span>
           {ride.status !== "active" ? (
-            <span className="chip bg-surface-2 text-muted">{ride.status}</span>
+            <span className="chip border border-white/15 text-muted">{ride.status}</span>
           ) : null}
         </div>
 
@@ -218,6 +218,12 @@ export default async function RideDetailPage({
           {formatPlace(ride.from_city, ride.from_state)} →{" "}
           {formatPlace(ride.to_city, ride.to_state)}
         </h1>
+
+        {ride.from_airport ? (
+          <p className="mt-2 text-sm font-medium text-muted">
+            ✈ {ride.from_airport}
+          </p>
+        ) : null}
 
         {ride.type === "get" && (ride.from_street || ride.to_street) ? (
           <p className="mt-2 text-sm text-muted">

@@ -101,6 +101,18 @@ describe("validateOffer", () => {
     expect(validateOffer({ ...base }).ok).toBe(true);
   });
 
+  it("upper-cases a valid airport tag", () => {
+    const r = validateOffer({ ...base, from_airport: "ord" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.data.from_airport).toBe("ORD");
+  });
+
+  it("rejects a malformed airport tag", () => {
+    const r = validateOffer({ ...base, from_airport: "ohare" });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.fieldErrors.from_airport).toBeDefined();
+  });
+
   it("requires both cities and states", () => {
     const r = validateOffer({ ...base, from_city: "", to_state: "" });
     expect(r.ok).toBe(false);

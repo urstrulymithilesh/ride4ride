@@ -134,7 +134,7 @@ export function ChatThread({
               >
                 <div
                   className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
-                    mine ? "bg-primary text-black" : "bg-surface text-content"
+                    mine ? "bg-primary text-black" : "bg-app/70 text-content backdrop-blur-xl"
                   }`}
                 >
                   {m.image_url ? (
@@ -191,7 +191,7 @@ export function ChatThread({
           />
           <label
             htmlFor="chat-image-input"
-            className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-surface text-muted"
+            className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-app/70 text-muted backdrop-blur-xl"
             title="attach image"
             aria-label="attach image"
           >

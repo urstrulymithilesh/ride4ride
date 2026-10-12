@@ -16,8 +16,11 @@ export async function GET(request: NextRequest) {
     .split(",")
     .map((k) => k.trim())
     .filter((k): k is PlaceKind => KINDS.has(k) && k !== "all");
+  // Short-lived cache: result SHAPE follows the code (titles carry
+  // the display format), so an hour-long max-age served stale rows
+  // after a format change. 60s still absorbs repeat typing.
   return NextResponse.json(
     { results: searchPlaces(q, kinds.length > 0 ? kinds : "all") },
-    { headers: { "cache-control": "private, max-age=3600" } },
+    { headers: { "cache-control": "private, max-age=60" } },
   );
 }

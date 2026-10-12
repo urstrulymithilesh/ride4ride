@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { createPortal, useFormStatus } from "react-dom";
 import { submitQuickPost } from "@/app/rides/actions";
+import { PlaceAutocomplete } from "@/components/places/place-autocomplete";
 
 function PostButton() {
   const { pending } = useFormStatus();
@@ -57,6 +58,10 @@ export function QuickPost() {
   const [state, formAction] = useActionState(submitQuickPost, {});
   const [postMode, setPostMode] = useState<"need" | "give">("need");
   const [timing, setTiming] = useState<"asap" | "anytime" | "at">("anytime");
+  // Controlled address fields so they can carry the shared autocomplete.
+  // Picks fill the display name; the action geocodes server-side.
+  const [fromValue, setFromValue] = useState("");
+  const [toValue, setToValue] = useState("");
 
   // Placeholders follow the mode, matching the mocks: need-rides need
   // full addresses (geocoded + kept private), give-rides only need a
@@ -92,7 +97,7 @@ export function QuickPost() {
       <div className="pointer-events-auto absolute inset-0 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
         <div className="flex min-h-full">
           <div className="m-auto w-full max-w-[340px] sm:max-w-sm">
-          <div data-quickpost-panel className="relative max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain rounded-3xl border border-white/15 bg-black p-3 sm:p-6">
+          <div data-quickpost-panel className="relative max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain rounded-3xl border border-white/15 bg-app/70 p-3 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)] backdrop-blur-xl sm:p-6">
             <form action={formAction} className="flex flex-col gap-2 sm:gap-4">
               <p className="text-center text-[11px] text-muted sm:text-xs">
                 your privacy is most important and respected.
@@ -130,16 +135,36 @@ export function QuickPost() {
             </label>
           </div>
 
+          {/* Two distinct fields, not one shared box: need-rides ask for a
+              full typed address (autocomplete comes later); give-rides ask
+              for a place and get the city/university/airport suggestions. */}
           <fieldset className="rounded-2xl border border-white/15 px-3 pb-1 sm:pb-3">
             <legend className="px-1 text-[11px] text-muted sm:text-xs">{postMode === "give" ? "from" : "pick up"}</legend>
-            <input
-              name="from_address"
-              required
-              minLength={5}
-              placeholder={addrPlaceholder}
-              aria-label="pickup address"
-              className="input min-h-[22px] border-0 bg-transparent text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:min-h-11 sm:text-sm sm:placeholder:text-xs"
-            />
+            {postMode === "give" ? (
+              <PlaceAutocomplete
+                name="from_address"
+                value={fromValue}
+                onValueChange={setFromValue}
+                required
+                minLength={5}
+                placeholder={addrPlaceholder}
+                ariaLabel="pickup place"
+                kind="all"
+                variant="panel"
+                inputClassName="input min-h-[22px] border-0 bg-transparent px-4 text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:min-h-11 sm:text-sm sm:placeholder:text-xs"
+              />
+            ) : (
+              <input
+                name="from_address"
+                value={fromValue}
+                onChange={(e) => setFromValue(e.target.value)}
+                required
+                minLength={5}
+                placeholder={addrPlaceholder}
+                aria-label="pickup address"
+                className="input min-h-[22px] border-0 bg-transparent px-4 text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:min-h-11 sm:text-sm sm:placeholder:text-xs"
+              />
+            )}
           </fieldset>
           {postMode === "need" ? (
             <p className="-mt-2 text-center text-[11px] text-muted sm:text-xs">
@@ -149,14 +174,31 @@ export function QuickPost() {
 
           <fieldset className="rounded-2xl border border-white/15 px-3 pb-1 sm:pb-3">
             <legend className="px-1 text-[11px] text-muted sm:text-xs">{postMode === "give" ? "to" : "drop off"}</legend>
-            <input
-              name="to_address"
-              required
-              minLength={5}
-              placeholder={addrPlaceholder}
-              aria-label="drop-off address"
-              className="input min-h-[22px] border-0 bg-transparent text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:min-h-11 sm:text-sm sm:placeholder:text-xs"
-            />
+            {postMode === "give" ? (
+              <PlaceAutocomplete
+                name="to_address"
+                value={toValue}
+                onValueChange={setToValue}
+                required
+                minLength={5}
+                placeholder={addrPlaceholder}
+                ariaLabel="drop-off place"
+                kind="all"
+                variant="panel"
+                inputClassName="input min-h-[22px] border-0 bg-transparent px-4 text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:min-h-11 sm:text-sm sm:placeholder:text-xs"
+              />
+            ) : (
+              <input
+                name="to_address"
+                value={toValue}
+                onChange={(e) => setToValue(e.target.value)}
+                required
+                minLength={5}
+                placeholder={addrPlaceholder}
+                aria-label="drop-off address"
+                className="input min-h-[22px] border-0 bg-transparent px-4 text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:min-h-11 sm:text-sm sm:placeholder:text-xs"
+              />
+            )}
           </fieldset>
 
           <div className="flex gap-2" role="radiogroup" aria-label="timing">

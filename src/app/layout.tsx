@@ -50,7 +50,7 @@ export default async function RootLayout({
             Skip to content
           </a>
           <TopBar menu={<AppMenu />} memberCount={memberCount} />
-          <div id="main" className="flex flex-1 flex-col pb-24 pt-6">
+          <div id="main" className="relative flex flex-1 flex-col pb-24 pt-6">
             {children}
           </div>
           <BottomNav />

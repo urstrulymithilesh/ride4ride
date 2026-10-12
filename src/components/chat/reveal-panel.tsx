@@ -147,7 +147,7 @@ export function RevealPanel({
             : "when you both agree, the full pickup and drop-off addresses become visible to the two of you only."}
       </p>
 
-      <div className="mt-3 rounded-xl bg-surface-2 p-3 text-xs text-muted">
+      <div className="mt-3 rounded-xl bg-app/70 p-3 text-xs text-muted backdrop-blur-xl">
         <p className="font-medium text-content">before you share addresses, stay safe:</p>
         <ul className="mt-1 list-disc space-y-0.5 pl-4">
           <li>meet in a public place first — don&apos;t go straight to a home.</li>

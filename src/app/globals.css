@@ -2,14 +2,21 @@
 
 /* ==================================================================
    Design tokens — the ONLY place colors are defined. Components must
-   use these (bg-surface, text-muted, bg-primary, …), never raw hexes.
+   use these (bg-app, text-muted, bg-primary, …), never raw hexes.
    Dark theme: black canvas + app column, white text, royal blue accent.
+
+   STANDING RULE — no grey fills anywhere. Every fill is #000-based
+   black glass (bg-app/70 + backdrop-blur-xl); free-floating cards use
+   solid bg-app. Tags/chips carry no fill (hairline outline only —
+   glass-on-glass would erase them). Hover/highlight states use a
+   white/10 lift, never a grey fill. Apply this to every new panel,
+   dropdown, bubble, or button — no exceptions.
    ================================================================== */
 @theme {
   --color-canvas: #000000; /* backdrop behind the app column */
   --color-app: #000000; /* the app column background (pure black) */
-  --color-surface: #161616; /* elevated: cards, nav, inputs */
-  --color-surface-2: #262626; /* more elevated: hover, secondary buttons */
+  --color-surface: #161616; /* legacy — do not use for new fills (see rule above) */
+  --color-surface-2: #262626; /* legacy — do not use for new fills (see rule above) */
   --color-hairline: rgba(255, 255, 255, 0.12); /* dividers & borders */
 
   --color-content: #ffffff; /* primary text */
@@ -60,16 +67,30 @@ video {
   height: auto;
 }
 
-/* Visible keyboard focus. */
+/* Focus rings: OFF site-wide (founder decision). Must be an explicit
+   `outline: none`, NOT a deleted rule — browsers ship a default
+   :focus-visible ring in their UA stylesheet, and removing our
+   override let that white rounded ring resurface around every focused
+   input/textarea (pick up, drop off, note). An author `outline: none`
+   beats the UA default; that is what actually removes it.
+
+   Focus still reads through each control's own state — glass bars and
+   panels shift, the search row widens, pills invert. To restore
+   keyboard focus indicators later, give this block a visible outline
+   again (e.g. outline: 2px solid var(--color-primary)). */
+a:focus,
 a:focus-visible,
+button:focus,
 button:focus-visible,
+input:focus,
 input:focus-visible,
+select:focus,
 select:focus-visible,
+textarea:focus,
 textarea:focus-visible,
+summary:focus,
 summary:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-  border-radius: 8px;
+  outline: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -80,6 +101,20 @@ summary:focus-visible {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* Drawer slide-in: panel glides from the left on open. Exit is instant
+   (unmount); the reduced-motion block above neutralizes this too. */
+@keyframes drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.animate-drawer-in {
+  animation: drawer-in 260ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /* ==================================================================
@@ -100,7 +135,7 @@ summary:focus-visible {
   }
 
   .card {
-    @apply rounded-2xl bg-surface p-4;
+    @apply rounded-2xl bg-app p-4;
   }
 
   /* Long strings (addresses, emails, links) wrap instead of overflowing. */
@@ -123,15 +158,15 @@ summary:focus-visible {
     @apply bg-danger text-white hover:opacity-90;
   }
   .btn-secondary {
-    @apply bg-surface-2 text-content hover:opacity-90;
+    @apply bg-app/70 text-content backdrop-blur-xl hover:opacity-90;
   }
   .btn-ghost {
-    @apply text-muted hover:bg-surface hover:text-content;
+    @apply text-muted hover:bg-white/10 hover:text-content;
   }
 
   /* Inputs — 16px text avoids iOS focus-zoom; 44px min height. */
   .input {
-    @apply min-h-11 w-full rounded-xl border border-hairline bg-surface px-3 text-base text-content placeholder:text-faint;
+    @apply min-h-11 w-full rounded-xl border border-hairline bg-app px-3 text-base text-content placeholder:text-faint;
   }
   textarea.input {
     @apply py-2;
@@ -139,5 +174,28 @@ summary:focus-visible {
 
   .chip {
     @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+  }
+
+  /* Dropdown result lists: a minimal scrollbar matching the site —
+     thin white/25 thumb on the black glass, no arrow chrome. Firefox
+     gets scrollbar-width: thin + a hairline thumb color; WebKit gets
+     a 3px trackless thumb that only shows on hover. Wheel, trackpad,
+     touch, and keyboard scrolling are unaffected. */
+  .thin-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+  }
+  .thin-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .thin-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .thin-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.25);
+    border-radius: 999px;
+  }
+  .thin-scrollbar:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.4);
   }
 }

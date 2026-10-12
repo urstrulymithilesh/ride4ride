@@ -40,6 +40,12 @@ interface UniversityRow {
   country: string;
   lat: number;
   lon: number;
+  /** Authoritative city override (curated corrections). When absent,
+      the nearest city is derived from coordinates — which misfires on
+      border towns (Lewis University sits in Romeoville, IL but its
+      Wikidata point resolves nearer Lockport). */
+  city?: string;
+  region?: string;
 }
 
 const cache = new Map<string, unknown[]>();
@@ -87,8 +93,11 @@ function nearestCity(lat: number, lon: number): CityRow | null {
 }
 
 /** University picks resolve to their nearest city so the value stays
- *  feed-searchable ("University of North Texas" -> "Denton, TX"). */
+ *  feed-searchable ("University of North Texas" -> "Denton, TX"). A
+ *  curated row city wins over coordinate derivation (see
+ *  UniversityRow.city). */
 function universityValue(r: UniversityRow): string {
+  if (r.city) return r.region ? `${r.city}, ${r.region}` : r.city;
   const near = nearestCity(r.lat, r.lon);
   if (!near) return r.name;
   return near.region ? `${near.name}, ${near.region}` : near.name;
@@ -113,7 +122,14 @@ export function searchPlaces(
   const exact: PlaceResult[] = [];
   const pref: PlaceResult[] = [];
   const sub: PlaceResult[] = [];
+  // The vendored datasets contain duplicate rows (e.g. the same
+  // university twice). Identical options render identical React keys
+  // downstream and confuse selection, so drop repeats at the source.
+  const seen = new Set<string>();
   const consider = (tier: "exact" | "pref" | "sub", r: PlaceResult) => {
+    const id = `${r.kind}|${r.title}|${r.sub}`;
+    if (seen.has(id)) return;
+    seen.add(id);
     ({ exact, pref, sub })[tier].push(r);
   };
   // Stop scanning once all buckets are comfortably full; exact hits are
@@ -127,8 +143,8 @@ export function searchPlaces(
       if (norm(r.iata) === needle) {
         consider("exact", {
           kind: "airport",
-          title: r.iata,
-          sub: `${r.name} · ${r.city}${r.region ? `, ${r.region}` : ""}`,
+          title: `${r.name} (${r.iata})`,
+          sub: `${r.city}${r.region ? `, ${r.region}` : ""}`,
           value: r.region ? `${r.city}, ${r.region}` : r.city,
           lat: r.lat,
           lon: r.lon,
@@ -139,8 +155,8 @@ export function searchPlaces(
       ) {
         consider("pref", {
           kind: "airport",
-          title: r.iata,
-          sub: `${r.name} · ${r.city}${r.region ? `, ${r.region}` : ""}`,
+          title: `${r.name} (${r.iata})`,
+          sub: `${r.city}${r.region ? `, ${r.region}` : ""}`,
           value: r.region ? `${r.city}, ${r.region}` : r.city,
           lat: r.lat,
           lon: r.lon,
@@ -148,8 +164,8 @@ export function searchPlaces(
       } else if (norm(`${r.iata} ${r.name} ${r.city}`).includes(needle)) {
         consider("sub", {
           kind: "airport",
-          title: r.iata,
-          sub: `${r.name} · ${r.city}${r.region ? `, ${r.region}` : ""}`,
+          title: `${r.name} (${r.iata})`,
+          sub: `${r.city}${r.region ? `, ${r.region}` : ""}`,
           value: r.region ? `${r.city}, ${r.region}` : r.city,
           lat: r.lat,
           lon: r.lon,
@@ -201,7 +217,7 @@ export function searchPlaces(
       if (!h.includes(needle)) continue;
       consider(h.startsWith(needle) ? "pref" : "sub", {
         kind: "university",
-        title: r.name,
+        title: `${r.name} · ${universityValue(r)}`,
         sub: r.country,
         value: universityValue(r),
         lat: r.lat,

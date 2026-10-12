@@ -78,15 +78,15 @@ export default async function AdminPage() {
             return (
               <li key={r.id} className="card">
                 <div className="flex flex-wrap items-center gap-2 text-xs">
-                  <span className="chip bg-surface-2 uppercase tracking-wide text-muted">
+                  <span className="chip border border-white/15 uppercase tracking-wide text-muted">
                     {r.target_type}
                   </span>
-                  <span className="chip bg-surface-2 text-content">{r.reason}</span>
+                  <span className="chip border border-white/15 text-content">{r.reason}</span>
                   <span
                     className={`chip ${
                       r.status === "open"
                         ? "bg-danger-soft text-danger"
-                        : "bg-surface-2 text-muted"
+                        : "border border-white/15 text-muted"
                     }`}
                   >
                     {r.status}
@@ -121,7 +121,7 @@ export default async function AdminPage() {
                 </div>
 
                 {r.details ? (
-                  <p className="wrap-anywhere mt-2 rounded-lg bg-surface-2 p-2 text-sm text-muted">
+                  <p className="wrap-anywhere mt-2 rounded-lg bg-app/70 p-2 text-sm text-muted backdrop-blur-xl">
                     {r.details}
                   </p>
                 ) : null}

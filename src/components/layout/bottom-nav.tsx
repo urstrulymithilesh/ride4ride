@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { QuickPost } from "@/components/rides/quick-post";
+import { OPEN_POST_EVENT } from "@/components/rides/empty-post-cta";
 
 function PlusIcon() {
   return (
@@ -26,10 +28,20 @@ interface Active {
   rides: boolean;
   chats: boolean;
   post: boolean;
-  postComposer: boolean;
 }
 
 function DockLinks({ active }: { active: Active }) {
+  const [postOpen, setPostOpen] = useState(false);
+
+  // The empty-feed "be the first to post one" button lives in a server
+  // component, so it can't flip this state directly — it fires an event
+  // and the dock opens the popup in place. setState runs in the event
+  // callback, not the effect body.
+  useEffect(() => {
+    const open = () => setPostOpen(true);
+    window.addEventListener(OPEN_POST_EVENT, open);
+    return () => window.removeEventListener(OPEN_POST_EVENT, open);
+  }, []);
   const item = (isActive: boolean) =>
     `flex min-h-11 min-w-0 flex-1 items-center justify-center rounded-full ${
       isActive ? "text-[17.5px] font-bold text-white" : "text-sm font-medium text-muted"
@@ -49,21 +61,21 @@ function DockLinks({ active }: { active: Active }) {
           rides
         </Link>
         <span className="flex flex-1 items-center justify-center">
-          {/* Route-driven toggle: + goes to the post page, × on that
-              page comes back to the feed. Same look, same rotation. */}
-          <Link
-            href={active.postComposer ? "/rides" : "/newpost"}
-            aria-label={active.postComposer ? "close" : "post a ride"}
-            aria-current={active.postComposer ? "page" : undefined}
+          <button
+            type="button"
+            onClick={() => setPostOpen((v) => !v)}
+            aria-label={postOpen ? "close" : "post a ride"}
+            aria-expanded={postOpen}
+            aria-haspopup="dialog"
             className="flex h-16 w-16 -mt-5 items-center justify-center rounded-full bg-primary text-black shadow-[0_8px_20px_-6px_rgba(255,255,255,0.35)]"
           >
             <span
               aria-hidden="true"
-              className={`flex transition-transform duration-200 ${active.postComposer ? "rotate-45" : ""}`}
+              className={`flex transition-transform duration-200 ${postOpen ? "rotate-45" : ""}`}
             >
               <PlusIcon />
             </span>
-          </Link>
+          </button>
         </span>
         <Link
           href="/messages"
@@ -73,6 +85,7 @@ function DockLinks({ active }: { active: Active }) {
           chats
         </Link>
       </nav>
+      {postOpen ? <QuickPost /> : null}
     </>
   );
 }
@@ -92,9 +105,7 @@ function BottomNavInner() {
     post:
       pathname === "/rides/new" ||
       pathname === "/rides/offer" ||
-      pathname === "/rides/get" ||
-      pathname === "/newpost",
-    postComposer: pathname === "/newpost",
+      pathname === "/rides/get",
   };
 
   return (

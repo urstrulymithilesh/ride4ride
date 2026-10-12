@@ -117,6 +117,16 @@ summary:focus-visible {
   animation: drawer-in 260ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+/* iOS Safari auto-zooms on focus whenever an editable control is under
+   16px, which yanks the whole page on every tap. This forces 16px on
+   input text site-wide (unlayered, so it beats the text-sm utilities).
+   Placeholder sizes are untouched — only typed text is affected. */
+input,
+textarea,
+select {
+  font-size: 16px;
+}
+
 /* ==================================================================
    Reusable component classes (tokens only).
    ================================================================== */

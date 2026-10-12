@@ -5,7 +5,7 @@ import {
   changePassword,
   updateProfile,
   type ProfileState,
-} from "@/app/profile/actions";
+} from "@/app/account/actions";
 import { TextField } from "@/components/ui/text-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 

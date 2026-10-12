@@ -49,7 +49,9 @@ export async function AppMenu() {
           {user && profile ? (
             <div className="px-5 py-4">
               <p className="wrap-anywhere truncate text-base font-semibold text-content">
-                @{profile.username}
+                <Link href={`/${profile.username}`} className="hover:underline">
+                  @{profile.username}
+                </Link>
               </p>
               {joined ? (
                 <p className="mt-0.5 text-xs text-muted">{joined}</p>
@@ -63,7 +65,7 @@ export async function AppMenu() {
             </div>
           ) : null}
           <nav aria-label="menu" className="flex flex-1 flex-col overflow-y-auto py-2">
-            <Link href="/profile" className={item}>
+            <Link href="/account" className={item}>
               account
             </Link>
             <Link href="/privacy" className={item}>

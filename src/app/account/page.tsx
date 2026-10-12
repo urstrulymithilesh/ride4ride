@@ -3,7 +3,7 @@ import Link from "next/link";
 import { requireUser, getProfile } from "@/lib/auth";
 import { PasswordForm, ProfileDetails } from "@/components/profile/profile-details";
 
-export const metadata: Metadata = { title: "profile" };
+export const metadata: Metadata = { title: "account" };
 
 /** YYYY-MM-DD -> m/d/yyyy for display. */
 function formatDob(iso: string | null): string {
@@ -14,7 +14,7 @@ function formatDob(iso: string | null): string {
 }
 
 export default async function ProfilePage() {
-  const user = await requireUser("/profile");
+  const user = await requireUser("/account");
   const profile = await getProfile();
 
   if (!profile) {
@@ -23,9 +23,9 @@ export default async function ProfilePage() {
 
   return (
     <main className="mx-auto w-full max-w-xl flex-1 px-4 py-6">
-      <h1 className="text-xl font-semibold text-content">profile</h1>
+      <h1 className="text-xl font-semibold text-content">account</h1>
       <p className="mt-1 text-sm text-muted">
-        signed in as {user.email ?? "your account"}.
+        logged in as @{profile.username}.
       </p>
 
       <ProfileDetails

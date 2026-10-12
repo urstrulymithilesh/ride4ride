@@ -310,7 +310,7 @@ export function LocationPicker({
                 e.preventDefault();
                 save();
               }}
-              className="block overflow-hidden rounded-2xl border border-hairline bg-app"
+              className="block rounded-2xl border border-hairline bg-app"
             >
               <PlaceAutocomplete
                 value={draft}
@@ -319,34 +319,37 @@ export function LocationPicker({
                 placeholder="city, university or airport"
                 ariaLabel="city and state"
                 kind="all"
-                variant="panel"
+                clearable
+                surface="soft"
                 inputClassName="input border-0 bg-transparent px-4 py-3 text-center text-sm placeholder:text-xs"
               />
             </form>
-            <span className="mt-3 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="btn btn-ghost min-h-11 border border-white/25 text-sm"
-              >
-                close
-              </button>
+            <span className="mt-3 flex flex-col gap-2">
               <button
                 type="button"
                 onClick={save}
-                className="btn btn-primary min-h-11 flex-1 text-sm"
+                className="btn btn-primary min-h-11 w-full text-sm"
               >
                 save
               </button>
-              {override ? (
+              <span className="flex gap-2">
                 <button
                   type="button"
-                  onClick={reset}
-                  className="btn btn-ghost min-h-11 text-sm"
+                  onClick={() => setOpen(false)}
+                  className="btn btn-ghost min-h-11 flex-1 text-sm"
                 >
-                  reset
+                  close
                 </button>
-              ) : null}
+                {override ? (
+                  <button
+                    type="button"
+                    onClick={reset}
+                    className="btn btn-ghost min-h-11 flex-1 text-sm"
+                  >
+                    reset
+                  </button>
+                ) : null}
+              </span>
             </span>
           </span>
       ) : null}

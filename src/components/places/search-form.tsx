@@ -76,7 +76,7 @@ export function SearchForm({
           placeholder="search city, university or airport"
           ariaLabel={label}
           kind="all"
-          dropAlign="self"
+          dropAlign="row"
           submitOnPick
           onSubmit={(opt) =>
             // opt carries the freshly picked name, so the first search

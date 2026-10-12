@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
-import { createPortal, useFormStatus } from "react-dom";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
 import { submitQuickPost } from "@/app/rides/actions";
 import { PlaceAutocomplete } from "@/components/places/place-autocomplete";
 
@@ -33,28 +33,90 @@ function RadioDot({ checked }: { checked: boolean }) {  return (
 }
 
 /**
- * Quick-post popup opened from the dock + button. Same fields for both
- * modes (full addresses); give-rides posts derive city/state from
- * geocoding server-side. The dock +/X toggle is the ONLY way to close
- * it — backdrop taps, outside taps, Escape, and navigation all leave
- * it open. A successful post redirects behind it; the user closes via
- * X to see the new post.
+ * Infinitely looping option column (hour / minute). The option set is
+ * rendered three times; crossing into an outer copy jumps the scroll by
+ * exactly one set height, which reads as continuous. The selected value
+ * highlights in every copy; the middle copy centers on mount.
  */
-export function QuickPost() {
-  // Portal out of the dock: its -translate-x-1/2 wrapper traps fixed
-  // descendants, so without this the overlay anchors to the little dock
-  // bar instead of the viewport. Mounts post-hydration (microtask, not a
-  // sync setState) so SSR stays clean.
-  const [mounted, setMounted] = useState(false);
+function LoopColumn({
+  label,
+  options,
+  value,
+  onPick,
+}: {
+  label: string;
+  options: string[];
+  value: string;
+  onPick: (v: string) => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    let live = true;
-    Promise.resolve().then(() => {
-      if (live) setMounted(true);
-    });
-    return () => {
-      live = false;
-    };
+    const el = ref.current;
+    if (!el) return;
+    const items = el.querySelectorAll("[data-loop-item]");
+    const target = items[options.findIndex((o) => o === value) + options.length];
+    if (target instanceof HTMLElement) {
+      el.scrollTop =
+        target.offsetTop - el.clientHeight / 2 + target.clientHeight / 2;
+    }
+    // Mount-only centering; afterwards the user owns the scroll.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const onScroll = () => {
+    const el = ref.current;
+    if (!el || el.scrollHeight <= 0) return;
+    const setH = el.scrollHeight / 3;
+    if (el.scrollTop < setH * 0.5) el.scrollTop += setH;
+    else if (el.scrollTop + el.clientHeight > setH * 2.5)
+      el.scrollTop -= setH;
+  };
+
+  return (
+    <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+      <p className="shrink-0 pb-1 text-center text-[11px] text-muted">
+        {label}
+      </p>
+      <div
+        ref={ref}
+        role="listbox"
+        aria-label={label}
+        onScroll={onScroll}
+        className="thin-scrollbar min-h-0 flex-1 overflow-y-auto"
+      >
+        {[0, 1, 2].map((copy) => (
+          <div key={copy} className="flex flex-col gap-1 pb-1">
+            {options.map((o) => (
+              <button
+                key={`${copy}-${o}`}
+                type="button"
+                data-loop-item
+                role="option"
+                aria-selected={o === value}
+                onClick={() => onPick(o)}
+                className={`min-h-10 shrink-0 rounded-lg text-sm ${
+                  o === value
+                    ? "bg-white font-semibold text-black"
+                    : "text-muted hover:bg-white/10 hover:text-content"
+                }`}
+              >
+                {o}
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Post form shared by the /newpost page. Same fields for both modes
+ * (full addresses); give-rides posts derive city/state from geocoding
+ * server-side. A successful post redirects to the new post.
+ */
+export function QuickPostForm() {
   const [state, formAction] = useActionState(submitQuickPost, {});
   const [postMode, setPostMode] = useState<"need" | "give">("need");
   const [timing, setTiming] = useState<"asap" | "anytime" | "at">("anytime");
@@ -62,10 +124,41 @@ export function QuickPost() {
   // Picks fill the display name; the action geocodes server-side.
   const [fromValue, setFromValue] = useState("");
   const [toValue, setToValue] = useState("");
-
-  // Placeholders follow the mode, matching the mocks: need-rides need
-  // full addresses (geocoded + kept private), give-rides only need a
-  // city-level place. Examples in the optional box match each side too.
+  // 12-hour time dropdowns for the "enter time" mode. Defaults to the
+  // current local time rounded up to the next 5 minutes; the hidden
+  // ride_time field carries HH:MM 24h for the action (existing contract).
+  const now = new Date();
+  const [hour, setHour] = useState(() => {
+    const h = now.getHours() % 12 || 12;
+    return String(h);
+  });
+  const [minute, setMinute] = useState(() => {
+    const m = Math.ceil(now.getMinutes() / 5) * 5;
+    return String(m % 60).padStart(2, "0");
+  });
+  const [ampm, setAmpm] = useState(() => (now.getHours() < 12 ? "am" : "pm"));
+  const rideTime24 = (() => {
+    const h = parseInt(hour, 10) % 12;
+    return `${String(ampm === "pm" ? h + 12 : h).padStart(2, "0")}:${minute}`;
+  })();
+  const HOURS = Array.from({ length: 12 }, (_, i) => String(i + 1));
+  const MINUTES = Array.from({ length: 12 }, (_, i) =>
+    String(i * 5).padStart(2, "0"),
+  );
+  const displayTime = `${hour}:${minute} ${ampm}`;
+  // Clock panel visibility. Outside taps close it (same pattern as the
+  // place dropdowns); switching to now/anytime closes it too.
+  const [clockOpen, setClockOpen] = useState(false);
+  const clockBoxRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!clockOpen) return;
+    const onDown = (e: PointerEvent) => {
+      if (!clockBoxRef.current?.contains(e.target as Node))
+        setClockOpen(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [clockOpen]);
   const addrPlaceholder =
     postMode === "need"
       ? "complete address is required for accuracy"
@@ -82,26 +175,12 @@ export function QuickPost() {
         : "border-white/20 text-muted"
     }`;
 
-  if (!mounted) return null;
-  return createPortal(
-    // z-30 sits BELOW the top bar and dock (both z-40), so both stay
-    // sharp and tappable. The dim + blur cover the FULL viewport on
-    // purpose: a middle-only band left a sharp unblurred seam wherever
-    // its edge missed the real bar heights. Padding reserves the bar
-    // zones so the panel never slides under either one.
-    <div className="pointer-events-none fixed inset-0 z-30">
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-black/60 backdrop-blur-md"
-      />
-      <div className="pointer-events-auto absolute inset-0 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
-        <div className="flex min-h-full">
-          <div className="m-auto w-full max-w-[340px] sm:max-w-sm">
-          <div data-quickpost-panel className="relative max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain rounded-3xl border border-white/15 bg-app/70 p-3 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)] backdrop-blur-xl sm:p-6">
-            <form action={formAction} className="flex flex-col gap-2 sm:gap-4">
-              <p className="text-center text-[11px] text-muted sm:text-xs">
-                your privacy is most important and respected.
-              </p>
+  return (
+    <div data-quickpost-panel className="flex flex-col gap-4">
+      <form action={formAction} className="flex flex-col gap-4">
+        <p className="text-center text-xs text-muted sm:text-sm">
+          your privacy is most important and respected.
+        </p>
               <div className="flex items-center justify-around gap-2" role="radiogroup" aria-label="post type">
             <label
               className={`flex min-h-10 cursor-pointer items-center gap-2 text-[13px] sm:min-h-11 sm:text-sm ${
@@ -150,7 +229,6 @@ export function QuickPost() {
                 placeholder={addrPlaceholder}
                 ariaLabel="pickup place"
                 kind="all"
-                variant="panel"
                 inputClassName="input min-h-[22px] border-0 bg-transparent px-4 text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:min-h-11 sm:text-sm sm:placeholder:text-xs"
               />
             ) : (
@@ -184,7 +262,6 @@ export function QuickPost() {
                 placeholder={addrPlaceholder}
                 ariaLabel="drop-off place"
                 kind="all"
-                variant="panel"
                 inputClassName="input min-h-[22px] border-0 bg-transparent px-4 text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:min-h-11 sm:text-sm sm:placeholder:text-xs"
               />
             ) : (
@@ -201,39 +278,85 @@ export function QuickPost() {
             )}
           </fieldset>
 
-          <div className="flex gap-2" role="radiogroup" aria-label="timing">
-            {(
-              [
-                ["asap", "now"],
-                ["anytime", "anytime"],
-                ["at", "enter time"],
-              ] as const
-            ).map(([value, label]) => (
-              <label key={value} className="flex-1 cursor-pointer">
-                <input
-                  type="radio"
-                  name="timing"
-                  value={value}
-                  checked={timing === value}
-                  onChange={() => setTiming(value)}
-                  className="sr-only"
-                />
-                <span className={`${pill(timing === value)} flex min-h-10 items-center justify-center sm:min-h-11`}>
+          <div className="relative" ref={clockBoxRef}>
+            <input type="hidden" name="timing" value={timing} />
+            <input type="hidden" name="ride_time" value={rideTime24} />
+            <div className="flex gap-2" role="group" aria-label="timing">
+              {(
+                [
+                  ["asap", "now"],
+                  ["anytime", "anytime"],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => {
+                    setTiming(value);
+                    setClockOpen(false);
+                  }}
+                  aria-pressed={timing === value}
+                  className={`${pill(timing === value)} flex min-h-10 flex-1 items-center justify-center sm:min-h-11`}
+                >
                   {label}
-                </span>
-              </label>
-            ))}
+                </button>
+              ))}
+              <button
+                key="at"
+                type="button"
+                onClick={() => {
+                  setTiming("at");
+                  setClockOpen((v) => (timing === "at" ? !v : true));
+                }}
+                aria-pressed={timing === "at"}
+                aria-expanded={timing === "at" && clockOpen}
+                className={`${pill(timing === "at")} flex min-h-10 flex-1 items-center justify-center sm:min-h-11`}
+              >
+                {timing === "at" ? displayTime : "enter time"}
+              </button>
+            </div>
+            {timing === "at" && clockOpen ? (
+              <div className="thin-scrollbar absolute top-full z-30 mt-1 flex max-h-60 w-full gap-2 overflow-hidden overscroll-contain rounded-xl border border-white/25 bg-app/60 p-3 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-xl backdrop-saturate-150">
+                {(
+                  [
+                    ["hour", HOURS, hour, setHour],
+                    ["minute", MINUTES, minute, setMinute],
+                  ] as const
+                ).map(([label, opts, current, set]) => (
+                  <LoopColumn
+                    key={label}
+                    label={label}
+                    options={[...opts]}
+                    value={current}
+                    onPick={set}
+                  />
+                ))}
+                <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+                  <p aria-hidden="true" className="shrink-0 select-none pb-1 text-center text-[11px]">
+                    &nbsp;
+                  </p>
+                  <div className="flex flex-col gap-1">
+                    {(["am", "pm"] as const).map((o) => (
+                      <button
+                        key={o}
+                        type="button"
+                        role="option"
+                        aria-selected={o === ampm}
+                        onClick={() => setAmpm(o)}
+                        className={`min-h-10 shrink-0 rounded-lg text-sm ${
+                          o === ampm
+                            ? "bg-white font-semibold text-black"
+                            : "text-muted hover:bg-white/10 hover:text-content"
+                        }`}
+                      >
+                        {o}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
-
-          {timing === "at" ? (
-            <input
-              name="ride_time"
-              type="time"
-              required
-              aria-label="time"
-              className="input text-center"
-            />
-          ) : null}
 
           <fieldset className="rounded-2xl border border-white/15 px-3 pb-0.5 sm:pb-3">
             <legend className="px-1 text-[11px] text-muted sm:text-xs">note (optional)</legend>
@@ -259,11 +382,6 @@ export function QuickPost() {
 
           <PostButton />
           </form>
-          </div>
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body,
+    </div>
   );
 }

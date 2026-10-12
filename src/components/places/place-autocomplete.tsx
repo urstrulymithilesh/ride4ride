@@ -32,6 +32,7 @@ export function PlaceAutocomplete({
   dropAlign = "row",
   submitOnPick = false,
   onSubmit,
+  surface = "glass",
 }: {
   name?: string;
   value: string;
@@ -64,6 +65,13 @@ export function PlaceAutocomplete({
    *  so the picker and quick-post don't submit on every tap. */
   submitOnPick?: boolean;
   onSubmit?: (picked: PlaceOption) => void;
+  /**
+   * Dropdown surface. "glass" is the default everywhere (translucent
+   * fill + blur + specular edge). "soft" keeps the blur but raises the
+   * fill for lists opening over busy content (buttons, text) where
+   * see-through rows hurt readability.
+   */
+  surface?: "glass" | "soft";
 }) {
   const [open, setOpen] = useState(false);
   const [options, setOptions] = useState<PlaceOption[]>([]);
@@ -322,7 +330,7 @@ export function PlaceAutocomplete({
             onValueChange("");
             inputRef.current?.blur();
           }}
-          className="absolute right-2 top-1/2 flex min-h-11 min-w-10 -translate-y-1/2 items-center justify-center text-muted hover:text-content"
+          className="absolute right-3 top-1/2 flex min-h-11 min-w-10 -translate-y-1/2 items-center justify-center text-muted hover:text-content"
         >
           <svg
             width="18"
@@ -349,7 +357,9 @@ export function PlaceAutocomplete({
           className={
             variant === "panel"
               ? "block border-t border-hairline"
-              : "thin-scrollbar absolute top-full z-30 mt-1 block max-h-60 overflow-y-auto overscroll-contain rounded-xl border border-white/25 bg-app/60 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-xl backdrop-saturate-150"
+              : surface === "soft"
+                ? "thin-scrollbar absolute top-full z-30 mt-1 block max-h-60 overflow-y-auto overscroll-contain rounded-xl border border-white/25 bg-app/80 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)] backdrop-blur-xl"
+                : "thin-scrollbar absolute top-full z-30 mt-1 block max-h-60 overflow-y-auto overscroll-contain rounded-xl border border-white/25 bg-app/60 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-xl backdrop-saturate-150"
           }
         >
           {variant === "panel" ? cleanRows : richRows}

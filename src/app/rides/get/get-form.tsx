@@ -1,16 +1,67 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { createGetRide, type RideFormState } from "@/app/rides/actions";
+import { PlaceAutocomplete } from "@/components/places/place-autocomplete";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { TextField } from "@/components/ui/text-field";
 import { WhenFields } from "@/components/rides/when-fields";
 
 const initialState: RideFormState = {};
 
+function AddressField({
+  label,
+  name,
+  placeholder,
+  value,
+  onValueChange,
+  error,
+  nearViewer = false,
+}: {
+  label: string;
+  name: string;
+  placeholder: string;
+  value: string;
+  onValueChange: (next: string) => void;
+  error?: string;
+  nearViewer?: boolean;
+}) {
+  const id = `field-${name}`;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-sm font-medium text-content">
+        {label}
+      </label>
+      <PlaceAutocomplete
+        id={id}
+        name={name}
+        value={value}
+        onValueChange={onValueChange}
+        source="address"
+        nearViewer={nearViewer}
+        placeholder={placeholder}
+        ariaLabel={label}
+        required
+        minLength={5}
+        invalid={Boolean(error)}
+        describedBy={error ? `${id}-error` : undefined}
+        inputClassName="input wrap-anywhere"
+        dropAlign="self"
+        surface="soft"
+      />
+      {error ? (
+        <p id={`${id}-error`} className="text-xs text-danger" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 export function GetForm() {
   const [state, formAction] = useActionState(createGetRide, initialState);
   const fe = state.fieldErrors;
+  const [fromAddress, setFromAddress] = useState("");
+  const [toAddress, setToAddress] = useState("");
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
@@ -20,21 +71,22 @@ export function GetForm() {
         matched rider both agree to proceed.
       </div>
 
-      <TextField
+      <AddressField
         label="pickup address"
         name="from_address"
-        autoComplete="off"
         placeholder="900 university ave, riverside, ca 92521"
+        value={fromAddress}
+        onValueChange={setFromAddress}
         error={fe?.from_address}
-        required
+        nearViewer
       />
-      <TextField
+      <AddressField
         label="drop-off address"
         name="to_address"
-        autoComplete="off"
         placeholder="111 s grand ave, los angeles, ca 90012"
+        value={toAddress}
+        onValueChange={setToAddress}
         error={fe?.to_address}
-        required
       />
 
       <WhenFields fieldErrors={fe} />

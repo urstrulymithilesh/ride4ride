@@ -16,11 +16,18 @@ export async function GET(request: NextRequest) {
     .split(",")
     .map((k) => k.trim())
     .filter((k): k is PlaceKind => KINDS.has(k) && k !== "all");
+  // Client place options use `lng`, while the vendored datasets use
+  // `lon`. Normalize at the API boundary so every caller (autocomplete,
+  // the manual location picker) gets the same coordinate shape.
+  const results = searchPlaces(
+    q,
+    kinds.length > 0 ? kinds : "all",
+  ).map(({ lon, ...rest }) => ({ ...rest, lng: lon }));
   // Short-lived cache: result SHAPE follows the code (titles carry
   // the display format), so an hour-long max-age served stale rows
   // after a format change. 60s still absorbs repeat typing.
   return NextResponse.json(
-    { results: searchPlaces(q, kinds.length > 0 ? kinds : "all") },
+    { results },
     { headers: { "cache-control": "private, max-age=60" } },
   );
 }

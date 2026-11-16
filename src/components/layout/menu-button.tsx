@@ -1,42 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
+import { PersonGlyph } from "@/components/places/search-icons";
 
-function HamburgerIcon({ open }: { open: boolean }) {
-  return (
-    <svg
-      width="30"
-      height="30"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      {open ? (
-        <>
-          <path d="M6 6l12 12" />
-          <path d="M18 6L6 18" />
-        </>
-      ) : (
-        <>
-          <path d="M3 7h18" />
-          <path d="M3 12h18" />
-          <path d="M3 17h18" />
-        </>
-      )}
-    </svg>
-  );
+/** Dock menu trigger. Always the person glyph — opening the drawer
+ *  never swaps it (the drawer carries its own close X). */
+function HamburgerIcon() {
+  return <PersonGlyph height={18} />;
 }
 
 /**
  * Hamburger toggle + dropdown panel. Panel content (links, identity,
  * logout form) is server-rendered and passed in as children.
  */
-export function MenuButton({ children }: { children: React.ReactNode }) {
+export function MenuButton({
+  children,
+  tone = "text-content",
+}: {
+  children: React.ReactNode;
+  /** Trigger glyph color while the drawer is closed. Opens bright. */
+  tone?: string;
+}) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -55,6 +41,9 @@ export function MenuButton({ children }: { children: React.ReactNode }) {
   // themselves to the 52px bar instead of the viewport. Mounts
   // post-hydration (microtask, not a sync setState) so SSR stays clean.
   const [mounted, setMounted] = useState(false);
+  // Swipe-to-close: a predominantly-horizontal left swipe on the panel
+  // dismisses the drawer (scrim tap and the header X keep working).
+  const swipeFrom = useRef<{ x: number; y: number } | null>(null);
   useEffect(() => {
     let live = true;
     Promise.resolve().then(() => {
@@ -71,9 +60,9 @@ export function MenuButton({ children }: { children: React.ReactNode }) {
       onClick={() => setOpen((v) => !v)}
       aria-label="menu"
       aria-expanded={open}
-      className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-content"
+      className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full ${open ? "text-white" : tone}`}
     >
-      <HamburgerIcon open={open} />
+      <HamburgerIcon />
     </button>
   );
 
@@ -96,8 +85,25 @@ export function MenuButton({ children }: { children: React.ReactNode }) {
                   Anchored to the app column (centered 480px), not the
                   viewport: on wide screens viewport-left would strand it
                   outside the page. */}
-              <div className="fixed inset-y-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2">
-                <div className="flex h-full w-80 flex-col rounded-r-2xl border-r border-hairline bg-app/60 backdrop-blur-2xl backdrop-saturate-150 animate-drawer-in">
+              <div className="pointer-events-none fixed inset-y-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2">
+                <div
+                  onTouchStart={(e) => {
+                    const t = e.touches[0];
+                    swipeFrom.current = { x: t.clientX, y: t.clientY };
+                  }}
+                  onTouchEnd={(e) => {
+                    const from = swipeFrom.current;
+                    swipeFrom.current = null;
+                    if (!from) return;
+                    const t = e.changedTouches[0];
+                    const dx = t.clientX - from.x;
+                    const dy = t.clientY - from.y;
+                    if (dx < -60 && Math.abs(dx) > 2 * Math.abs(dy)) {
+                      setOpen(false);
+                    }
+                  }}
+                  className="pointer-events-auto flex h-full w-80 flex-col rounded-r-2xl border-r border-hairline bg-app/90 backdrop-blur-2xl backdrop-saturate-150 animate-drawer-in"
+                >
                   {/* X mirrors the hamburger seat on the right edge:
                       same bar height, padding, button and glyph size. */}
                   <div className="flex h-16 shrink-0 items-center justify-end pr-5">
@@ -108,8 +114,8 @@ export function MenuButton({ children }: { children: React.ReactNode }) {
                       className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-content"
                     >
                       <svg
-                        width="30"
-                        height="30"
+                        width="24"
+                        height="24"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"

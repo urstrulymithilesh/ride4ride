@@ -57,7 +57,7 @@ with `npx web-push generate-vapid-keys`; generate `CRON_SECRET` with
 | `SUPABASE_SERVICE_ROLE_KEY` | **Secret** | Supabase → Settings → API. Bypasses RLS — server only. |
 | `NEXT_PUBLIC_SITE_URL` | Public | `https://ride4ride.com` |
 | `EDU_VERIFICATION_MODE` | Server | `restrict` or `badge` |
-| `MAPBOX_ACCESS_TOKEN` | **Secret** | Mapbox account (geocoding + directions) |
+| `MAPBOX_ACCESS_TOKEN` | **Secret** | Mapbox account (address suggestions, geocoding + directions) |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Public | from `web-push generate-vapid-keys` |
 | `VAPID_PUBLIC_KEY` | Server | same public key |
 | `VAPID_PRIVATE_KEY` | **Secret** | from `web-push generate-vapid-keys` |

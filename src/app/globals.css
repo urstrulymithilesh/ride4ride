@@ -6,11 +6,12 @@
    Dark theme: black canvas + app column, white text, royal blue accent.
 
    STANDING RULE — no grey fills anywhere. Every fill is #000-based
-   black glass (bg-app/70 + backdrop-blur-xl); free-floating cards use
-   solid bg-app. Tags/chips carry no fill (hairline outline only —
-   glass-on-glass would erase them). Hover/highlight states use a
-   white/10 lift, never a grey fill. Apply this to every new panel,
-   dropdown, bubble, or button — no exceptions.
+   black glass (bg-app/60 + backdrop-blur-2xl + backdrop-saturate-150,
+   the hamburger-drawer recipe); free-floating cards use solid bg-app.
+   Tags/chips carry no fill (hairline outline only — glass-on-glass
+   would erase them). Hover/highlight states use a white/10 lift, never
+   a grey fill. Apply this to every new panel, dropdown, bubble, or
+   button — no exceptions.
    ================================================================== */
 @theme {
   --color-canvas: #000000; /* backdrop behind the app column */
@@ -39,6 +40,44 @@
 
 :root {
   color-scheme: dark;
+
+  /* Shared dark-glass material (single tweak point). Used by the
+     search-suggestion dropdown, BottomNav, search bar, and member
+     pill: solid black fill, 24px frosted blur, and one soft drop
+     shadow. There are deliberately NO edge strokes anywhere on glass —
+     no borders, no outlines, no inset hairlines, no gradient rims. The
+     look comes only from fill + blur + drop shadow. Radius stays
+     per-element so one token serves every surface. No backdrop-filter
+     (very old browsers) → the @supports fallback below swaps in the
+     same dark fill solid. */
+  --glass-dark-bg: rgba(0, 0, 0, 1);
+  --glass-dark-bg-fallback: rgba(0, 0, 0, 1);
+  --glass-dark-blur: 24px;
+  --glass-dark-saturate: 150%;
+  --glass-dark-brightness: 100%;
+  --glass-dark-shadow: 0 18px 40px -12px rgba(0, 0, 0, 0.7);
+
+  /* Shared bar radius (single tweak point). Used by the floating search
+     bar and the BottomNav so the two rounded surfaces match. */
+  --bar-radius: 16px;
+
+  /* Feed map zoom limits. The visual editor overrides these live via
+     --r4r-min-zoom / --r4r-max-zoom and the map picks them up on reload. */
+  --r4r-min-zoom: 10;
+  --r4r-max-zoom: 17;
+
+  /* Feed stacking, lowest to highest: map < search inputs < open
+     suggestion dropdown < search bar / BottomNav. The map root stays
+     z-0 and the chrome shells use --z-chrome — recorded here so the
+     order is explicit in one place. Each search field is its own
+     stacking context, so the dropdown's own z-index can't escape it:
+     the field owning the open list is raised to --z-dropdown while its
+     sibling stays at --z-search. */
+  --z-map: 0;
+  --z-search: 10;
+  --z-dropdown: 30;
+  --z-chrome: 40;
+  --z-chat: 50;
 }
 
 /* Prevent flex/grid children from refusing to shrink (the #1 overflow cause).
@@ -137,6 +176,54 @@ select {
     @apply mx-auto flex min-h-screen w-full max-w-[480px] flex-col bg-app;
   }
 
+  /* Shared frosted-chrome recipe, lifted from the hamburger drawer.
+     Pair with border-* / rounded-*; this only supplies the fill/blur. */
+  .glass {
+    @apply bg-app/90 backdrop-blur-2xl backdrop-saturate-150;
+  }
+
+  /* The shared dark-glass surface. This is the suggestion dropdown's
+     exact material — background, blur, and drop shadow all come from
+     the --glass-dark vars above. No border, no outline, no inset
+     edge highlight: separation from the map comes from fill + blur +
+     shadow alone. Pair with a radius utility; this only supplies the
+     surface. The old green recipes are gone: every glass surface uses
+     this token now. */
+  .glass-dark {
+    background: var(--glass-dark-bg);
+    -webkit-backdrop-filter: blur(var(--glass-dark-blur))
+      saturate(var(--glass-dark-saturate)) brightness(var(--glass-dark-brightness));
+    backdrop-filter: blur(var(--glass-dark-blur))
+      saturate(var(--glass-dark-saturate)) brightness(var(--glass-dark-brightness));
+    box-shadow: var(--glass-dark-shadow);
+  }
+
+  @supports not (
+    (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+  ) {
+    .glass-dark {
+      background: var(--glass-dark-bg-fallback);
+    }
+  }
+
+  /* Feed search fields. The open list must paint above the sibling
+     field (same z-index would lose to DOM order inside separate
+     stacking contexts). The input carries aria-expanded="true" exactly
+     while its list is open, so no JS changes are needed. */
+  .search-field {
+    position: relative;
+    z-index: var(--z-search);
+  }
+
+  .search-field:has(input[aria-expanded="true"]) {
+    z-index: var(--z-dropdown);
+  }
+
+  /* NOTE: focused/typing fields deliberately keep the exact same shade
+     as every other glass surface — no lighter or darker focus variant.
+     (Site rule also bans focus rings and edge strokes, so focus reads
+     through the caret, the clear button, and the open list itself.) */
+
   .safe-top {
     padding-top: env(safe-area-inset-top);
   }
@@ -168,7 +255,7 @@ select {
     @apply bg-danger text-white hover:opacity-90;
   }
   .btn-secondary {
-    @apply bg-app/70 text-content backdrop-blur-xl hover:opacity-90;
+    @apply bg-app/60 text-content backdrop-blur-2xl backdrop-saturate-150 hover:opacity-90;
   }
   .btn-ghost {
     @apply text-muted hover:bg-white/10 hover:text-content;
@@ -208,4 +295,158 @@ select {
   .thin-scrollbar:hover::-webkit-scrollbar-thumb {
     background-color: rgba(255, 255, 255, 0.4);
   }
+}
+
+/* ==================================================================
+   Map (MapLibre + OpenFreeMap vector tiles). The feed uses the map as a
+   full-bleed backdrop, so these are the only third-party styles that
+   live globally. The style's palette is set in src/lib/map-theme.ts.
+   ================================================================== */
+.r4r-map.maplibregl-map {
+  position: absolute;
+  inset: 0;
+  background: #ebe8e1;
+  color: var(--color-content);
+  font-family: inherit;
+}
+.r4r-map .maplibregl-canvas {
+  outline: none;
+}
+.r4r-map .maplibregl-ctrl-attrib,
+.r4r-map .maplibregl-ctrl-logo {
+  display: none;
+}
+
+/* Viewer position: blue pulsing nav dot with a white center ring. */
+.r4r-me {
+  position: relative;
+  width: 16px;
+  height: 16px;
+  z-index: 1;
+}
+
+.r4r-me::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #0d99ff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.r4r-me::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid #0d99ff;
+  animation: r4r-me-pulse 1.6s ease-out infinite;
+}
+
+@keyframes r4r-me-pulse {
+  0% {
+    transform: scale(0.4);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+/* Post button idle pulse: breathes between 72px and 64px (scale 1 to
+   8/9) so the primary action draws the eye. Uses the `scale` property
+   so it composes with the -translate-x-1/2 centering instead of
+   clobbering it. The reduced-motion block at the top neutralizes this. */
+@keyframes r4r-plus-pulse {
+  0%,
+  100% {
+    scale: 1;
+  }
+  50% {
+    scale: 0.8889;
+  }
+}
+.r4r-plus-pulse {
+  animation: r4r-plus-pulse 1.6s ease-in-out infinite;
+}
+
+/* Pin: black pill with a black teardrop below it, tip anchored on the
+   approximate pickup point. Text is the trip distance, not the distance
+   to you. MapLibre owns the marker element's transform, so hover motion
+   stays on the inner pill. */
+.r4r-pin-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-content);
+}
+/* Static pins (no tap action yet): default cursor, same paint. */
+.r4r-pin-static {
+  cursor: default;
+}
+.r4r-pin-label {
+  display: block;
+  white-space: nowrap;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  background: #34c759;
+  padding: 5px 10px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  transition: transform 120ms ease;
+}
+.r4r-pin-label .r4r-pin-when {
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 600;
+}
+
+/* Offer-tab cluster marker: grey count pill ("8 rides") with the black
+   car glyph below it. Same geometry as the green pin + hail pattern. */
+.r4r-cluster-label {
+  display: block;
+  white-space: nowrap;
+  border-radius: 999px;
+  background: #6e6e6e;
+  padding: 5px 10px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  transition: transform 120ms ease;
+}
+.r4r-pin-marker:hover .r4r-cluster-label {
+  transform: scale(1.06);
+}
+.r4r-pin-marker:active .r4r-cluster-label {
+  transform: scale(0.97);
+}
+
+/* Feed chip dropdown: option rows never wrap — long airport names
+   ellipsis instead of pushing the panel taller. */
+.chip-panel [role="option"] span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.r4r-pin-drop {
+  display: block;
+  margin-top: 1px;
+  line-height: 0;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35));
+}
+.r4r-pin-marker:hover .r4r-pin-label {
+  transform: scale(1.06);
+}
+.r4r-pin-marker:active .r4r-pin-label {
+  transform: scale(0.97);
 }

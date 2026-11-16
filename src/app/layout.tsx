@@ -2,9 +2,10 @@ import type { Metadata, Viewport } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { BottomNav } from "@/components/layout/bottom-nav";
-import { TopBar } from "@/components/layout/top-bar";
-import { getSignupCount } from "@/lib/signup-count";
+import { MapCredit } from "@/components/rides/map-credit";
 import { AppMenu } from "@/components/layout/app-menu";
+import { LocationProvider } from "@/components/location/location-provider";
+import { VisualEditorWrapper } from "@/components/dev/visual-editor-wrapper";
 
 // Geometric sans for the whole site, normal + italic.
 const mono = Montserrat({
@@ -33,28 +34,28 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Live member total for the top-bar center. Cached ~60s; null hides
-  // the slot rather than showing a wrong number.
-  const memberCount = await getSignupCount();
   return (
     <html
       lang="en"
       className={`${mono.variable} h-full antialiased`}
     >
       <body className="min-h-full">
-        <div className="app-shell">
-          <a
-            href="#main"
-            className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-3 focus:py-2 focus:text-sm focus:text-black"
-          >
-            Skip to content
-          </a>
-          <TopBar menu={<AppMenu />} memberCount={memberCount} />
-          <div id="main" className="relative flex flex-1 flex-col pb-24 pt-6">
-            {children}
+        <LocationProvider>
+          <div className="app-shell">
+            <a
+              href="#main"
+              className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-3 focus:py-2 focus:text-sm focus:text-black"
+            >
+              Skip to content
+            </a>
+            <MapCredit />
+            <div id="main" className="relative flex flex-1 flex-col pb-24">
+              {children}
+            </div>
+            <BottomNav menu={<AppMenu triggerTone="text-white/40 transition-colors group-hover:text-white" />} />
           </div>
-          <BottomNav />
-        </div>
+        </LocationProvider>
+        <VisualEditorWrapper />
       </body>
     </html>
   );

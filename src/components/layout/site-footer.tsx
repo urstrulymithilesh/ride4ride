@@ -8,7 +8,7 @@ export function SiteFooter() {
       <div className="flex flex-col items-center justify-between gap-1 px-4 py-4 text-xs text-muted sm:flex-row">
         <p>© {new Date().getFullYear()} ride4ride</p>
         <nav aria-label="legal" className="flex items-center gap-4">
-          <Link href="/rides" className={link}>
+          <Link href="/" className={link}>
             browse
           </Link>
           <Link href="/privacy" className={link}>

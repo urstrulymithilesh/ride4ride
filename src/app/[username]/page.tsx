@@ -32,7 +32,7 @@ function memberSince(iso: string): string {
  *
  * Identity (name + posts) is full-details material, so viewing requires
  * sign-in — the same rule as the poster name on the detail page. Static
- * routes win over this dynamic segment, so /rides, /messages, /admin and
+ * routes win over this dynamic segment, so /rides, /chat, /admin and
  * friends never land here; handles colliding with those names are
  * rejected at signup (RESERVED_USERNAMES) and 404 here as a second wall.
  * Only active posts, coarse columns only — never addresses.
@@ -77,7 +77,7 @@ export default async function MemberPage({
   return (
     <main className="w-full flex-1 px-4 py-6">
       <Link
-        href="/rides"
+        href="/"
         className="inline-flex min-h-11 items-center text-sm text-muted hover:text-content"
       >
         ← back

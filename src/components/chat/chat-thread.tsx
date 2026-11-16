@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { sendMessage } from "@/app/messages/actions";
+import { sendMessage } from "@/app/chat/actions";
 import {
   CHAT_BUCKET,
   extForMime,

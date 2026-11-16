@@ -16,7 +16,7 @@ interface RideRoute {
 }
 
 export default async function MessagesPage() {
-  const user = await requireUser("/messages");
+  const user = await requireUser("/chat");
   const supabase = await createClient();
 
   // RLS returns only conversations the user participates in. Newest-first.
@@ -79,7 +79,7 @@ export default async function MessagesPage() {
             there — we just can&apos;t show them right now.
           </p>
           <Link
-            href="/messages"
+            href="/chat"
             className="mt-3 inline-block text-sm font-medium text-primary"
           >
             try again
@@ -89,7 +89,7 @@ export default async function MessagesPage() {
         <div className="card border border-dashed border-hairline bg-transparent p-8 text-center">
           <p className="text-sm text-muted">no conversations yet.</p>
           <Link
-            href="/rides"
+            href="/"
             className="mt-3 inline-block text-sm font-medium text-primary"
           >
             browse rides to start one
@@ -105,7 +105,7 @@ export default async function MessagesPage() {
             return (
               <li key={c.id}>
                 <Link
-                  href={`/messages/${c.id}`}
+                  href={`/chat/${c.id}`}
                   className="card flex min-h-11 items-center justify-between gap-3 py-3"
                 >
                   <div className="min-w-0">

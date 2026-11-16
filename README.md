@@ -52,7 +52,7 @@ See [`.env.local.example`](./.env.local.example) for the full list. Summary:
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes     | Anon key (guarded by Row Level Security)       |
 | `SUPABASE_SERVICE_ROLE_KEY`     | **no**  | Server-only; privileged ops, bypasses RLS      |
 | `NEXT_PUBLIC_SITE_URL`          | yes     | Auth redirects & copy-link share URLs          |
-| `MAPBOX_ACCESS_TOKEN`           | **no**  | Server-only; geocoding + driving distance      |
+| `MAPBOX_ACCESS_TOKEN`           | **no**  | Server-only; address suggestions, geocoding, distance |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY`  | yes     | Web push subscription (browser)                |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | **no** | Sign web push messages (server)          |
 | `VAPID_SUBJECT`                 | **no**  | Contact URI for push services (`mailto:`)      |
@@ -155,6 +155,13 @@ The routes are just authenticated HTTP GETs, so anything can drive them:
 
 - Public browsing is open to everyone (no account needed).
 - Sign-in required to: view post details, contact, message, post, or publish.
+- **Device location is preferred** to use the app: it centers the map and
+  sorts rides by distance. If the browser blocks location, the gate lets you
+  choose a city manually; either choice is remembered on the device for 30
+  days. Coordinates stay in the browser; they are never sent to the server.
+  Pickup/drop-off fields use Mapbox address suggestions; pickup suggestions
+  are ranked in the browser with the same coordinates, so the location still
+  never leaves the device.
 
 ### Chat
 
@@ -164,10 +171,14 @@ The routes are just authenticated HTTP GETs, so anything can drive them:
   - **Current rides** — chat auto-deletes **24h after creation**.
   - **Future rides** — chat auto-deletes **24h after the ride date**.
 
-### Filters & sort
+### Filters & map
 
 - Filter current & future rides by **ZIP**, **City**, or **State**.
-- Sort **newest→oldest** or **oldest→newest**.
+- The **need ride** tab is a MapLibre/OpenFreeMap vector map of active posts,
+  recolored in-app to a light paper palette (no API key leaves the server). Pins are
+  approximate city-center pickup points (never exact addresses) and are labeled
+  with the trip distance from pickup to drop-off. **Ride available** keeps the
+  card list, sorted nearest-first, over the same map backdrop.
 
 ## Privacy invariant (must-hold)
 

@@ -74,7 +74,7 @@ Any row at zero stops; non-founder posts at zero stops regardless. **Day-3 check
 ### Permanent rules (`TODOS.md` P-1–P-4, never "done", never reversed)
 
 1. **Chat privacy absolute** (above).
-2. **Platform suggests, never decides:** post content is always user-filled. A default (e.g. FROM city guessed from IP) may be offered but must always be changeable.
+2. **Platform suggests, never decides:** post content is always user-filled. A default may be offered but must always remain changeable.
 3. **No platform-set price, ever** — no set/suggest/compute/cap/display, and not even a poster-typed price field (classification risk; BlaBlaCar's cap does not transfer to the US).
 4. **No fake posts or accounts on production**, ever.
 
@@ -124,7 +124,7 @@ Scaffolding through the pilot backend are shipped. HEAD is `14462ba` on `main` (
 - **Phase 3.5 reveal handshake (`0005`, `src/components/chat/reveal-panel.tsx`):** either party requests, other confirms; `set_ride_reveal()` sets only the caller's flag; mutual agreement flips `agreed = true` and RLS opens addresses to exactly those two. Live via Realtime. Proven by `rls_reveal_handshake.sql`.
 - **Phase 4 browse/detail:** public listings with tabs/filters/sort via URL params, `RideCard` grid, named-column selects only (`CARD_COLUMNS`, `src/app/rides/page.tsx:14-15`); detail gates poster/description/contact behind sign-in and owner addresses behind ownership.
 - **Phase 5 expiry/notifications/cleanup (`0006`, `src/app/api/cron/*`, `src/lib/push.ts`, `public/sw.js`):** `expire-rides` (pre-expiry push within 1h + flip past-due to `expired`, every 30 min) and `purge-chats` (delete past-`auto_delete_at` conversations + Storage images, hourly), both requiring `Authorization: Bearer $CRON_SECRET`; VAPID push with per-user subscriptions and contextual prompt on the owner's post; one-click repost of expired posts.
-- **Phase 6 chat (`0004`, `src/app/messages/`):** find-or-create conversation RPC, participant-only RLS, image-only private `chat-images` bucket with per-conversation Storage RLS + signed URLs, `auto_delete_at` triggers (created+24h vs ride_date+24h).
+- **Phase 6 chat (`0004`, `src/app/chat/`):** find-or-create conversation RPC, participant-only RLS, image-only private `chat-images` bucket with per-conversation Storage RLS + signed URLs, `auto_delete_at` triggers (created+24h vs ride_date+24h).
 - **Trust & safety (`0007`):** `reports`, `blocks` (+ RLS blocking across conversations/messages/posting), `allowed_email_domains`, admin page + ban/takedown via service-role after `is_admin` check. Proven by `rls_blocking_and_verify.sql`.
 - **Pilot hardening (`0008–0016`):**
   - `0008` expiry hardening: trigger-derived `expires_at` (ride_date+8d midnight, else created+7d), `p_expires_at` removed from RPCs, `repostRide` reconciled. Proof `supabase/tests/expiry_rule.sql`.
@@ -136,8 +136,8 @@ Scaffolding through the pilot backend are shipped. HEAD is `14462ba` on `main` (
   - `0015` masked street display: public `rides.from_street`/`to_street` (street name only, never a number), get-only check constraints, `create_get_ride` extended, `maskedStreet()` derived server-side from Mapbox's street-name field with a leading-digit strip, shown as "Main St · Riverside, CA" on cards/detail. `rides_with_location` dropped + recreated (REPLACE fails with 42P16 since 0006 widened `rides` after 0002). Proof `masked_street.sql` (6 assertions). Live-verified ("Bromley Lane", no number).
   - `0016` airports: REMOVED 2026-10-04 by founder decision (`0018_remove_airports.sql`), then RETURNED 2026-10-10 as matchable post tags (`0021_airports.sql`: reference table, `nearest_airport()`, `rides.from_airport`, derivation in get-RPC, explicit pick in offer-RPC; wanted-routes airport text stays removed). Literal scope rule: strict-uppercase 3-letter tokens match `from_airport` by equality; lowercase falls through to city match. Historical note retained below.
   - Feed/detail error-vs-empty split, `noindex` on post detail + admin, OG share metadata, `check-privacy` extended to chat contents, full-stack CI with migration replay + REST tests, `notFound()`-returns-200 investigated and closed as works-as-designed (root `loading.tsx` streams 200 + framework `noindex`).
-- **Post-pilot app additions (no migration):** one-tap quick message (`startConversation` sends a canned opener into empty conversations, copy flips by post type), homepage signup counter (service-role count, `unstable_cache` 60 s, hides on failure), IP-suggested FROM city (Vercel geo header as filter-box default only, never a filter or post fill).
-- **Unit tests:** Vitest 3 (`npm test`, 26 tests: ride/wanted-route validations, formatters) wired into CI Static checks. (Vitest 5 refused: needs `@types/node` 22+, repo pins 20.)
+- **Post-pilot app additions (no migration):** one-tap quick message (`startConversation` sends a canned opener into empty conversations, copy flips by post type), homepage signup counter (service-role count, `unstable_cache` 60 s, hides on failure), device-location gate + full-bleed MapLibre/OpenFreeMap vector map on the feed (light recolored style, approximate city-center pins, trip-distance labels; device location preferred, manual city fallback when the browser blocks it, either choice cached locally for 30 days), Mapbox street-address suggestions on pickup/drop-off (`/api/address`, server-only token; pickup rows ranked in-browser against device coordinates, so coordinates still never reach the server).
+- **Unit tests:** Vitest 3 (`npm test`, 95 tests: ride/wanted-route validations, formatters, address-option formatting) wired into CI Static checks. (Vitest 5 refused: needs `@types/node` 22+, repo pins 20.)
 - **Production (live 2026-10-03):** Vercel project reconnected to `urstrulymithilesh/ride4ride` (was linked to a different repo serving foreign code — "Project Link not found"), env vars set (public keys as Config, secrets as Secret), DNS realigned to Vercel's recommended CNAME (apex + www, proxy off), Deployment Protection off, stale Framework-Override deployment replaced, Hobby-legal daily crons in `vercel.json` + real cadence via cron-job.org (both 200-verified). CI green on every push.
 
 ### Known divergence to be aware of
@@ -150,7 +150,7 @@ Scaffolding through the pilot backend are shipped. HEAD is `14462ba` on `main` (
 
 ### A. v3 "What Ships" items — status 2026-10-03
 
-DONE since the last revision: masked street (#5), one-tap quick message (#8), signup counter (#9), IP-suggested FROM city (#12), Vitest coverage (#11, unit scope — DB behavior stays in `supabase/tests/`). Airports (#7) was built, live-verified, then REMOVED entirely by founder decision (see `0018`).
+DONE since the last revision: masked street (#5), one-tap quick message (#8), signup counter (#9), Vitest coverage (#11, unit scope — DB behavior stays in `supabase/tests/`). IP-suggested FROM city (#12) was replaced by the device-location map on 2026-11-10. Airports (#7) was built, live-verified, then REMOVED entirely by founder decision (see `0018`).
 
 Still open:
 

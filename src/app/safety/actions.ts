@@ -65,7 +65,7 @@ export async function reportContent(
 export async function blockUser(formData: FormData): Promise<void> {
   const user = await getUser();
   const targetUserId = String(formData.get("targetUserId") ?? "");
-  const redirectPath = String(formData.get("redirectPath") ?? "/messages");
+  const redirectPath = String(formData.get("redirectPath") ?? "/chat");
   if (!user || !targetUserId || targetUserId === user.id) return;
 
   const supabase = await createClient();
@@ -82,7 +82,7 @@ export async function blockUser(formData: FormData): Promise<void> {
 export async function unblockUser(formData: FormData): Promise<void> {
   const user = await getUser();
   const targetUserId = String(formData.get("targetUserId") ?? "");
-  const redirectPath = String(formData.get("redirectPath") ?? "/messages");
+  const redirectPath = String(formData.get("redirectPath") ?? "/chat");
   if (!user || !targetUserId) return;
 
   const supabase = await createClient();

@@ -139,7 +139,7 @@ export async function updateProfile(
     return { error: "couldn't save your profile. please try again." };
   }
 
-  revalidatePath("/account");
+  revalidatePath("/settings");
   revalidatePath("/", "layout");
   return {
     message:

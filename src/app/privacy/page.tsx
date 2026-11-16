@@ -17,7 +17,11 @@ export default function PrivacyPage() {
       <div className="mt-6 space-y-5 text-sm leading-6 text-muted">
         <section>
           <h2 className="font-semibold text-content">what we collect</h2>
-          <p>account info (email, display name), ride posts (cities/state/zip; and for &lsquo;get&rsquo; rides, exact addresses and coordinates), messages and images you send, and technical data needed to run the service.</p>
+          <p>account info (email, display name), ride posts (cities/state/zip; and for &lsquo;get&rsquo; rides, exact addresses and coordinates), messages and images you send, and technical data needed to run the service. device location is handled separately — see below.</p>
+        </section>
+        <section>
+          <h2 className="font-semibold text-content">device location</h2>
+          <p>ride4ride asks for your device location so the map can center on you and the feed can be sorted by distance. if you block that permission, you can choose a city manually instead. either choice stays in your browser and is remembered on this device for up to 30 days so you aren&rsquo;t asked every time; it is not sent to our servers, stored in your account, or written to a cookie. map pins show an approximate city-level pickup area, never the poster&rsquo;s exact address.</p>
         </section>
         <section>
           <h2 className="font-semibold text-content">how addresses are protected</h2>
@@ -33,7 +37,8 @@ export default function PrivacyPage() {
         </section>
         <section>
           <h2 className="font-semibold text-content">third parties</h2>
-          <p>we use supabase (auth, database, storage), vercel (hosting), and a mapping provider (geocoding/distance). a push service delivers notifications you opt into.</p>
+          <p>we use supabase (auth, database, storage), vercel (hosting), Mapbox (address suggestions, geocoding, and driving distance), and OpenStreetMap for map tiles. a push service delivers notifications you opt into.</p>
+          <p className="mt-2">when you type in an address field, Mapbox receives that text to return suggestions. it is used only to produce the list and is not stored by us until you post.</p>
         </section>
         <section>
           <h2 className="font-semibold text-content">your choices</h2>

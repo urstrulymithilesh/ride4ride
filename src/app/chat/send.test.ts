@@ -41,7 +41,7 @@ const state: {
   failInsert: boolean;
 } = { user: { id: "user-1" }, inserted: [], failInsert: false };
 
-const { sendMessage } = await import("@/app/messages/actions");
+const { sendMessage } = await import("@/app/chat/actions");
 
 const convo = "conv-1";
 

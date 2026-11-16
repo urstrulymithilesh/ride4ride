@@ -226,5 +226,26 @@ export function searchPlaces(
     }
   }
 
-  return [...exact, ...pref, ...sub].slice(0, limit);
+  const merged = [...exact, ...pref, ...sub].slice(0, limit);
+  // Multi-kind fairness: the shared scan above fills buckets in dataset
+  // order, so a common prefix ("lewis" → Lewiston, Lewisville…) can
+  // starve a whole kind out of the capped list. The pick-up / drop-off
+  // chips promise cities, airports AND universities in one list, so any
+  // requested kind missing from the page gets its top hit swapped onto
+  // the tail. Single-kind callers are untouched (kinds.length === 1).
+  if (kinds.length > 1) {
+    const extras: PlaceResult[] = [];
+    for (const k of kinds) {
+      if (merged.some((r) => r.kind === k)) continue;
+      // Single kind → no repair recursion.
+      extras.push(...searchPlaces(q, k, 1));
+    }
+    if (extras.length > 0) {
+      return [...merged.slice(0, limit - extras.length), ...extras].slice(
+        0,
+        limit,
+      );
+    }
+  }
+  return merged;
 }

@@ -138,7 +138,7 @@ export function QuickPost() {
   const [postMode, setPostMode] = useState<"need" | "give" | null>(null);
   const [timing, setTiming] = useState<"asap" | "anytime" | "at" | null>(null);
   // Controlled address fields so they can carry the shared autocomplete.
-  // Picks fill the display name; the action geocodes server-side.
+  // Address picks fill the complete address; the action geocodes it.
   const [fromValue, setFromValue] = useState("");
   const [toValue, setToValue] = useState("");
   const [noteValue, setNoteValue] = useState("");
@@ -221,6 +221,16 @@ export function QuickPost() {
               <input type="hidden" name="postMode" value={postMode ?? "need"} />
               <input type="hidden" name="timing" value={timing ?? "anytime"} />
               <input type="hidden" name="ride_time" value={rideTime24} />
+              {/* Step-1 address fields unmount once you advance, so carry
+                  their controlled values here — otherwise the submit sees
+                  empty from/to and wrongly reports "enter a full pickup
+                  address" no matter what was typed. */}
+              {step !== 1 ? (
+                <>
+                  <input type="hidden" name="from_address" value={fromValue} />
+                  <input type="hidden" name="to_address" value={toValue} />
+                </>
+              ) : null}
 
               {step === 0 ? (
                 <div className="flex gap-2" role="group" aria-label="post type">
@@ -256,18 +266,22 @@ export function QuickPost() {
                         ariaLabel="pickup place"
                         kind="all"
                         variant="default"
+                        surface="soft"
                         inputClassName="input min-h-[22px] border-0 bg-transparent px-4 text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:min-h-11 sm:text-sm sm:placeholder:text-xs"
                       />
                     ) : (
-                      <input
+                      <PlaceAutocomplete
                         name="from_address"
                         value={fromValue}
-                        onChange={(e) => setFromValue(e.target.value)}
+                        onValueChange={setFromValue}
                         required
                         minLength={5}
                         placeholder={addrPlaceholder}
-                        aria-label="pickup address"
-                        className="input min-h-[22px] border-0 bg-transparent px-4 text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:min-h-11 sm:text-sm sm:placeholder:text-xs"
+                        ariaLabel="pickup address"
+                        source="address"
+                        nearViewer
+                        surface="soft"
+                        inputClassName="input min-h-[22px] border-0 bg-transparent px-4 text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:min-h-11 sm:text-sm sm:placeholder:text-xs"
                       />
                     )}
                   </fieldset>
@@ -284,18 +298,21 @@ export function QuickPost() {
                         aria-label="drop-off place"
                         kind="all"
                         variant="default"
+                        surface="soft"
                         inputClassName="input min-h-[22px] border-0 bg-transparent px-4 text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:min-h-11 sm:text-sm sm:placeholder:text-xs"
                       />
                     ) : (
-                      <input
+                      <PlaceAutocomplete
                         name="to_address"
                         value={toValue}
-                        onChange={(e) => setToValue(e.target.value)}
+                        onValueChange={setToValue}
                         required
                         minLength={5}
                         placeholder={addrPlaceholder}
-                        aria-label="drop-off address"
-                        className="input min-h-[22px] border-0 bg-transparent px-4 text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:min-h-11 sm:text-sm sm:placeholder:text-xs"
+                        ariaLabel="drop-off address"
+                        source="address"
+                        surface="soft"
+                        inputClassName="input min-h-[22px] border-0 bg-transparent px-4 text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:min-h-11 sm:text-sm sm:placeholder:text-xs"
                       />
                     )}
                   </fieldset>

@@ -28,7 +28,7 @@ export default async function ConversationPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const user = await requireUser(`/messages/${id}`);
+  const user = await requireUser(`/chat/${id}`);
   const supabase = await createClient();
 
   // RLS hides conversations the user isn't part of => notFound.
@@ -125,7 +125,7 @@ export default async function ConversationPage({
       <div className="flex items-center justify-between gap-3 border-b border-hairline pb-3">
         <div className="min-w-0">
           <Link
-            href="/messages"
+            href="/chat"
             className="inline-flex min-h-11 items-center text-xs text-muted hover:text-content"
           >
             ← all messages
@@ -154,7 +154,7 @@ export default async function ConversationPage({
             </span>
             <form action={unblockUser}>
               <input type="hidden" name="targetUserId" value={otherId} />
-              <input type="hidden" name="redirectPath" value={`/messages/${id}`} />
+              <input type="hidden" name="redirectPath" value={`/chat/${id}`} />
               <button
                 type="submit"
                 className="inline-flex min-h-11 items-center font-medium text-primary"
@@ -171,7 +171,7 @@ export default async function ConversationPage({
             <div className="mt-1 flex flex-col gap-2 rounded-xl border border-hairline p-3">
               <form action={blockUser}>
                 <input type="hidden" name="targetUserId" value={otherId} />
-                <input type="hidden" name="redirectPath" value={`/messages/${id}`} />
+                <input type="hidden" name="redirectPath" value={`/chat/${id}`} />
                 <button
                   type="submit"
                   className="inline-flex min-h-11 items-center font-medium text-danger"

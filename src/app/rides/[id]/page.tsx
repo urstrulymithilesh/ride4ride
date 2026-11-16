@@ -7,7 +7,7 @@ import { SignInPrompt } from "@/components/auth/sign-in-prompt";
 import { CopyLinkButton } from "@/components/rides/copy-link-button";
 import { EnableNotifications } from "@/components/notifications/enable-notifications";
 import { ReportButton } from "@/components/safety/report-button";
-import { startConversation } from "@/app/messages/actions";
+import { startConversation } from "@/app/chat/actions";
 import { repostRide } from "@/app/rides/actions";
 import { formatDistance, formatPlace, formatRideWhen } from "@/lib/utils/format";
 import { recordArrival } from "@/lib/arrivals";
@@ -170,7 +170,7 @@ export default async function RideDetailPage({
     <main className="w-full flex-1 px-4 py-6">
       <div className="flex items-center justify-between gap-2">
         <Link
-          href="/rides"
+          href="/"
           className="inline-flex min-h-11 items-center text-sm text-muted hover:text-content"
         >
           ← back

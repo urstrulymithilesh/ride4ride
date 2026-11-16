@@ -3,13 +3,14 @@ import { getUser, getProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/(auth)/actions";
 import { MenuButton } from "./menu-button";
+import { ChangeLocationButton } from "@/components/location/change-location";
 
 /**
  * Floating hamburger (top-left everywhere). Signed-in menu lists identity
- * first (@handle, member-since, active post count), then account / legal /
+ * first (@handle, member-since, active post count), then settings / legal /
  * about / support, with log out last.
  */
-export async function AppMenu() {
+export async function AppMenu({ triggerTone }: { triggerTone?: string }) {
   const [user, profile] = await Promise.all([getUser(), getProfile()]);
   const joined = profile?.created_at
     ? `member since ${new Date(profile.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
@@ -37,7 +38,7 @@ export async function AppMenu() {
     "flex min-h-12 w-full items-center px-5 text-lg text-content hover:bg-white/10";
 
   return (
-    <MenuButton>
+    <MenuButton tone={triggerTone}>
         {/* Full-height drawer, flush left, rounded on the right edge only.
             Black glass: translucent enough to feel layered over the
             feed, opaque enough that green headlines can't bleed
@@ -65,9 +66,14 @@ export async function AppMenu() {
             </div>
           ) : null}
           <nav aria-label="menu" className="flex flex-1 flex-col overflow-y-auto py-2">
-            <Link href="/account" className={item}>
-              account
+            <Link href="/settings" className={item}>
+              settings
             </Link>
+            {/* Dev-only: manual location override for testing. Production
+                builds hide it — real users go through device location. */}
+            {process.env.NODE_ENV !== "production" ? (
+              <ChangeLocationButton className={`${item} text-left`} />
+            ) : null}
             <Link href="/privacy" className={item}>
               privacy & terms
             </Link>

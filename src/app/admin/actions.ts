@@ -37,6 +37,7 @@ export async function takedownRide(formData: FormData): Promise<void> {
     .eq("status", "open");
   revalidatePath("/admin");
   revalidatePath("/rides");
+  revalidatePath("/");
 }
 
 /** Ban a user: set the flag (blocks posting/messaging via RLS) and cancel their live posts. */

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getUser } from "@/lib/auth";
 import { geocodeAddress, drivingDistanceMeters } from "@/lib/geocoding";
+import { nearPickup } from "@/lib/geo";
 import { validateOffer, validateGet } from "@/lib/validations/rides";
 import type { Timing } from "@/lib/validations/rides";
 import type { FieldErrors } from "@/lib/validations/auth";
@@ -83,6 +84,7 @@ export async function createOfferRide(
   await saveTiming(supabase, ride.id, d.timing);
 
   revalidatePath("/rides");
+  revalidatePath("/");
   redirect(`/rides/${ride.id}`);
 }
 
@@ -118,6 +120,7 @@ export async function repostRide(formData: FormData): Promise<void> {
 
   if (error) redirect(`/rides/${rideId}?error=repost`);
   revalidatePath("/rides");
+  revalidatePath("/");
   redirect(`/rides/${rideId}`);
 }
 
@@ -149,8 +152,13 @@ export async function createGetRide(
 
   const distance_meters = await drivingDistanceMeters(from, to);
 
+  // Public map pin: near the pickup, never on it. The exact point stays
+  // in row-protected ride_locations; only this pre-jittered pin is
+  // world-readable (plus the zoom cap, houses stay unidentifiable).
+  const pin = nearPickup(from, `${d.from_address}|${d.to_address}`);
+
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("create_get_ride", {
+  const baseParams = {
     // Coarse fields derived from geocoding (safe to show publicly).
     p_from_city: from.city ?? "unknown",
     p_from_state: from.state ?? "",
@@ -174,7 +182,19 @@ export async function createGetRide(
     p_description: d.description,
     p_ride_date: d.timing.ride_date,
     p_is_future: d.timing.is_future,
+  };
+  let { data, error } = await supabase.rpc("create_get_ride", {
+    ...baseParams,
+    p_pin_lat: pin.lat,
+    p_pin_lng: pin.lng,
   });
+
+  // Pre-0022 databases only have the 18-arg RPC: retry without the pin
+  // (the feed falls back to the city-center pin) instead of failing the
+  // post. Any other error is real and handled below.
+  if (error && /could not find the function/i.test(error.message)) {
+    ({ data, error } = await supabase.rpc("create_get_ride", baseParams));
+  }
 
   // Log before returning the friendly message. Without this the real cause
   // is invisible: a migration that never applied surfaced only as
@@ -193,6 +213,7 @@ export async function createGetRide(
   await saveTiming(supabase, ride.id, d.timing);
 
   revalidatePath("/rides");
+  revalidatePath("/");
   redirect(`/rides/${ride.id}`);
 }
 

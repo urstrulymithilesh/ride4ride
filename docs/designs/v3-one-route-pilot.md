@@ -64,7 +64,7 @@ A student flying through ORD posts "need ride from ORD airport tomorrow 5pm." Fa
 **No login:** browsing the feed, viewing an individual post, sharing a post URL.
 **Login required:** posting, chatting, contact reveal, reporting, blocking, submitting a wanted-route.
 
-**Already implemented and verified.** `/rides` and `/rides/[id]` use `getUser()` and render regardless; `/rides/new`, `/rides/get`, `/rides/offer`, `/messages`, `/messages/[id]` use `requireUser()`. `lib/auth.ts` documents this exact access model. `CopyLinkButton` already exists on the detail page.
+**Already implemented and verified.** `/rides` and `/rides/[id]` use `getUser()` and render regardless; `/rides/new`, `/rides/get`, `/rides/offer`, `/chat`, `/chat/[id]` use `requireUser()`. `lib/auth.ts` documents this exact access model. `CopyLinkButton` already exists on the detail page.
 
 **Done (T6).** Post detail pages ship `robots: { index: false }`, matching the convention already used by `/admin`. A public shareable post URL carrying one person's route and travel date is fine to hand someone in a group chat and wrong to leave in a search index, where it outlives the ride. Messenger link previews read Open Graph tags and generally ignore robots meta, so this should not affect the WhatsApp preview — worth eyeballing the first time a post link is pasted.
 
@@ -182,7 +182,7 @@ Two experiments, both against production builds:
 
 What remains is monitoring fidelity (logs cannot separate a dead post from a live one by status) and link-preview crawlers getting 200 for a missing post — where metadata already degrades to a generic `Ride · Ride4Ride`, or `[expired]` for an expired one.
 
-Removing the root `loading.tsx` would buy real 404s at the cost of the loading UI on *every* route, against a stated mobile-first / slow-connection constraint. Scoping it does not help: `loading.tsx` applies to a segment **and its children**, so any such file above `/rides/[id]`, `/messages/[id]` or `/admin` re-breaks it, and the segments left over are forms and static pages that least need a skeleton. The documented alternative — an existence check in `proxy` — adds a database round trip to every post-page view, on the hottest path and the primary distribution surface, which the docs explicitly warn against.
+Removing the root `loading.tsx` would buy real 404s at the cost of the loading UI on *every* route, against a stated mobile-first / slow-connection constraint. Scoping it does not help: `loading.tsx` applies to a segment **and its children**, so any such file above `/rides/[id]`, `/chat/[id]` or `/admin` re-breaks it, and the segments left over are forms and static pages that least need a skeleton. The documented alternative — an existence check in `proxy` — adds a database round trip to every post-page view, on the hottest path and the primary distribution surface, which the docs explicitly warn against.
 
 **Decision: keep `loading.tsx`, accept 200 + `noindex`.** Revisit only if compliance or analytics ever needs a true 404 status.
 
@@ -212,7 +212,7 @@ Rider airport is derived from coordinates; captain airport is picked by hand. Th
 | Address firewall | `ride_locations` + `ride_reveals` + `rides_with_location` view with `security_invoker = on` (verified) |
 | Public-read RLS | `rides: public can read active` in `0002`, no `to` clause, applies to `anon` (verified) |
 | Geocoding + distance | `src/lib/geocoding.ts` — `geocodeAddress()`, `drivingDistanceMeters()`, Mapbox, server-only |
-| Chat + conversation start | `0004`, `src/app/messages/actions.ts` — `startConversation` already wired to a button |
+| Chat + conversation start | `0004`, `src/app/chat/actions.ts` — `startConversation` already wired to a button |
 | Reports / blocks | `0007`, with RLS gating conversations, messages, and posting |
 | Push + expiry cron | `0006`, `src/app/api/cron/expire-rides/route.ts`, `vercel.json` |
 | Privacy invariant guard | `scripts/check-privacy.mjs`, `npm run check` |

@@ -25,7 +25,7 @@ export async function startConversation(formData: FormData): Promise<void> {
   const user = await getUser();
   const rideId = String(formData.get("rideId") ?? "");
   if (!user) redirect(`/sign-in?redirectTo=/rides/${rideId}`);
-  if (!rideId) redirect("/rides");
+  if (!rideId) redirect("/");
 
   const supabase = await createClient();
 
@@ -64,7 +64,7 @@ export async function startConversation(formData: FormData): Promise<void> {
     });
   }
 
-  redirect(`/messages/${conversationId}`);
+  redirect(`/chat/${conversationId}`);
 }
 
 export interface SendResult {

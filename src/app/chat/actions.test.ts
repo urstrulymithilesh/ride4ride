@@ -69,7 +69,7 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
-const { startConversation } = await import("@/app/messages/actions");
+const { startConversation } = await import("@/app/chat/actions");
 
 function form(): FormData {
   const fd = new FormData();
@@ -100,7 +100,7 @@ describe("startConversation opener", () => {
   it("sends the driving offer copy on a rider post", async () => {
     state.rideType = "get";
     const to = await redirectOf(() => startConversation(form()));
-    expect(to).toBe("/messages/conv-1");
+    expect(to).toBe("/chat/conv-1");
     expect(state.inserted).toHaveLength(1);
     expect(state.inserted[0]).toMatchObject({
       conversation_id: "conv-1",
@@ -121,13 +121,13 @@ describe("startConversation opener", () => {
   it("sends nothing into a resumed conversation", async () => {
     state.existing = [{ id: "m1" }];
     const to = await redirectOf(() => startConversation(form()));
-    expect(to).toBe("/messages/conv-1");
+    expect(to).toBe("/chat/conv-1");
     expect(state.inserted).toHaveLength(0);
   });
 
   it("still opens the chat when the opener insert fails", async () => {
     state.failInsert = true;
     const to = await redirectOf(() => startConversation(form()));
-    expect(to).toBe("/messages/conv-1");
+    expect(to).toBe("/chat/conv-1");
   });
 });

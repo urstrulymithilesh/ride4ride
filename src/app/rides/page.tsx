@@ -1,16 +1,15 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
-import { getLocationFromHeaders } from "@/lib/location-server";
 import { searchPlaces } from "@/lib/places";
-import { formatLocation } from "@/lib/location";
 import { createClient } from "@/lib/supabase/server";
-import { RideCard, type RideCardData } from "@/components/rides/ride-card";
-import { EmptyPostCta } from "@/components/rides/empty-post-cta";
+import type { RideCardData } from "@/components/rides/ride-card";
 import { SearchForm } from "@/components/places/search-form";
-import { LocationPicker } from "@/components/layout/location-picker";
+import { PersonGlyph } from "@/components/places/search-icons";
+import { RidesMap } from "@/components/rides/rides-map";
+import { buildMapRides } from "@/lib/ride-geo.server";
 import { recordArrival } from "@/lib/arrivals";
 import { getUser } from "@/lib/auth";
+import { getSignupCount } from "@/lib/signup-count";
 
 export const metadata: Metadata = { title: "browse rides" };
 
@@ -18,7 +17,7 @@ export const metadata: Metadata = { title: "browse rides" };
 // columns (those live in the row-protected `ride_locations` table), and
 // listing them explicitly keeps that guarantee obvious and the query lean.
 const CARD_COLUMNS =
-  "id, type, owner_id, created_at, from_city, from_state, to_city, to_state, ride_date, is_future, time_mode, ride_time, distance_meters, from_street, to_street, from_airport, description";
+  "id, type, owner_id, created_at, from_city, from_state, to_city, to_state, ride_date, is_future, time_mode, ride_time, distance_meters, from_street, to_street, from_airport, pin_lat, pin_lng, description";
 
 // Same columns minus migration 0019's timing pair — the degraded fallback
 // when those columns don't exist yet.
@@ -26,91 +25,165 @@ const BASE_CARD_COLUMNS =
   "id, type, owner_id, created_at, from_city, from_state, to_city, to_state, ride_date, is_future, distance_meters, from_street, to_street, description";
 
 type When = "current" | "future";
-type RideType = "all" | "offer" | "get";
+type RideType = "offer" | "get";
 
 interface Params {
   when?: string;
   from?: string;
   to?: string;
-  type?: string;
+  airport?: string;
+  university?: string;
 }
 
-export default async function BrowseRidesPage({
+/**
+ * The feed, shared by both routes. The ROUTE picks the ride type, never
+ * the URL: `/` is need-ride (hail), `/rides` is ride-available (car).
+ * `?type=` links are legacy — the proxy strips them (see proxy.ts).
+ */
+export function BrowseRidesPage({
+  searchParams,
+  rideType,
+}: {
+  searchParams: Promise<Params>;
+  rideType: RideType;
+}) {
+  return <FeedInner searchParams={searchParams} rideType={rideType} />;
+}
+
+/** `/rides` serves the ride-available feed. */
+export default function RidesRoutePage({
   searchParams,
 }: {
   searchParams: Promise<Params>;
 }) {
+  return <BrowseRidesPage searchParams={searchParams} rideType="offer" />;
+}
+
+async function FeedInner({
+  searchParams,
+  rideType,
+}: {
+  searchParams: Promise<Params>;
+  rideType: RideType;
+}) {
   const sp = await searchParams;
   const when: When = sp.when === "future" ? "future" : "current";
-  const rideType: RideType =
-    sp.type === "offer" || sp.type === "get" ? sp.type : "all";
-  // Scoping vs search. The feed is always scoped: explicit ?from= wins,
-  // else the saved city override, else the IP-detected city. An explicit
-  // empty ?from= (clear) means unscoped. Only typed text counts as
-  // "searched" for the X button and empty-state copy.
-  const cookieCity = ((await cookies()).get("r4r-city")?.value ?? "").trim();
-  const detected = await getLocationFromHeaders();
-  const detectedLabel = detected ? formatLocation(detected) : "";
-  // A picked place name resolves to its filterable form — with one
-  // exception: a university title ("Name · City, ST") matches on its
-  // bare name. Rides carry no university column, so city substitution
-  // would match every post in town instead of university posts; the
-  // description text is the literal signal and matching uses the name
-  // ("Lewis University"), never the suffixed title. Anything else
-  // filters literally, as before. Only a full display-name match
-  // resolves, so partial typing keeps the old substring behavior.
-  // Strict-uppercase IATA codes are exempt — the airport branch below
-  // scopes those verbatim. The saved scope goes through the same
-  // resolution, so a stored university title matches by name too.
+
+  // Search is literal from→to text. Location scoping is no longer
+  // inferred from IP: the map centers on the viewer's device and every
+  // active ride is returned, nearest-first in the client.
   const resolvePlace = (raw: string): { text: string; university: boolean } => {
     const text = raw.trim();
-    if (!text || /^[A-Z]{3}$/.test(text)) return { text, university: false };
+    if (!text) return { text, university: false };
+    // Airport title or bare code ("Chicago O'Hare (ORD)" or "ORD").
+    // Matched structurally — a full-title round-trip through searchPlaces
+    // need not return the title itself for this to scope correctly.
+    const code =
+      text.match(/\(([A-Z]{3})\)\s*$/)?.[1] ??
+      (/^[A-Z]{3}$/.test(text) ? text : null);
+    if (code) {
+      const known = searchPlaces(code, "airport", 5).some((r) =>
+        r.title.includes(`(${code})`),
+      );
+      if (known) return { text: code, university: false };
+    }
+    // University title or bare name ("Lewis University · Romeoville, IL"
+    // or "Lewis University").
+    const name = text.split("·")[0]?.trim() || text;
+    if (
+      searchPlaces(name, "university", 5).some(
+        (r) =>
+          r.title.split("·")[0]?.trim().toLowerCase() === name.toLowerCase(),
+      )
+    ) {
+      return { text: name, university: true };
+    }
+    // City text (or anything else): exact title hit keeps the canonical
+    // value, otherwise the raw text tokenizes downstream.
     const hit = searchPlaces(text, "all", 5).find(
       (r) => r.title.toLowerCase() === text.toLowerCase(),
     );
     if (!hit) return { text, university: false };
     if (hit.kind === "university") {
-      const name = hit.title.split("·")[0]?.trim() || hit.title;
-      return { text: name, university: true };
+      const uni = hit.title.split("·")[0]?.trim() || hit.title;
+      return { text: uni, university: true };
     }
     // Airport titles read "Name (ORD)"; scope the bare IATA code so the
     // airport equality below matches tagged posts.
     if (hit.kind === "airport") {
-      const code = hit.title.match(/\(([A-Z]{3})\)\s*$/)?.[1];
-      return { text: code ?? hit.value, university: false };
+      const c = hit.title.match(/\(([A-Z]{3})\)\s*$/)?.[1];
+      return { text: c ?? hit.value, university: false };
     }
     return { text: hit.value, university: false };
   };
-  const fromPlace =
-    sp.from !== undefined
-      ? resolvePlace(sp.from)
-      : resolvePlace(cookieCity || detectedLabel);
+  const fromPlace = resolvePlace(sp.from ?? "");
   const toPlace = resolvePlace(sp.to?.trim() ?? "");
   const from = fromPlace.text;
   const to = toPlace.text;
-  const searched = Boolean(sp.from?.trim() || to);
-  const scopedNote = !searched && from ? ` near ${from}` : "";
-  const hasFilters = searched;
+  // Origin kind for the drop-off list: airport/university origins restrict
+  // drop off to cities (airports/universities as destinations live on
+  // their own chips).
+  const fromKind = !from
+    ? "city"
+    : fromPlace.university
+      ? "university"
+      : /^[A-Z]{3}$/.test(from)
+        ? "airport"
+        : "city";
 
-  // Build an href preserving current params, dropping empties.
-  // Only explicitly typed text travels in URLs — the implicit scoped
-  // city must never leak in, or every tab switch would look "searched".
+  // Airport scope (?airport=ORD): strict IATA only, and only for codes
+  // in our airports table — anything else is ignored, never queried.
+  const airportCode = (sp.airport ?? "").trim().toUpperCase();
+  const airportHit = /^[A-Z]{3}$/.test(airportCode)
+    ? searchPlaces(airportCode, "airport", 5).find((r) =>
+        r.title.includes(`(${airportCode})`),
+      )
+    : undefined;
+  const airportValid = airportHit !== undefined;
+  // Airport city for the drop-off side of the OR: there is no to_airport
+  // column, so a dropoff "containing" the airport means the airport's own
+  // city (ORD -> Chicago, IL).
+  const airportCity = airportHit?.value
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+  const airportLabel = airportHit?.title ?? (airportValid ? airportCode : "");
+
+  // University scope (?university=Lewis University): validated against
+  // the vendored dataset — anything else is ignored, never queried. With
+  // no university column, the description is the only literal signal, and
+  // one ilike covers either end of the trip.
+  const uniRaw = (sp.university ?? "").trim();
+  const uniHit = uniRaw
+    ? searchPlaces(uniRaw, "university", 5).find(
+        (r) =>
+          r.title.split("·")[0]?.trim().toLowerCase() ===
+          uniRaw.toLowerCase(),
+      )
+    : undefined;
+  const university = uniHit?.title.split("·")[0]?.trim() ?? "";
+
+  // Build an href preserving current params, dropping empties. Only
+  // explicitly typed text travels in URLs. Stays on the current tab's
+  // route (/ for hail, /rides for car).
   const hrefWith = (next: Partial<Params>) => {
+    const base = rideType === "offer" ? "/rides" : "/";
     const merged = {
       when,
-      type: rideType,
       from: sp.from?.trim() ?? "",
       to: sp.to?.trim() ?? "",
+      airport: sp.airport?.trim() ?? "",
+      university: sp.university?.trim() ?? "",
       ...next,
     };
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(merged)) {
-      if (v && !(k === "when" && v === "current") && !(k === "type" && v === "all")) {
+      if (v && !(k === "when" && v === "current")) {
         qs.set(k, String(v));
       }
     }
     const s = qs.toString();
-    return s ? `/rides?${s}` : "/rides";
+    return s ? `${base}?${s}` : base;
   };
 
   // Arrival tracking (T13). Fire before the feed query so a slow or
@@ -119,88 +192,144 @@ export default async function BrowseRidesPage({
   const viewer = await getUser();
   await recordArrival("feed", viewer?.id);
 
+  // Live member total for the floating pill above the dock. Cached ~60s;
+  // null hides the slot rather than showing a wrong number.
+  const memberCount = await getSignupCount();
+
   const supabase = await createClient();
   // Columns from migration 0019. Factored so the feed can retry without
   // them when the migration hasn't applied yet (degraded timing: ASAP).
-  const buildQuery = (columns: string, opts?: { noAirport?: boolean }) => {
+  //
+  // One scope per chip group. A single scope behaves exactly like the old
+  // all-AND query; multiple scopes run in parallel and union by id, which
+  // is how pick up AND drop off narrow to the route while airport and
+  // university chips broaden to either end of the trip.
+  const buildQuery = (
+    columns: string,
+    scope: "route" | "airport" | "uni",
+    opts?: { noAirport?: boolean },
+  ) => {
     let q = supabase
       .from("rides")
       .select(columns)
       .eq("status", "active")
       .gt("expires_at", new Date().toISOString())
-      .eq("is_future", when === "future");
+      .eq("is_future", when === "future")
+      .eq("type", rideType);
 
-    const fromTokens = endTokens(from);
-    const toTokens = endTokens(to);
-    // University scope/search matches post text: with no university
-    // column, the description is the only literal signal. Everything
-    // else keeps the city/state/zip/airport token logic.
-    if (fromPlace.university) q = q.ilike("description", `%${from}%`);
-    else
-      for (const t of fromTokens) {
-        if (/^\d+$/.test(t)) q = q.eq("from_zip", t);
-        // Strict-uppercase 3 letters = a literal airport pick (the picker
-        // scopes IATA codes verbatim). Lowercase 3-letter text falls through
-        // to the city match below, so prefix typing never hijacks to airports.
-        // Skipped in the no-column fallback: filtering on a missing column
-        // fails the whole query, which is how an airport scope became the
-        // error board instead of a degraded list.
-        else if (/^[A-Z]{3}$/.test(t)) {
-          if (!opts?.noAirport) q = q.eq("from_airport", t);
-        } else if (/^[a-zA-Z]{2}$/.test(t)) q = q.ilike("from_state", t);
-        else q = q.ilike("from_city", `%${t}%`);
-      }
-    if (toPlace.university) q = q.ilike("description", `%${to}%`);
-    else
-      for (const t of toTokens) {
-        if (/^\d+$/.test(t)) q = q.eq("to_zip", t);
-        else if (/^[a-zA-Z]{2}$/.test(t)) q = q.ilike("to_state", t);
-        else q = q.ilike("to_city", `%${t}%`);
-      }
-    if (rideType !== "all") q = q.eq("type", rideType);
+    if (scope === "route") {
+      const fromTokens = endTokens(from);
+      const toTokens = endTokens(to);
+      // University scope/search matches post text: with no university
+      // column, the description is the only literal signal. Everything
+      // else keeps the city/state/zip/airport token logic.
+      if (fromPlace.university) q = q.ilike("description", `%${from}%`);
+      else
+        for (const t of fromTokens) {
+          if (/^\d+$/.test(t)) q = q.eq("from_zip", t);
+          // Strict-uppercase 3 letters = a literal airport pick. Lowercase
+          // 3-letter text falls through to the city match below.
+          else if (/^[A-Z]{3}$/.test(t)) {
+            if (!opts?.noAirport) q = q.eq("from_airport", t);
+          } else if (/^[a-zA-Z]{2}$/.test(t)) q = q.ilike("from_state", t);
+          else q = q.ilike("from_city", `%${t}%`);
+        }
+      if (toPlace.university) q = q.ilike("description", `%${to}%`);
+      else
+        for (const t of toTokens) {
+          if (/^\d+$/.test(t)) q = q.eq("to_zip", t);
+          else if (/^[a-zA-Z]{2}$/.test(t)) q = q.ilike("to_state", t);
+          else q = q.ilike("to_city", `%${t}%`);
+        }
+    }
+
+    if (scope === "airport" && airportValid && !opts?.noAirport) {
+      // Pickup side is the tagged IATA code; drop-off side is the
+      // airport's own city (there is no to_airport column). The degraded
+      // retry drops this scope entirely (no from_airport column).
+      const [city, state] = airportCity ?? [];
+      q =
+        city && state
+          ? q.or(
+              `from_airport.eq.${airportCode},and(to_city.ilike.%${city}%,to_state.ilike.${state}%)`,
+            )
+          : q.eq("from_airport", airportCode);
+    }
+
+    if (scope === "uni" && university)
+      q = q.ilike("description", `%${university}%`);
 
     return q
       .order("created_at", { ascending: false })
-      .limit(60)
+      .limit(120)
       .returns<RideCardData[]>();
+  };
+
+  // Chip combination: OR across scopes, AND inside the route scope. With
+  // no chips set the route scope is unfiltered, preserving the old
+  // show-everything board.
+  const scopes: ("route" | "airport" | "uni")[] = [];
+  if (from.trim() || to.trim()) scopes.push("route");
+  if (airportValid) scopes.push("airport");
+  if (university) scopes.push("uni");
+  if (scopes.length === 0) scopes.push("route");
+
+  const runScopes = async (
+    columns: string,
+    opts?: { noAirport?: boolean },
+  ) => {
+    // The degraded retry has no from_airport column, so the airport scope
+    // (which needs it) is dropped there instead of erroring.
+    const active = opts?.noAirport
+      ? scopes.filter((s) => s !== "airport")
+      : scopes;
+    const runs = active.length > 0 ? active : (["route"] as const);
+    const out = await Promise.all(
+      runs.map((scope) => buildQuery(columns, scope, opts)),
+    );
+    const seen = new Set<string>();
+    const data: RideCardData[] = [];
+    let error: (typeof out)[number]["error"] = null;
+    for (const r of out) {
+      if (r.error && !error) error = r.error;
+      for (const row of r.data ?? []) {
+        if (!seen.has(row.id)) {
+          seen.add(row.id);
+          data.push(row);
+        }
+      }
+    }
+    data.sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
+    return { data: data.slice(0, 120), error };
   };
 
   // Capture the error. Discarding it here is how a totally broken database
   // rendered as "0 current rides" with HTTP 200 and nothing in the logs:
   // `data` comes back null on failure, which is indistinguishable from an
-  // empty result unless you look at `error`. On a board whose entire purpose
-  // is answering "did anyone post", a silent failure produces exactly the
-  // reading that says nobody did.
-  let { data: rides, error: ridesError } = await buildQuery(CARD_COLUMNS);
+  // empty result unless you look at `error`.
+  let { data: rides, error: ridesError } = await runScopes(CARD_COLUMNS);
 
-  // A missing timing or airport column is an expected state until
-  // migrations 0019/0021 are applied, so it warns instead of erroring
-  // (a red console for every page view trains you to ignore red). Any
-  // other failure keeps the loud log — that is the signal that was
-  // missing entirely before.
+  // A missing timing, airport, or pin column is an expected state until
+  // migrations 0019/0021/0022 are applied, so it warns instead of erroring.
   const pendingMigration = Boolean(
-    ridesError && /time_mode|ride_time|from_airport/i.test(ridesError.message),
+    ridesError && /time_mode|ride_time|from_airport|pin_lat|pin_lng/i.test(ridesError.message),
   );
   if (ridesError && !pendingMigration) {
     console.error("[rides] feed query failed:", ridesError.message, ridesError);
   }
 
   if (pendingMigration && ridesError) {
-    // Migration 0019 (timing) or 0021 (airports) hasn't applied: retry
-    // without those columns (cards fall back to ASAP / no airport chip)
-    // instead of blanking the whole board. The airport equality is
-    // dropped too — it names the same missing column, so keeping it
-    // would fail the retry right back into the error board. Airport
-    // scopes stay broad until 0021 applies.
     console.warn(
-      "[rides] timing/airport columns missing — apply migrations 0019_ride_timing.sql and 0021_airports.sql.",
+      "[rides] timing/airport/pin columns missing — apply migrations 0019_ride_timing.sql, 0021_airports.sql, and 0022_pin_points.sql.",
     );
-    const retry = await buildQuery(BASE_CARD_COLUMNS, { noAirport: true });
+    const retry = await runScopes(BASE_CARD_COLUMNS, { noAirport: true });
     rides = (retry.data ?? []).map((r) => ({
       ...r,
       time_mode: "asap" as const,
       ride_time: null,
       from_airport: null,
+      pin_lat: null,
+      pin_lng: null,
     }));
     ridesError = retry.error;
     if (ridesError) {
@@ -212,132 +341,88 @@ export default async function BrowseRidesPage({
     }
   }
 
-  // Only meaningful when ridesError is null. Kept separate so an empty list
-  // can never be produced by a failure.
   const list = rides ?? [];
 
-  // Poster handles are full-details material: only resolve them for
-  // signed-in viewers (same rule as the detail page). Signed-out viewers
-  // get cards with no handle line rather than a wrong one.
-  let handleById = new Map<string, string>();
-  if (viewer && list.length > 0) {
-    const { data: posters } = await supabase
-      .from("profiles")
-      .select("id, username")
-      .in(
-        "id",
-        [...new Set(list.map((r) => r.owner_id))],
-      )
-      .returns<{ id: string; username: string }[]>();
-    handleById = new Map((posters ?? []).map((p) => [p.id, p.username]));
-  }
-  const withHandles = list.map((r) => ({
-    ...r,
-    username: handleById.get(r.owner_id) ?? null,
-  }));
+  // Feed map pins and clusters. Exact pickup points never leave
+  // ride_locations — the public pin is pre-jittered at post time.
+  const mapRides = buildMapRides(list);
 
-  // Ride-type tabs: plain labels on a shared hairline; the active one goes
-  // bold white with a blue segment sitting on the line.
-  const typeTab = (value: RideType, label: string) => {
-    const isActive = rideType === value;
-    return (
-      <Link
-        href={hrefWith({ type: value })}
-        aria-current={isActive ? "page" : undefined}
-        className={`relative flex-1 pb-2 text-center text-sm ${
-          isActive ? "font-bold text-white" : "font-medium text-muted hover:text-content"
-        }`}
-      >
-        <span className="relative inline-block">
-          {label}
-          {isActive ? (
-            <span
-              aria-hidden="true"
-              className="absolute -bottom-2 left-0 right-0 h-[3px] bg-primary"
-            />
-          ) : null}
-        </span>
-      </Link>
-    );
-  };
+  // Ride-type tabs live in the feed's bottom bar (see BottomNav's
+  // FeedDock); the page itself renders no tab bar.
 
   return (
-    <main className="w-full flex-1 px-4">
-      {/* Search — client form with autocomplete dropdowns; the query
-          itself stays in shareable ?from=&to= params. */}
-      <SearchForm
-        when={when}
-        type={rideType}
-        fromDefault={sp.from?.trim() ?? ""}
-        toDefault={to}
-        clearHref={hrefWith({ from: "", to: "" })}
-        showClear={hasFilters}
+    <>
+      {/* Full-bleed map backdrop. Need-ride shows per-ride pins;
+          ride-available shows city clusters. Both pan and zoom. Zoom
+          limits are per-tab: need-ride stays close (10-17), ride-available
+          opens wide (4-12). */}
+      <RidesMap
+        rides={mapRides}
+        interactive
+        showControls={rideType === "get"}
+        minZoom={rideType === "get" ? 10 : 4}
+        maxZoom={rideType === "get" ? 17 : 12}
+        landingZoom={rideType === "get" ? 10 : 10}
+        cluster={rideType === "offer"}
       />
 
-      {/* Ride type tabs */}
-      <div className="mb-4 flex border-b border-hairline">
-        {typeTab("get", "need ride")}
-        {typeTab("all", "all")}
-        {typeTab("offer", "ride available")}
+      {/* Floating filter chips at the top of the feed. Chip dropdown
+          behavior: pick up / drop off filter the feed; airport and
+          university set the chip label until their behavior lands. */}
+      <div className="pointer-events-auto fixed inset-x-0 top-0 z-[var(--z-chrome)] mx-auto w-full max-w-[480px] px-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
+        <SearchForm
+          key={`${sp.from?.trim() ?? ""}|${to}|${airportCode}|${sp.university?.trim() ?? ""}`}
+          when={when}
+          type={rideType}
+          fromDefault={sp.from?.trim() ?? ""}
+          toDefault={to}
+          airportDefault={airportValid ? airportCode : ""}
+          airportLabel={airportValid ? airportLabel : ""}
+          universityDefault={university}
+          fromKindDefault={fromKind}
+        />
       </div>
 
-      {/* Scoped location readout + picker. */}
-      <div className="mb-6 flex justify-center">
-        <LocationPicker detected={detected} />
-      </div>
+      <main className="pointer-events-none relative z-10 flex w-full flex-1 flex-col pb-4">
+        {/* The ride-type switch is the feed's bottom bar (BottomNav);
+            nothing floats between the search rows and it. */}
 
-      {ridesError ? (
-        /* ERROR state — deliberately NOT the empty state. An empty board and
-           a broken board mean opposite things and must never look alike. */
-        <div
-          role="alert"
-          className="card border border-danger bg-transparent p-8 text-center"
-        >
-          <p className="text-sm font-semibold text-content">
-            couldn&apos;t load rides.
-          </p>
-          <p className="mt-1 text-sm text-muted">
-            something went wrong on our side, so we can&apos;t show the board
-            right now. this is not the same as there being no rides.
-          </p>
-          <Link
-            href={hrefWith({})}
-            className="mt-3 inline-block text-sm font-medium text-primary"
-          >
-            try again
-          </Link>
-        </div>
-      ) : list.length === 0 ? (
-        <div className="card border border-dashed border-hairline bg-transparent p-8 text-center">
-          <p className="text-sm text-muted">
-            {hasFilters
-              ? "no rides match these filters."
-              : scopedNote
-                ? `no ${when} rides${scopedNote} yet.`
-                : `no ${when} rides posted yet.`}
-          </p>
-          {hasFilters ? (
-            <Link
-              href={hrefWith({ from: "", to: "" })}
-              className="mt-3 inline-block text-sm font-medium text-primary"
+        {memberCount !== null && memberCount > 0 ? (
+          <div className="pointer-events-none fixed inset-x-0 bottom-[calc(0.35rem+env(safe-area-inset-bottom))] z-[var(--z-chrome)] flex justify-center px-4">
+            <span className="glass-dark pointer-events-auto flex items-center gap-1 rounded-full px-3.5 pb-0.5 pt-0.5 text-[11px] font-medium text-white/70 opacity-[0.85]">
+              <PersonGlyph height={9} />
+              ride4ride.com
+              <span>: {memberCount.toString().padStart(2, "0")}</span>
+            </span>
+          </div>
+        ) : null}
+
+        {ridesError ? (
+          /* ERROR state — deliberately NOT the empty state. An empty board and
+             a broken board mean opposite things and must never look alike. */
+          <div className="pointer-events-none fixed inset-x-0 bottom-[calc(9rem+env(safe-area-inset-bottom))] z-20 flex justify-center px-4">
+            <div
+              role="alert"
+              className="glass pointer-events-auto w-full max-w-sm rounded-2xl border border-danger/60 p-6 text-center"
             >
-              clear filters
-            </Link>
-          ) : (
-            <EmptyPostCta />
-          )}
-        </div>
-      ) : (
-        <ul className="flex flex-col gap-3">
-          {withHandles.map((r) => (
-            <li key={r.id}>
-              <RideCard ride={r} signedIn={Boolean(viewer)} />
-            </li>
-          ))}
-        </ul>
-      )}
-
-    </main>
+              <p className="text-sm font-semibold text-content">
+                couldn&apos;t load rides.
+              </p>
+              <p className="mt-1 text-sm text-muted">
+                something went wrong on our side, so we can&apos;t show the board
+                right now. this is not the same as there being no rides.
+              </p>
+              <Link
+                href={hrefWith({})}
+                className="mt-3 inline-block text-sm font-medium text-primary"
+              >
+                try again
+              </Link>
+            </div>
+          </div>
+        ) : null}
+      </main>
+    </>
   );
 }
 

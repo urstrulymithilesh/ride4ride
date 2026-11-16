@@ -13,7 +13,7 @@ export default function NotFound() {
         this page doesn&apos;t exist, or the post may have expired or been
         removed.
       </p>
-      <Link href="/rides" className="btn btn-primary mt-6 w-full">
+      <Link href="/" className="btn btn-primary mt-6 w-full">
         browse rides
       </Link>
     </main>

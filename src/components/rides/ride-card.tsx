@@ -5,7 +5,9 @@ import { formatClockDots, formatMiles, formatPlace, formatPostedAt } from "@/lib
 /**
  * The subset of `rides` shown on a public card. Deliberately NO address /
  * coordinate fields — those live in the row-protected `ride_locations` table
- * and are never part of a public query. `username` is attached by the page
+ * and are never part of a public query, with one deliberate exception:
+ * `pin_lat` / `pin_lng`, a pre-jittered near-pickup pin computed at post
+ * time, never the exact point. `username` is attached by the page
  * and is null for signed-out viewers (poster identity is full-details
  * material, same rule as the detail page).
  */
@@ -26,6 +28,8 @@ export interface RideCardData {
   from_street: string | null; // masked, no number; 'get' only
   to_street: string | null; // masked, no number; 'get' only
   from_airport: string | null; // public IATA tag for airport scoping
+  pin_lat: number | null; // public near-pickup pin, never exact; 'get' only
+  pin_lng: number | null; // public near-pickup pin, never exact; 'get' only
   description: string | null;
   username: string | null;
 }

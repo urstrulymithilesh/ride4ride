@@ -1,26 +1,50 @@
-import Link from "next/link";
 import type { Metadata } from "next";
-import { EnableNotifications } from "@/components/notifications/enable-notifications";
+import Link from "next/link";
+import { requireUser, getProfile } from "@/lib/auth";
+import { PasswordForm, ProfileDetails } from "@/components/profile/profile-details";
 
 export const metadata: Metadata = { title: "settings" };
 
-export default function SettingsPage() {
-  return (
-    <main className="w-full flex-1 px-4">
-      <section aria-label="notifications" className="card mt-4 p-5">
-        <h1 className="text-sm font-semibold text-content">reminders</h1>
-        <div className="mt-3">
-          <EnableNotifications />
-        </div>
-      </section>
+/** YYYY-MM-DD -> m/d/yyyy for display. */
+function formatDob(iso: string | null): string {
+  if (!iso) return "—";
+  const [y, m, d] = iso.split("-").map(Number);
+  if (!y || !m || !d) return "—";
+  return `${m}/${d}/${y}`;
+}
 
-      <nav aria-label="about" className="mt-3 flex flex-col gap-2">
-        <Link href="/privacy" className="btn btn-secondary w-full">
-          privacy
-        </Link>
-        <Link href="/terms" className="btn btn-secondary w-full">
-          terms
-        </Link>
+export default async function ProfilePage() {
+  const user = await requireUser("/settings");
+  const profile = await getProfile();
+
+  if (!profile) {
+    throw new Error("couldn't load your profile.");
+  }
+
+  return (
+    <main className="mx-auto w-full max-w-xl flex-1 px-4 py-6">
+      <h1 className="text-xl font-semibold text-content">settings</h1>
+      <p className="mt-1 text-sm text-muted">
+        logged in as @{profile.username}.
+      </p>
+
+      <ProfileDetails
+        username={profile.username}
+        displayName={profile.display_name}
+        dob={profile.date_of_birth ?? ""}
+        dobDisplay={formatDob(profile.date_of_birth)}
+        email={user.email ?? ""}
+        phone={profile.phone ?? ""}
+      />
+
+      <PasswordForm />
+
+      <nav aria-label="settings" className="mt-3 flex flex-col gap-2">
+        {profile.is_admin ? (
+          <Link href="/admin" className="btn btn-secondary w-full">
+            admin
+          </Link>
+        ) : null}
       </nav>
     </main>
   );

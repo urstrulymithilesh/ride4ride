@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { setRevealAgreement } from "@/app/messages/actions";
+import { setRevealAgreement } from "@/app/chat/actions";
 import type { RideReveal } from "@/types";
 
 interface Addresses {

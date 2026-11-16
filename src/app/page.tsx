@@ -1,7 +1,8 @@
-import BrowseRidesPage from "./rides/page";
+import { BrowseRidesPage } from "./rides/page";
 
 /**
- * The landing page is retired: / renders the rides feed directly.
+ * Landing page: `/` is the need-ride (hail) feed. `/rides` serves
+ * ride-available — the route picks the type, never the URL.
  */
 export default async function Home({
   searchParams,
@@ -15,11 +16,13 @@ export default async function Home({
   };
   return (
     <BrowseRidesPage
+      rideType="get"
       searchParams={Promise.resolve({
         when: pick("when"),
         from: pick("from"),
         to: pick("to"),
-        type: pick("type"),
+        airport: pick("airport"),
+        university: pick("university"),
       })}
     />
   );

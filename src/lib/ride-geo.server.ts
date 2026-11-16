@@ -111,16 +111,6 @@ export function cityCenter(city: string, state: string): LatLng | null {
   return idx.stateCenters.get(region) ?? null;
 }
 
-/** Approximate public pickup point: city center + deterministic jitter. */
-export function approxPickup(
-  city: string,
-  state: string,
-  seed: string,
-): LatLng | null {
-  const center = cityCenter(city, state);
-  return center ? approxPoint(center, seed) : null;
-}
-
 const METERS_PER_MILE = 0.000621371;
 
 /**

@@ -1,26 +1,4 @@
 /**
- * The magnifier shown at the right edge of an empty feed field. Matches
- * the clear X's optical size so the control doesn't shift when typing.
- */
-export function SearchIcon() {
-  return (
-    <svg
-      width="17"
-      height="17"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <circle cx="10.5" cy="10.5" r="6.5" />
-      <path d="m15.4 15.4 4.1 4.1" />
-    </svg>
-  );
-}
-
-/**
  * The X that clears a filled search field. One definition so the feed
  * search, popup, and picker can't drift in size or weight.
  */
@@ -38,28 +16,6 @@ export function ClearIcon({ size = 16 }: { size?: number }) {
     >
       <path d="M6 6l12 12" />
       <path d="M18 6L6 18" />
-    </svg>
-  );
-}
-
-/**
- * Horizontal swap arrows for switching origin and destination.
- */
-export function SwapIcon() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M4 8h13m0 0-3-3m3 3-3 3" />
-      <path d="M20 16H7m0 0 3-3m-3 3 3 3" />
     </svg>
   );
 }

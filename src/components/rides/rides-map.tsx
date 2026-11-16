@@ -341,14 +341,12 @@ export function RidesMap({
           haversineMiles(coords, { lat: r.lat, lng: r.lng }) <= FIT_RADIUS_MILES,
       ).length
     : 0;
-  const fartherCount = rides.length - nearbyCount;
 
+  // Nearby count only — no "N farther" tail.
   const countLabel =
     rides.length === 0
       ? "no rides yet"
-      : fartherCount > 0
-        ? `${nearbyCount} near you · ${fartherCount} farther`
-        : `${nearbyCount} ${nearbyCount === 1 ? "ride" : "rides"} near you`;
+      : `${nearbyCount} ${nearbyCount === 1 ? "ride" : "rides"} near you`;
 
   return (
     <div

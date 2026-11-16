@@ -66,16 +66,9 @@
   --r4r-min-zoom: 10;
   --r4r-max-zoom: 17;
 
-  /* Feed stacking, lowest to highest: map < search inputs < open
-     suggestion dropdown < search bar / BottomNav. The map root stays
-     z-0 and the chrome shells use --z-chrome — recorded here so the
-     order is explicit in one place. Each search field is its own
-     stacking context, so the dropdown's own z-index can't escape it:
-     the field owning the open list is raised to --z-dropdown while its
-     sibling stays at --z-search. */
-  --z-map: 0;
-  --z-search: 10;
-  --z-dropdown: 30;
+  /* Feed stacking, lowest to highest: map < chip panels < search bar /
+     BottomNav. The map root stays z-0 and the chrome shells use
+     --z-chrome — recorded here so the order is explicit in one place. */
   --z-chrome: 40;
   --z-chat: 50;
 }
@@ -204,19 +197,6 @@ select {
     .glass-dark {
       background: var(--glass-dark-bg-fallback);
     }
-  }
-
-  /* Feed search fields. The open list must paint above the sibling
-     field (same z-index would lose to DOM order inside separate
-     stacking contexts). The input carries aria-expanded="true" exactly
-     while its list is open, so no JS changes are needed. */
-  .search-field {
-    position: relative;
-    z-index: var(--z-search);
-  }
-
-  .search-field:has(input[aria-expanded="true"]) {
-    z-index: var(--z-dropdown);
   }
 
   /* NOTE: focused/typing fields deliberately keep the exact same shade

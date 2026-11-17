@@ -66,7 +66,8 @@ select
 from ins;
 
 -- ---- 5. create_get_ride RPC accepts the street + pin params --------
--- (18 args after 0015, 20 after 0022 added pin_lat/pin_lng.)
+-- (18 args after 0015, 20 after 0022 added pin_lat/pin_lng, 19 after
+-- 0025 dropped p_is_future.)
 select
   case when count(*) = 1 then 'PASS' else 'FAIL' end
     as test_5_create_get_ride_has_street_params
@@ -74,7 +75,7 @@ from pg_proc p
 join pg_namespace n on n.oid = p.pronamespace
 where n.nspname = 'public'
   and p.proname = 'create_get_ride'
-  and p.pronargs = 20;
+  and p.pronargs = 19;
 
 -- ---- 6. View exposes the new columns (r.* re-expanded) ---------------
 select

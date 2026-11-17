@@ -63,6 +63,7 @@ from public.airports;
 reset role;
 
 -- ---- 6. create_offer_ride takes the airport param ---------------------
+-- (10 args after 0021, 9 after 0025 dropped p_is_future.)
 select
   case when count(*) = 1 then 'PASS' else 'FAIL' end
     as test_6_create_offer_ride_has_airport_param
@@ -70,7 +71,7 @@ from pg_proc p
 join pg_namespace n on n.oid = p.pronamespace
 where n.nspname = 'public'
   and p.proname = 'create_offer_ride'
-  and p.pronargs = 10;
+  and p.pronargs = 9;
 
 -- Nothing is kept: seeds and rows roll back with the proof.
 rollback;

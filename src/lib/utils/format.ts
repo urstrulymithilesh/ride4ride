@@ -1,3 +1,10 @@
+import {
+  addDays,
+  formatMonthDay,
+  todayInZone,
+  timezoneForState,
+} from "@/lib/pickup-tz";
+
 /** Format meters as US miles, e.g. 92000 -> "57 mi". */
 export function formatDistance(meters: number | null | undefined): string | null {
   if (meters == null) return null;
@@ -12,25 +19,25 @@ export function formatMiles(meters: number | null | undefined): string | null {
   return short.endsWith("1 mi") ? "1 mile" : short.replace(" mi", " miles");
 }
 
-/** 'HH:MM' 24h -> 'h:mm a.m', e.g. "14:30" -> "2:30 p.m". */
+/** 'HH:MM' 24h -> 'h:mm am', e.g. "14:30" -> "2:30 pm". */
 export function formatClock(hhmm: string): string {
   const m = /^([01][0-9]|2[0-3]):([0-5][0-9])$/.exec(hhmm.trim());
   if (!m) return hhmm;
   const h24 = Number(m[1]);
-  const suffix = h24 < 12 ? "a.m" : "p.m";
+  const suffix = h24 < 12 ? "am" : "pm";
   return `${h24 % 12 || 12}:${m[2]} ${suffix}`;
 }
 
-/** 'HH:MM' 24h -> 'h.mm a.m', e.g. "13:45" -> "1.45 p.m" (card headline). */
+/** 'HH:MM' 24h -> 'h.mm am', e.g. "13:45" -> "1.45 pm" (card headline). */
 export function formatClockDots(hhmm: string): string {
   const m = /^([01][0-9]|2[0-3]):([0-5][0-9])$/.exec(hhmm.trim());
   if (!m) return hhmm;
   const h24 = Number(m[1]);
-  const suffix = h24 < 12 ? "a.m" : "p.m";
+  const suffix = h24 < 12 ? "am" : "pm";
   return `${h24 % 12 || 12}.${m[2]} ${suffix}`;
 }
 
-/** Posted time, e.g. "Today • 10:05 a.m". Days compare in server time. */
+/** Posted time, e.g. "Today • 10:05 am". Days compare in server time. */
 export function formatPostedAt(iso: string): string {
   const d = new Date(iso);
   const now = new Date();
@@ -46,23 +53,23 @@ export function formatPostedAt(iso: string): string {
         ? "Yesterday"
         : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   const h24 = d.getHours();
-  const suffix = h24 < 12 ? "a.m" : "p.m";
+  const suffix = h24 < 12 ? "am" : "pm";
   const h = h24 % 12 || 12;
   const mm = String(d.getMinutes()).padStart(2, "0");
   return `${day} • ${h}:${mm} ${suffix}`;
 }
 
-/** Human-readable ride timing. */
-export function formatRideWhen(rideDate: string | null, isFuture: boolean): string {
-  if (!rideDate) return "current · asap";
-  const d = new Date(rideDate + "T00:00:00");
-  const label = d.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-  return isFuture ? label : `current · ${label}`;
+/** Ride detail timing line: "Today", "Tomorrow", or "Nov 20" from the
+ *  ride date in the pickup's local day. Undated rides read as today. */
+export function formatRideWhen(
+  rideDate: string | null,
+  fromState: string,
+): string {
+  const tz = timezoneForState(fromState);
+  const today = todayInZone(tz);
+  if (!rideDate || rideDate <= today) return "Today";
+  if (rideDate === addDays(today, 1)) return "Tomorrow";
+  return formatMonthDay(rideDate);
 }
 
 /** e.g. "Riverside, CA 92501" (zip optional). */

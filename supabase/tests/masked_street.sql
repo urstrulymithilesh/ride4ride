@@ -24,11 +24,10 @@ where table_schema = 'public'
 do $$
 begin
   insert into public.rides (
-    type, owner_id, from_city, from_state, to_city, to_state,
-    is_future, status, from_street
+    type, owner_id, from_city, from_state, to_city, to_state, status, from_street
   )
   select 'offer', id, 'Chicago', 'IL', 'Aurora', 'IL',
-         false, 'active', 'Main St'
+         'active', 'Main St'
   from auth.users limit 1;
   raise notice 'FAIL test_2_offer_rejects_from_street (insert succeeded)';
 exception when check_violation then
@@ -39,11 +38,10 @@ end$$;
 do $$
 begin
   insert into public.rides (
-    type, owner_id, from_city, from_state, to_city, to_state,
-    is_future, status, to_street
+    type, owner_id, from_city, from_state, to_city, to_state, status, to_street
   )
   select 'offer', id, 'Chicago', 'IL', 'Aurora', 'IL',
-         false, 'active', 'Lake St'
+         'active', 'Lake St'
   from auth.users limit 1;
   raise notice 'FAIL test_3_offer_rejects_to_street (insert succeeded)';
 exception when check_violation then
@@ -54,11 +52,10 @@ end$$;
 with owner as (select id from auth.users limit 1),
 ins as (
   insert into public.rides (
-    type, owner_id, from_city, from_state, to_city, to_state,
-    is_future, status, from_street, to_street
+    type, owner_id, from_city, from_state, to_city, to_state, status, from_street, to_street
   )
   select 'get', owner.id, 'Riverside', 'CA', 'Anaheim', 'CA',
-         false, 'active', 'Main St', 'Lake St'
+         'active', 'Main St', 'Lake St'
   from owner
   returning id, from_street, to_street
 )

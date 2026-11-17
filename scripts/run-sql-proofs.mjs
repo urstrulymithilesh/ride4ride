@@ -67,7 +67,7 @@ export function outputHasFailure(out) {
  */
 const MIN_ASSERTIONS = {
   "arrival_tracking.sql": 7,
-  "expiry_rule.sql": 6,
+  "expiry_rule.sql": 10,
   "rate_limit.sql": 7,
   "rls_address_privacy.sql": 5,
   "rls_blocking_and_verify.sql": 2,

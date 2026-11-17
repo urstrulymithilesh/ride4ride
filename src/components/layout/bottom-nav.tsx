@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
-import { QuickPost } from "@/components/rides/quick-post";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { QuickPost, POST_DRAFT_KEY } from "@/components/rides/quick-post";
+import type { PostDraft } from "@/components/rides/quick-post";
 import { OPEN_POST_EVENT } from "@/components/rides/empty-post-cta";
 import { useViewerLocation } from "@/components/location/location-context";
 import { CAR_GLYPH_PATH } from "@/lib/marker-art";
@@ -73,8 +74,115 @@ function ChatIcon() {
  * switching type never clears filters.
  */
 function FeedDock({ menu }: { menu: React.ReactNode }) {
-  const [postOpen, setPostOpen] = useState(false);
   const { coords } = useViewerLocation();
+  const sp = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
+  // Stopwatch ring around recenter: one 30s revolution per refresh cycle.
+  const ringRef = useRef<SVGCircleElement>(null);
+
+  // Feed-only auto-refresh, aligned to the wall clock (:00 and :30 of
+  // every minute — 2,880 refreshes a day). The camera stash keeps the
+  // refresh from yanking the viewport (see RidesMap landing); the stash
+  // is dropped on tab switch so each tab keeps its own landing view.
+  useEffect(() => {
+    if (pathname !== "/" && pathname !== "/rides") return;
+    let raf = 0;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const RING = 2 * Math.PI * 14;
+    const tick = () => {
+      const p = (Date.now() % 30000) / 30000;
+      const el = ringRef.current;
+      if (el) el.style.strokeDashoffset = `${RING * (1 - p)}`;
+      raf = requestAnimationFrame(tick);
+    };
+    const schedule = () => {
+      timer = setTimeout(
+        () => {
+          try {
+            const w = window as unknown as {
+              __r4rMap?: {
+                getCenter: () => { toArray: () => [number, number] };
+                getZoom: () => number;
+              };
+              __r4rViewport?: {
+                center: [number, number];
+                zoom: number;
+                at: number;
+              };
+            };
+            const m = w.__r4rMap;
+            if (m)
+              w.__r4rViewport = {
+                center: m.getCenter().toArray(),
+                zoom: m.getZoom(),
+                at: Date.now(),
+              };
+          } catch {
+            // Map not ready — refresh anyway.
+          }
+          router.refresh();
+          schedule();
+        },
+        30000 - (Date.now() % 30000),
+      );
+    };
+    raf = requestAnimationFrame(tick);
+    schedule();
+    return () => {
+      cancelAnimationFrame(raf);
+      if (timer) clearTimeout(timer);
+      try {
+        delete (window as unknown as { __r4rViewport?: unknown })
+          .__r4rViewport;
+      } catch {
+        // ignore
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  // Post-login draft restore: a signed-out submit saves the draft and
+  // bounces through sign-in; landing back here reopens the popup at the
+  // confirm step. Reads storage in a post-hydration microtask — the draft
+  // exists only client-side, so render-time reads desync the server HTML
+  // and leave attributes React won't patch. Clearing (X, success,
+  // terminal error) removes it.
+  const [postDraft, setPostDraft] = useState<PostDraft | null>(null);
+  const [postOpen, setPostOpen] = useState(false);
+  useEffect(() => {
+    let live = true;
+    Promise.resolve().then(() => {
+      if (!live) return;
+      try {
+        const raw = localStorage.getItem(POST_DRAFT_KEY);
+        if (raw) {
+          setPostDraft(JSON.parse(raw) as PostDraft);
+          setPostOpen(true);
+        }
+      } catch {
+        // Corrupt draft: drop it rather than crash the dock.
+        try {
+          localStorage.removeItem(POST_DRAFT_KEY);
+        } catch {
+          // ignore
+        }
+      }
+    });
+    return () => {
+      live = false;
+    };
+  }, [pathname]);
+
+  const closePost = () => {
+    try {
+      localStorage.removeItem(POST_DRAFT_KEY);
+    } catch {
+      // ignore
+    }
+    setPostDraft(null);
+    setPostOpen(false);
+  };
 
   // The empty-feed "be the first to post one" button lives in a server
   // component, so it can't flip this state directly — it fires an event
@@ -86,8 +194,6 @@ function FeedDock({ menu }: { menu: React.ReactNode }) {
     return () => window.removeEventListener(OPEN_POST_EVENT, open);
   }, []);
 
-  const sp = useSearchParams();
-  const pathname = usePathname();
   // The tab IS the route: hail lives at /, cars at /rides. Filters carry
   // over; the dead ?type= scheme is stripped, never written.
   const isOffer = pathname === "/rides";
@@ -124,9 +230,46 @@ function FeedDock({ menu }: { menu: React.ReactNode }) {
     <>
       <div className="fixed inset-x-0 bottom-0 z-[var(--z-chrome)] mx-auto w-full max-w-[480px] px-3 pb-[calc(1.9rem+env(safe-area-inset-bottom))]">
         {(pathname === "/rides" || pathname === "/") ? (
-          <button
-            type="button"
-            onClick={() => {
+          <span
+            // Same footprint as the bare button; the ring draws inside
+            // its edge instead of circling outside it.
+            style={{ top: "-70px" }}
+            className="absolute right-[32px] z-[var(--z-chat)] flex h-[34px] w-[34px] items-center justify-center"
+          >
+            <svg
+              width="34"
+              height="34"
+              viewBox="0 0 34 34"
+              fill="none"
+              aria-hidden="true"
+              // Above the glass button: its backdrop-filter makes it a
+              // stacking context that would otherwise bury the ring.
+              // Clicks pass through to the button below.
+              className="absolute inset-0 -rotate-90 z-10 pointer-events-none"
+            >
+              <circle
+                cx="17"
+                cy="17"
+                r="14"
+                stroke="rgba(255,255,255,0.4)"
+                strokeWidth="2"
+              />
+              <circle
+                ref={ringRef}
+                cx="17"
+                cy="17"
+                r="14"
+                stroke="#ffffff"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeDasharray="87.96"
+                strokeDashoffset="87.96"
+                style={{ filter: "drop-shadow(0 0 3px rgba(255,255,255,0.9))" }}
+              />
+            </svg>
+            <button
+              type="button"
+              onClick={() => {
               const map = (
                 window as unknown as {
                   __r4rMap?: {
@@ -150,10 +293,7 @@ function FeedDock({ menu }: { menu: React.ReactNode }) {
               });
             }}
             aria-label="recenter map on my location"
-            // No chat bubble anymore to align against: float 36px above
-            // the bar's top edge on the same relative parent.
-            style={{ top: "-70px" }}
-            className="glass-dark absolute right-[32px] z-[var(--z-chat)] flex h-[34px] w-[34px] items-center justify-center rounded-full text-white opacity-[0.85]"
+            className="glass-dark flex h-[34px] w-[34px] items-center justify-center rounded-full text-white opacity-[0.85]"
           >
             <svg
               width="20"
@@ -177,7 +317,8 @@ function FeedDock({ menu }: { menu: React.ReactNode }) {
                 strokeLinecap="round"
               />
             </svg>
-          </button>
+            </button>
+          </span>
         ) : null}
         <nav
           aria-label="ride type"
@@ -188,7 +329,7 @@ function FeedDock({ menu }: { menu: React.ReactNode }) {
           <span className="flex min-h-10 flex-1 items-center justify-center">
             <button
               type="button"
-              onClick={() => setPostOpen((v) => !v)}
+              onClick={() => (postOpen ? closePost() : setPostOpen(true))}
               aria-label={postOpen ? "close" : "post a ride"}
               aria-expanded={postOpen}
               aria-haspopup="dialog"
@@ -228,7 +369,13 @@ function FeedDock({ menu }: { menu: React.ReactNode }) {
           </span>
         </nav>
       </div>
-      {postOpen ? <QuickPost /> : null}
+      {postOpen ? (
+        <QuickPost
+          key={postDraft ? "draft" : "new"}
+          initialDraft={postDraft}
+          onDone={closePost}
+        />
+      ) : null}
     </>
   );
 }

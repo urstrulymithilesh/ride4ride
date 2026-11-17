@@ -135,13 +135,10 @@ export default async function ConversationPage({
           </h1>
         </div>
         {ride ? (
-          <Link
-            href={`/rides/${ride.id}`}
-            className="wrap-anywhere shrink-0 text-right text-xs text-muted hover:text-content"
-          >
+          <span className="wrap-anywhere shrink-0 text-right text-xs text-muted">
             {formatPlace(ride.from_city, ride.from_state)} →{" "}
             {formatPlace(ride.to_city, ride.to_state)}
-          </Link>
+          </span>
         ) : null}
       </div>
 

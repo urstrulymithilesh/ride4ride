@@ -16,8 +16,8 @@ export const dynamic = "force-dynamic";
  * Scheduled via vercel.json. The cron interval should be <= the notice
  * window (default 1h) so soon-to-expire posts aren't missed.
  *
- * FAILURE POLICY. This job is what actually enforces the 7-day expiry
- * rule (see 0008_expiry_hardening.sql). Previously both queries here
+ * FAILURE POLICY. This job is what actually enforces the timing-based
+ * expiry rule (see 0024_timing_expiry.sql). Previously both queries here
  * discarded their `error`, so a failed run returned
  * `{ notified: 0, expired: 0 }` with HTTP 200 — which Vercel Cron records
  * as a SUCCESS. Posts would have stopped expiring indefinitely and the
@@ -61,7 +61,7 @@ export async function GET(request: Request) {
           ride.to_city,
           ride.to_state,
         )} expires soon. Repost to keep it live.`,
-        url: `/rides/${ride.id}`,
+        url: `/`,
         tag: `expiry-${ride.id}`,
       });
       if (count > 0) notified += 1;

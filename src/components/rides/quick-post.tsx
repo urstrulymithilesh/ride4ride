@@ -4,6 +4,33 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { createPortal, useFormStatus } from "react-dom";
 import { submitQuickPost } from "@/app/rides/actions";
 import { PlaceAutocomplete } from "@/components/places/place-autocomplete";
+import { addDays } from "@/lib/pickup-tz";
+
+/**
+ * Post draft: everything the wizard holds, so a signed-out submit can
+ * stash it locally, survive the sign-in bounce, and reopen at confirm.
+ */
+export interface PostDraft {
+  postMode: "need" | "give";
+  fromValue: string;
+  toValue: string;
+  noteValue: string;
+  dateOption: "today" | "tomorrow" | "custom";
+  customDate: string;
+  timing: "asap" | "anytime" | "at";
+  hour: string;
+  minute: string;
+  ampm: "am" | "pm";
+}
+
+export const POST_DRAFT_KEY = "r4r-post-draft";
+
+/** Device-local YYYY-MM-DD (display use only; the server resolves dates). */
+function deviceToday(): string {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
 
 function PostButton({ skippable }: { skippable: boolean }) {
   const { pending } = useFormStatus();
@@ -118,7 +145,15 @@ function BackArrow({ onBack }: { onBack: () => void }) {
  * way to close it — backdrop taps and navigation leave it open. A
  * successful post redirects behind it; the user closes via X.
  */
-export function QuickPost() {
+export function QuickPost({
+  initialDraft = null,
+  onDone = null,
+}: {
+  initialDraft?: PostDraft | null;
+  /** Called after a successful post instead of navigating away, so the
+   *  host (the dock) can simply close the popup. */
+  onDone?: (() => void) | null;
+}) {
   // Portal out of the dock: its -translate-x-1/2 wrapper traps fixed
   // descendants, so without this the overlay anchors to the little dock
   // bar instead of the viewport. Mounts post-hydration (microtask, not a
@@ -134,27 +169,44 @@ export function QuickPost() {
     };
   }, []);
   const [state, formAction] = useActionState(submitQuickPost, {});
-  const [step, setStep] = useState(0);
-  const [postMode, setPostMode] = useState<"need" | "give" | null>(null);
-  const [timing, setTiming] = useState<"asap" | "anytime" | "at" | null>(null);
+  const [step, setStep] = useState(initialDraft ? 4 : 0);
+  const [postMode, setPostMode] = useState<"need" | "give" | null>(
+    initialDraft?.postMode ?? null,
+  );
+  const [timing, setTiming] = useState<"asap" | "anytime" | "at" | null>(
+    initialDraft?.timing ?? null,
+  );
   // Controlled address fields so they can carry the shared autocomplete.
   // Address picks fill the complete address; the action geocodes it.
-  const [fromValue, setFromValue] = useState("");
-  const [toValue, setToValue] = useState("");
-  const [noteValue, setNoteValue] = useState("");
+  const [fromValue, setFromValue] = useState(initialDraft?.fromValue ?? "");
+  const [toValue, setToValue] = useState(initialDraft?.toValue ?? "");
+  const [noteValue, setNoteValue] = useState(initialDraft?.noteValue ?? "");
+  // Ride day: Today / Tomorrow / explicit date (day-after-tomorrow on).
+  const [dateOption, setDateOption] = useState<
+    "today" | "tomorrow" | "custom"
+  >(initialDraft?.dateOption ?? "today");
+  const [customDate, setCustomDate] = useState(initialDraft?.customDate ?? "");
+  // Tracks a submitted form so the action outcome (success navigation or
+  // terminal error) can clear the saved draft exactly once. A ref, not
+  // state: flipping state here would cascade renders.
+  const submittedRef = useRef(false);
   // 12-hour clock. Defaults to the current local time rounded up to the
   // next 5 minutes; the hidden ride_time field carries HH:MM 24h for the
   // action (existing contract).
   const now = new Date();
   const [hour, setHour] = useState(() => {
+    if (initialDraft) return initialDraft.hour;
     const h = now.getHours() % 12 || 12;
     return String(h);
   });
   const [minute, setMinute] = useState(() => {
+    if (initialDraft) return initialDraft.minute;
     const m = Math.ceil(now.getMinutes() / 5) * 5;
     return String(m % 60).padStart(2, "0");
   });
-  const [ampm, setAmpm] = useState(() => (now.getHours() < 12 ? "am" : "pm"));
+  const [ampm, setAmpm] = useState(() =>
+    initialDraft ? initialDraft.ampm : now.getHours() < 12 ? "am" : "pm",
+  );
   const [clockOpen, setClockOpen] = useState(false);
   const clockBoxRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -175,6 +227,52 @@ export function QuickPost() {
     String(i * 5).padStart(2, "0"),
   );
   const displayTime = `${hour}:${minute} ${ampm}`;
+
+  const saveDraft = () => {
+    if (!postMode) return;
+    const draft: PostDraft = {
+      postMode,
+      fromValue,
+      toValue,
+      noteValue,
+      dateOption,
+      customDate,
+      timing: timing ?? "anytime",
+      hour,
+      minute,
+      ampm,
+    };
+    try {
+      localStorage.setItem(POST_DRAFT_KEY, JSON.stringify(draft));
+    } catch {
+      // Private mode etc: the post still submits, just without restore.
+    }
+  };
+
+  const clearDraft = () => {
+    try {
+      localStorage.removeItem(POST_DRAFT_KEY);
+    } catch {
+      // ignore
+    }
+  };
+
+  // Action outcome: success clears the draft and hands control back
+  // (the detail page is gone pending redesign, so there is nowhere to
+  // navigate — the popup simply closes). A terminal error also clears
+  // the draft so it can't reopen stale. A signed-out submit redirects
+  // server-side with no state update, so the saved draft survives for
+  // the post-login restore.
+  useEffect(() => {
+    if (!submittedRef.current) return;
+    submittedRef.current = false;
+    if (state.ok && state.rideId) {
+      clearDraft();
+      onDone?.();
+    } else if (state.error || state.fieldErrors) {
+      clearDraft();
+    }
+  }, [state, onDone]);
 
   const addrPlaceholder =
     postMode === "need"
@@ -211,7 +309,14 @@ export function QuickPost() {
         <div className="flex min-h-full">
           <div className="m-auto w-full max-w-[340px] sm:max-w-sm">
           <div data-quickpost-panel className="relative overscroll-contain rounded-3xl border border-white/15 bg-app/70 p-3 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)] backdrop-blur-xl sm:p-6">
-            <form action={formAction} className="flex flex-col gap-2 sm:gap-4">
+            <form
+              action={formAction}
+              onSubmit={() => {
+                submittedRef.current = true;
+                saveDraft();
+              }}
+              className="flex flex-col gap-2 sm:gap-4"
+            >
               <h2 className="text-left text-lg font-semibold text-content">
                 new post
               </h2>
@@ -221,6 +326,12 @@ export function QuickPost() {
               <input type="hidden" name="postMode" value={postMode ?? "need"} />
               <input type="hidden" name="timing" value={timing ?? "anytime"} />
               <input type="hidden" name="ride_time" value={rideTime24} />
+              <input type="hidden" name="date_option" value={dateOption} />
+              <input
+                type="hidden"
+                name="custom_date"
+                value={dateOption === "custom" ? customDate : ""}
+              />
               {/* Step-1 address fields unmount once you advance, so carry
                   their controlled values here — otherwise the submit sees
                   empty from/to and wrongly reports "enter a full pickup
@@ -335,11 +446,74 @@ export function QuickPost() {
 
               {step === 2 ? (
                 <>
+                  <div
+                    className="flex gap-2"
+                    role="group"
+                    aria-label="ride date"
+                  >
+                    {(
+                      ["today", "tomorrow", "custom"] as const
+                    ).map((o) => (
+                      <button
+                        key={o}
+                        type="button"
+                        onClick={() => {
+                          setDateOption(o);
+                          // "now" only exists for today — leaving it would
+                          // submit an impossible combo.
+                          if (o !== "today")
+                            setTiming((t) => (t === "asap" ? null : t));
+                          if (o !== "custom") setStep(3);
+                        }}
+                        aria-pressed={dateOption === o}
+                        className={`${pill(dateOption === o)} flex min-h-10 flex-1 items-center justify-center sm:min-h-11`}
+                      >
+                        {o === "today"
+                          ? "today"
+                          : o === "tomorrow"
+                            ? "tomorrow"
+                            : "set date"}
+                      </button>
+                    ))}
+                  </div>
+                  {dateOption === "custom" ? (
+                    <>
+                      <input
+                        type="date"
+                        required
+                        value={customDate}
+                        min={addDays(deviceToday(), 2)}
+                        onChange={(e) => setCustomDate(e.target.value)}
+                        aria-label="pick a date"
+                        className="input min-h-11 w-full text-center [color-scheme:dark]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => customDate && setStep(3)}
+                        disabled={!customDate}
+                        className="min-h-11 w-full rounded-xl text-sm text-muted hover:text-content disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        continue →
+                      </button>
+                    </>
+                  ) : null}
+                  <BackArrow onBack={() => setStep(1)} />
+                </>
+              ) : null}
+
+              {step === 3 ? (
+                <>
                   <div className="relative" ref={clockBoxRef}>
-                    <div className="flex gap-2" role="group" aria-label="timing">
+                    <div
+                      className="flex gap-2"
+                      role="group"
+                      aria-label="timing"
+                    >
                       {(
                         [
-                          ["asap", "now"],
+                          ...(dateOption === "today"
+                            ? [["asap", "now"] as const]
+                            : []),
                           ["anytime", "anytime"],
                         ] as const
                       ).map(([value, label]) => (
@@ -349,7 +523,7 @@ export function QuickPost() {
                           onClick={() => {
                             setTiming(value);
                             setClockOpen(false);
-                            setStep(3);
+                            setStep(4);
                           }}
                           aria-pressed={timing === value}
                           className={`${pill(timing === value)} flex min-h-10 flex-1 items-center justify-center sm:min-h-11`}
@@ -401,7 +575,7 @@ export function QuickPost() {
                                 onClick={() => {
                                   setAmpm(o);
                                   setClockOpen(false);
-                                  setStep(3);
+                                  setStep(4);
                                 }}
                                 className={`min-h-10 shrink-0 rounded-lg text-sm ${
                                   o === ampm
@@ -417,12 +591,29 @@ export function QuickPost() {
                       </div>
                     ) : null}
                   </div>
-                  <BackArrow onBack={() => setStep(1)} />
+                  <BackArrow onBack={() => setStep(2)} />
                 </>
               ) : null}
 
-              {step === 3 ? (
+              {step === 4 ? (
                 <>
+                  {/* Confirm summary: what is being posted, in one glance. */}
+                  <div className="rounded-2xl border border-white/15 px-3 py-2 text-center text-[13px] text-white/80">
+                    <p className="wrap-anywhere">
+                      {fromValue || "…"} → {toValue || "…"}
+                    </p>
+                    <p className="mt-0.5 text-muted">
+                      {dateOption === "today"
+                        ? "today"
+                        : dateOption === "tomorrow"
+                          ? "tomorrow"
+                          : customDate || "pick a date"}{" "}
+                      ·{" "}
+                      {timing === "at"
+                        ? displayTime
+                        : (timing ?? "anytime")}
+                    </p>
+                  </div>
                   <fieldset className="rounded-2xl border border-white/15 px-3 pb-0.5 sm:pb-3">
                     <legend className="px-1 text-[11px] text-muted sm:text-xs">note (optional)</legend>
                     <textarea
@@ -448,7 +639,7 @@ export function QuickPost() {
                   ) : null}
 
                   <PostButton skippable={noteValue.trim().length === 0} />
-                  <BackArrow onBack={() => setStep(2)} />
+                  <BackArrow onBack={() => setStep(3)} />
                 </>
               ) : null}
             </form>

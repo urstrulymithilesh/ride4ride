@@ -38,11 +38,10 @@ select
 do $$
 begin
   insert into public.rides (
-    type, owner_id, from_city, from_state, to_city, to_state,
-    is_future, status, from_airport
+    type, owner_id, from_city, from_state, to_city, to_state, status, from_airport
   )
   select 'offer', id, 'Chicago', 'IL', 'Aurora', 'IL',
-         false, 'active', 'ohare'
+         'active', 'ohare'
   from auth.users limit 1;
   raise notice 'FAIL test_4_bad_iata_rejected (insert succeeded)';
 exception when check_violation then

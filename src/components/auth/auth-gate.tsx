@@ -11,7 +11,7 @@ import { SignInPrompt } from "./sign-in-prompt";
  * for sections/actions embedded in a public page.
  *
  * @example
- * <AuthGate action="view full trip details" redirectTo={`/rides/${id}`}>
+ * <AuthGate action="view full trip details" redirectTo="/chat">
  *   <RideDetails ride={ride} />
  * </AuthGate>
  */

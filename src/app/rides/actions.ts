@@ -6,13 +6,17 @@ import { createClient } from "@/lib/supabase/server";
 import { getUser } from "@/lib/auth";
 import { geocodeAddress, drivingDistanceMeters } from "@/lib/geocoding";
 import { nearPickup } from "@/lib/geo";
-import { validateOffer, validateGet } from "@/lib/validations/rides";
-import type { Timing } from "@/lib/validations/rides";
+import { validateOffer, validateGet, resolvePostDate } from "@/lib/validations/rides";
+import type { TimingDraft } from "@/lib/validations/rides";
 import type { FieldErrors } from "@/lib/validations/auth";
 
 export interface RideFormState {
   error?: string;
   fieldErrors?: FieldErrors;
+  /** Set on a successful post so the client can clear its draft and go
+   *  to the new post itself (replacing the old server redirect). */
+  ok?: true;
+  rideId?: string;
 }
 
 /**
@@ -25,7 +29,7 @@ export interface RideFormState {
 async function saveTiming(
   supabase: Awaited<ReturnType<typeof createClient>>,
   rideId: string,
-  timing: Timing,
+  timing: TimingDraft,
 ): Promise<void> {
   const { error } = await supabase
     .from("rides")
@@ -47,11 +51,19 @@ export async function createOfferRide(
   formData: FormData,
 ): Promise<RideFormState> {
   const user = await getUser();
-  if (!user) redirect("/sign-in?redirectTo=/rides/offer");
+  if (!user) redirect("/sign-in?redirectTo=/");
 
   const result = validateOffer(formToRecord(formData));
   if (!result.ok) return { fieldErrors: result.fieldErrors };
   const d = result.data;
+
+  // The posting date resolves against the pickup's local day (known
+  // upfront for give-rides: the city comes straight from the form).
+  const resolved = resolvePostDate(
+    d.timing,
+    d.from_state,
+  );
+  if (!resolved.ok) return { fieldErrors: resolved.fieldErrors };
 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("create_offer_ride", {
@@ -62,8 +74,7 @@ export async function createOfferRide(
     p_to_state: d.to_state,
     p_to_zip: d.to_zip,
     p_description: d.description,
-    p_ride_date: d.timing.ride_date,
-    p_is_future: d.timing.is_future,
+    p_ride_date: resolved.data.ride_date,
     p_from_airport: d.from_airport ?? "",
   });
 
@@ -72,63 +83,27 @@ export async function createOfferRide(
   // "Couldn't create the post", with nothing in the server log to say why.
   if (error) {
     console.error("[rides] create_offer_ride failed:", error.message, error);
-    return { error: "couldn't create the post. please try again." };
+    return { error: `couldn't create the post. please try again. (${error.message.slice(0, 160)})` };
   }
 
   const ride = Array.isArray(data) ? data[0] : data;
   if (!ride?.id) {
     console.error("[rides] create_offer_ride returned no row:", data);
-    return { error: "couldn't create the post. please try again." };
+    return { error: "couldn't create the post. please try again. (empty response)" };
   }
 
   await saveTiming(supabase, ride.id, d.timing);
 
   revalidatePath("/rides");
   revalidatePath("/");
-  redirect(`/rides/${ride.id}`);
-}
-
-/**
- * One-click repost: flip an expired post back to active.
- *
- * Repost does NOT extend a post's life. Expiry is derived from the ride
- * date by `trg_set_ride_expiry` (migration 0008), so reactivating a post
- * whose ride date is already more than 7 days past will simply be
- * re-expired by the next cron pass. That is correct: reposting a ride
- * that has already happened should not resurrect it. To relist, the
- * owner changes the ride date, and the expiry follows it.
- *
- * We reset expiry_notified_at so the pre-expiry reminder can fire again
- * for the new window. RLS (owner-only update) is the access guard; the
- * trigger is what guarantees the expiry value.
- */
-export async function repostRide(formData: FormData): Promise<void> {
-  const user = await getUser();
-  const rideId = String(formData.get("rideId") ?? "");
-  if (!user) redirect(`/sign-in?redirectTo=/rides/${rideId}`);
-  if (!rideId) redirect("/rides");
-
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("rides")
-    .update({
-      status: "active",
-      expiry_notified_at: null,
-    })
-    .eq("id", rideId)
-    .eq("owner_id", user.id);
-
-  if (error) redirect(`/rides/${rideId}?error=repost`);
-  revalidatePath("/rides");
-  revalidatePath("/");
-  redirect(`/rides/${rideId}`);
+  return { ok: true as const, rideId: ride.id };
 }
 
 export async function createGetRide(
   _prev: RideFormState,
   formData: FormData,
 ): Promise<RideFormState> {  const user = await getUser();
-  if (!user) redirect("/sign-in?redirectTo=/rides/get");
+  if (!user) redirect("/sign-in?redirectTo=/");
 
   const result = validateGet(formToRecord(formData));
   if (!result.ok) return { fieldErrors: result.fieldErrors };
@@ -151,6 +126,14 @@ export async function createGetRide(
   if (!from || !to) return { fieldErrors };
 
   const distance_meters = await drivingDistanceMeters(from, to);
+
+  // The posting date resolves against the pickup's local day, known only
+  // after geocoding here.
+  const resolved = resolvePostDate(
+    d.timing,
+    from.state ?? "",
+  );
+  if (!resolved.ok) return { fieldErrors: resolved.fieldErrors };
 
   // Public map pin: near the pickup, never on it. The exact point stays
   // in row-protected ride_locations; only this pre-jittered pin is
@@ -180,8 +163,7 @@ export async function createGetRide(
     p_from_street: from.street ?? "",
     p_to_street: to.street ?? "",
     p_description: d.description,
-    p_ride_date: d.timing.ride_date,
-    p_is_future: d.timing.is_future,
+    p_ride_date: resolved.data.ride_date,
   };
   let { data, error } = await supabase.rpc("create_get_ride", {
     ...baseParams,
@@ -201,27 +183,28 @@ export async function createGetRide(
   // "Couldn't create the post", with nothing in the server log to say why.
   if (error) {
     console.error("[rides] create_get_ride failed:", error.message, error);
-    return { error: "couldn't create the post. please try again." };
+    return { error: `couldn't create the post. please try again. (${error.message.slice(0, 160)})` };
   }
 
   const ride = Array.isArray(data) ? data[0] : data;
   if (!ride?.id) {
     console.error("[rides] create_get_ride returned no row:", data);
-    return { error: "couldn't create the post. please try again." };
+    return { error: "couldn't create the post. please try again. (empty response)" };
   }
 
   await saveTiming(supabase, ride.id, d.timing);
 
   revalidatePath("/rides");
   revalidatePath("/");
-  redirect(`/rides/${ride.id}`);
+  return { ok: true as const, rideId: ride.id };
 }
 
 /**
  * Quick-post popup submit. Same address fields for both modes; give-rides
  * posts derive city/state/zip by geocoding server-side, then delegate to
- * the regular create actions (which validate, write, time-stamp, and
- * redirect to the new post — the redirect closes the popup).
+ * the regular create actions (which validate, write, and time-stamp).
+ * Returns the new post id on success so the client can clear its draft
+ * and navigate itself; sign-in bounces still redirect server-side.
  */
 export async function submitQuickPost(
   _prev: RideFormState,
@@ -265,7 +248,8 @@ export async function submitQuickPost(
   fd.set("to_state", to.state ?? "");
   fd.set("to_zip", to.zip ?? "");
   fd.set("description", String(formData.get("description") ?? ""));
-  fd.set("mode", "current");
+  fd.set("date_option", String(formData.get("date_option") ?? "today"));
+  fd.set("custom_date", String(formData.get("custom_date") ?? ""));
   fd.set("timing", String(formData.get("timing") ?? "asap"));
   fd.set("ride_time", String(formData.get("ride_time") ?? ""));
   return await createOfferRide(_prev, fd);

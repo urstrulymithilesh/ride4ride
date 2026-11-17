@@ -12,11 +12,11 @@ begin;
 -- Seed a 'get' ride (owner = ...a), its addresses, and a conversation with
 -- the viewer (...b). Runs as postgres (bypasses RLS) for setup only.
 insert into public.rides
-  (id, type, owner_id, from_city, from_state, to_city, to_state, is_future, expires_at)
+  (id, type, owner_id, from_city, from_state, to_city, to_state, expires_at)
 values
   ('11111111-1111-1111-1111-111111111111', 'get',
    '00000000-0000-0000-0000-00000000000a',
-   'Riverside', 'CA', 'Los Angeles', 'CA', false, now() + interval '3 days');
+   'Riverside', 'CA', 'Los Angeles', 'CA', now() + interval '3 days');
 
 insert into public.ride_locations (ride_id, from_address, to_address)
 values ('11111111-1111-1111-1111-111111111111',

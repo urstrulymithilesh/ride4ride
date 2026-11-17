@@ -14,11 +14,11 @@ begin;
 -- Seed: ride owned by A, a conversation between A and B (bypasses RLS as
 -- postgres for setup only).
 insert into public.rides
-  (id, type, owner_id, from_city, from_state, to_city, to_state, is_future, expires_at)
+  (id, type, owner_id, from_city, from_state, to_city, to_state, expires_at)
 values
   ('33333333-3333-3333-3333-333333333333', 'offer',
    '00000000-0000-0000-0000-00000000000a',
-   'Riverside', 'CA', 'Los Angeles', 'CA', false, now() + interval '3 days');
+   'Riverside', 'CA', 'Los Angeles', 'CA', now() + interval '3 days');
 
 insert into public.conversations
   (id, ride_id, participant_one, participant_two, auto_delete_at)

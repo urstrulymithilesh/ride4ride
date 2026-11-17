@@ -22,12 +22,11 @@ begin;
 -- which bypasses RLS for setup only).
 with r as (
   insert into public.rides
-    (type, owner_id, from_city, from_state, to_city, to_state,
-     is_future, distance_meters, expires_at)
+    (type, owner_id, from_city, from_state, to_city, to_state, distance_meters, expires_at)
   values
     ('get', '00000000-0000-0000-0000-00000000000a',
      'Riverside', 'CA', 'Los Angeles', 'CA',
-     false, 92000, now() + interval '3 days')
+     92000, now() + interval '3 days')
   returning id
 )
 insert into public.ride_locations

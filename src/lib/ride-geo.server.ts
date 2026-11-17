@@ -1,6 +1,12 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { approxPoint, haversineMeters, type LatLng } from "@/lib/geo";
+import {
+  addDays,
+  formatMonthDay,
+  todayInZone,
+  timezoneForState,
+} from "@/lib/pickup-tz";
 import { formatClockDots } from "@/lib/utils/format";
 import type { MapRide } from "@/lib/ride-map";
 
@@ -130,6 +136,8 @@ export interface RideGeoRow {
   from_state: string;
   to_city: string;
   to_state: string;
+  /** Scheduled day; absent on older callers (treated as today-ish). */
+  ride_date?: string | null;
   distance_meters: number | null;
   /** Public near-pickup pin (0022). Null until backfilled. */
   pin_lat?: number | null;
@@ -139,7 +147,7 @@ export interface RideGeoRow {
   ride_time?: string | null;
 }
 
-/** Short timing for pin pills: "Now", "Anytime", or "10.45 a.m". */
+/** Short timing for pin pills: "Now", "Anytime", or "10.45 am". */
 export function pinWhen(
   time_mode: string | null | undefined,
   ride_time: string | null | undefined,
@@ -168,9 +176,21 @@ export function buildMapRides(rows: RideGeoRow[]): MapRide[] {
       const to = cityCenter(row.to_city, row.to_state);
       return to ? pinMiles(haversineMeters(from, to)) : null;
     })();
-    // Pin pill reads "2.0 miles • Now" — distance plus timing.
-    const when = pinWhen(row.time_mode, row.ride_time);
-    const label = miles && when ? `${miles} • ${when}` : (miles ?? when);
+    // Pin pill reads "2.0 miles • Now" — distance plus timing. Future
+    // ride dates show the day instead of the time ("Tomorrow", "Nov 20");
+    // the pill becomes regular on its own once that day arrives, because
+    // this comparison runs on every render. Days are pickup-local, and
+    // "Today" never appears on a pill.
+    const tz = timezoneForState(row.from_state);
+    const today = todayInZone(tz);
+    const rd = row.ride_date;
+    const day =
+      !rd || rd <= today
+        ? pinWhen(row.time_mode, row.ride_time)
+        : rd === addDays(today, 1)
+          ? "Tomorrow"
+          : formatMonthDay(rd);
+    const label = miles && day ? `${miles} • ${day}` : (miles ?? day);
     return [
       {
         id: row.id,

@@ -43,7 +43,6 @@ const PANEL_WIDTH = 256;
  * until their behavior lands.
  */
 export function SearchForm({
-  when,
   type,
   fromDefault,
   toDefault,
@@ -52,7 +51,6 @@ export function SearchForm({
   universityDefault,
   fromKindDefault,
 }: {
-  when: string;
   type: string;
   fromDefault: string;
   toDefault: string;
@@ -158,7 +156,6 @@ export function SearchForm({
     // The tab is the route: hail lives at /, cars at /rides.
     const path = type !== "get" ? "/rides" : "/";
     const qs = new URLSearchParams();
-    if (when !== "current") qs.set("when", when);
     if (f) qs.set("from", f);
     if (t) qs.set("to", t);
     if (/^[A-Z]{3}$/.test(a)) qs.set("airport", a);

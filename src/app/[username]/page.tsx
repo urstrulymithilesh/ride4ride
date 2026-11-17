@@ -59,7 +59,7 @@ export default async function MemberPage({
   const { data: rides } = await supabase
     .from("rides")
     .select(
-      "id, type, owner_id, created_at, from_city, from_state, to_city, to_state, ride_date, is_future, time_mode, ride_time, distance_meters, from_street, to_street, description",
+      "id, type, owner_id, created_at, from_city, from_state, to_city, to_state, ride_date, time_mode, ride_time, distance_meters, from_street, to_street, description",
     )
     .eq("owner_id", profile.id)
     .eq("status", "active")

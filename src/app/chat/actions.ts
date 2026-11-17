@@ -24,7 +24,7 @@ import type { Message, RideReveal } from "@/types";
 export async function startConversation(formData: FormData): Promise<void> {
   const user = await getUser();
   const rideId = String(formData.get("rideId") ?? "");
-  if (!user) redirect(`/sign-in?redirectTo=/rides/${rideId}`);
+  if (!user) redirect(`/sign-in?redirectTo=/`);
   if (!rideId) redirect("/");
 
   const supabase = await createClient();
@@ -39,7 +39,9 @@ export async function startConversation(formData: FormData): Promise<void> {
     p_ride_id: rideId,
   });
 
-  if (error || !data) redirect(`/rides/${rideId}?error=chat`);
+  // No detail page to land on (removed pending redesign): failures
+  // return to the feed, where the user can retry.
+  if (error || !data) redirect(`/`);
   const conversationId = data as string;
 
   // Send the canned opener only into an empty conversation. A double-tap

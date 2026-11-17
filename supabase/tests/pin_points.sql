@@ -24,11 +24,10 @@ where table_schema = 'public'
 do $$
 begin
   insert into public.rides (
-    type, owner_id, from_city, from_state, to_city, to_state,
-    is_future, status, pin_lat, pin_lng
+    type, owner_id, from_city, from_state, to_city, to_state, status, pin_lat, pin_lng
   )
   select 'offer', id, 'Chicago', 'IL', 'Aurora', 'IL',
-         false, 'active', 41.75, -88.31
+         'active', 41.75, -88.31
   from auth.users limit 1;
   raise notice 'FAIL test_2_offer_rejects_pin (insert succeeded)';
 exception when check_violation then
@@ -39,11 +38,10 @@ end$$;
 do $$
 begin
   insert into public.rides (
-    type, owner_id, from_city, from_state, to_city, to_state,
-    is_future, status, pin_lat
+    type, owner_id, from_city, from_state, to_city, to_state, status, pin_lat
   )
   select 'get', id, 'Chicago', 'IL', 'Aurora', 'IL',
-         false, 'active', 41.75
+         'active', 41.75
   from auth.users limit 1;
   raise notice 'FAIL test_3_half_pin_rejected (insert succeeded)';
 exception when check_violation then
@@ -54,11 +52,10 @@ end$$;
 with owner as (select id from auth.users limit 1),
 ins as (
   insert into public.rides (
-    type, owner_id, from_city, from_state, to_city, to_state,
-    is_future, status, pin_lat, pin_lng
+    type, owner_id, from_city, from_state, to_city, to_state, status, pin_lat, pin_lng
   )
   select 'get', owner.id, 'Riverside', 'CA', 'Anaheim', 'CA',
-         false, 'active', 33.95, -117.39
+         'active', 33.95, -117.39
   from owner
   returning id, pin_lat, pin_lng
 )

@@ -4,6 +4,12 @@ import {
   formatPlace,
   formatRideWhen,
 } from "@/lib/utils/format";
+import {
+  addDays,
+  formatMonthDay,
+  todayInZone,
+  timezoneForState,
+} from "@/lib/pickup-tz";
 
 describe("formatDistance", () => {
   it("returns null for null/undefined", () => {
@@ -33,19 +39,16 @@ describe("formatPlace", () => {
 });
 
 describe("formatRideWhen", () => {
-  it("labels dateless rides ASAP", () => {
-    expect(formatRideWhen(null, false)).toBe("current · asap");
+  it("labels dateless and past rides today", () => {
+    expect(formatRideWhen(null, "IL")).toBe("Today");
+    expect(formatRideWhen("2020-01-01", "IL")).toBe("Today");
   });
 
-  it("renders a dated future ride with year and month", () => {
-    const label = formatRideWhen("2026-09-10", true);
-    expect(label).toContain("2026");
-    expect(label).toContain("Sep");
-  });
-
-  it("prefixes a dated current ride with current", () => {
-    expect(formatRideWhen("2026-09-10", false).startsWith("current · ")).toBe(
-      true,
+  it("labels tomorrow and later dates", () => {
+    const today = todayInZone(timezoneForState("IL"));
+    expect(formatRideWhen(addDays(today, 1), "IL")).toBe("Tomorrow");
+    expect(formatRideWhen(addDays(today, 5), "IL")).toBe(
+      formatMonthDay(addDays(today, 5)),
     );
   });
 });

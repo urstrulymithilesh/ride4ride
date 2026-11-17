@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { buildMapRides, cityCenter } from "./ride-geo.server";
 import { haversineMiles } from "./geo";
+import {
+  addDays,
+  formatMonthDay,
+  todayInZone,
+  timezoneForState,
+} from "./pickup-tz";
 
 describe("cityCenter (vendored US cities)", () => {
   it("finds Chicago, IL", () => {
@@ -191,7 +197,7 @@ describe("buildMapRides", () => {
         ride_time: "10:45",
       },
     ]);
-    expect(pins[0].miles).toBe("8.2 miles • 10.45 a.m");
+    expect(pins[0].miles).toBe("8.2 miles • 10.45 am");
   });
 
   it("leaves the label as distance alone when timing is missing", () => {
@@ -205,5 +211,57 @@ describe("buildMapRides", () => {
       },
     ]);
     expect(pins[0].miles).toBe("8.2 miles");
+  });
+
+  it("shows Tomorrow for tomorrow rides without the time", () => {
+    const today = todayInZone(timezoneForState("IL"));
+    const pins = buildMapRides([
+      {
+        id: "ride-11",
+        ...chicago,
+        to_city: "Naperville",
+        to_state: "IL",
+        distance_meters: 13_197,
+        time_mode: "at",
+        ride_time: "17:00",
+        ride_date: addDays(today, 1),
+      },
+    ]);
+    expect(pins[0].miles).toBe("8.2 miles • Tomorrow");
+  });
+
+  it("shows Mon DD for later rides without the time", () => {
+    const today = todayInZone(timezoneForState("IL"));
+    const later = addDays(today, 5);
+    const pins = buildMapRides([
+      {
+        id: "ride-12",
+        ...chicago,
+        to_city: "Naperville",
+        to_state: "IL",
+        distance_meters: 13_197,
+        time_mode: "anytime",
+        ride_time: null,
+        ride_date: later,
+      },
+    ]);
+    expect(pins[0].miles).toBe(`8.2 miles • ${formatMonthDay(later)}`);
+  });
+
+  it("shows the time again once the ride day arrives", () => {
+    const today = todayInZone(timezoneForState("IL"));
+    const pins = buildMapRides([
+      {
+        id: "ride-13",
+        ...chicago,
+        to_city: "Naperville",
+        to_state: "IL",
+        distance_meters: 13_197,
+        time_mode: "at",
+        ride_time: "17:00",
+        ride_date: today,
+      },
+    ]);
+    expect(pins[0].miles).toBe("8.2 miles • 5.00 pm");
   });
 });

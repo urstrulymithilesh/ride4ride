@@ -102,6 +102,9 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<Status>("checking");
   const [manualOpen, setManualOpen] = useState(false);
   const [manualQuery, setManualQuery] = useState("");
+  // True when the user picked a city by hand. A live GPS watch must not
+  // override that choice — watching only follows the device fix.
+  const [manual, setManual] = useState(false);
   const pathname = usePathname();
 
   const requestPosition = useCallback((silent = false) => {
@@ -123,6 +126,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
         };
         setCoords(next);
         writeCache(next);
+        setManual(false);
         setStatus("granted");
       },
       (err) => {
@@ -147,6 +151,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   const setManualLocation = useCallback((next: ViewerCoords) => {
     setCoords(next);
     writeCache(next);
+    setManual(true);
     setStatus("granted");
     setManualOpen(false);
   }, []);
@@ -217,6 +222,41 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
       live = false;
     };
   }, [requestPosition]);
+
+  // Live tracking: follow the device as it moves. watchPosition fires on
+  // every significant fix, so the blue dot, map center, and distance
+  // sort stay current while walking or riding. Skipped for manual city
+  // picks (no device fix to follow — the chosen center stands), and
+  // cleaned up on unmount or when the user switches to manual.
+  useEffect(() => {
+    if (manual || status !== "granted") return;
+    if (typeof navigator === "undefined" || !navigator.geolocation) return;
+    const id = navigator.geolocation.watchPosition(
+      (position) => {
+        const next: ViewerCoords = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracy: Number.isFinite(position.coords.accuracy)
+            ? position.coords.accuracy
+            : null,
+        };
+        setCoords(next);
+        writeCache(next);
+      },
+      () => {
+        // A lost fix must not knock the user out: keep the last known
+        // position and let the next fix correct it.
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 12_000,
+        maximumAge: 5_000,
+      },
+    );
+    return () => {
+      navigator.geolocation.clearWatch(id);
+    };
+  }, [manual, status]);
 
   const value = {
     coords,

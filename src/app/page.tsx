@@ -18,7 +18,6 @@ export default async function Home({
     <BrowseRidesPage
       rideType="get"
       searchParams={Promise.resolve({
-        when: pick("when"),
         from: pick("from"),
         to: pick("to"),
         airport: pick("airport"),

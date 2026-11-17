@@ -17,18 +17,16 @@ export const metadata: Metadata = { title: "browse rides" };
 // columns (those live in the row-protected `ride_locations` table), and
 // listing them explicitly keeps that guarantee obvious and the query lean.
 const CARD_COLUMNS =
-  "id, type, owner_id, created_at, from_city, from_state, to_city, to_state, ride_date, is_future, time_mode, ride_time, distance_meters, from_street, to_street, from_airport, pin_lat, pin_lng, description";
+  "id, type, owner_id, created_at, from_city, from_state, to_city, to_state, ride_date, time_mode, ride_time, distance_meters, from_street, to_street, from_airport, pin_lat, pin_lng, description";
 
 // Same columns minus migration 0019's timing pair — the degraded fallback
 // when those columns don't exist yet.
 const BASE_CARD_COLUMNS =
-  "id, type, owner_id, created_at, from_city, from_state, to_city, to_state, ride_date, is_future, distance_meters, from_street, to_street, description";
+  "id, type, owner_id, created_at, from_city, from_state, to_city, to_state, ride_date, distance_meters, from_street, to_street, description";
 
-type When = "current" | "future";
 type RideType = "offer" | "get";
 
 interface Params {
-  when?: string;
   from?: string;
   to?: string;
   airport?: string;
@@ -67,7 +65,9 @@ async function FeedInner({
   rideType: RideType;
 }) {
   const sp = await searchParams;
-  const when: When = sp.when === "future" ? "future" : "current";
+
+  // No current/future split anymore: each tab shows every ride of its
+  // type, newest first. Timing lives on the pills, not in tabs.
 
   // Search is literal from→to text. Location scoping is no longer
   // inferred from IP: the map centers on the viewer's device and every
@@ -169,7 +169,6 @@ async function FeedInner({
   const hrefWith = (next: Partial<Params>) => {
     const base = rideType === "offer" ? "/rides" : "/";
     const merged = {
-      when,
       from: sp.from?.trim() ?? "",
       to: sp.to?.trim() ?? "",
       airport: sp.airport?.trim() ?? "",
@@ -178,7 +177,7 @@ async function FeedInner({
     };
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(merged)) {
-      if (v && !(k === "when" && v === "current")) {
+      if (v) {
         qs.set(k, String(v));
       }
     }
@@ -214,7 +213,6 @@ async function FeedInner({
       .select(columns)
       .eq("status", "active")
       .gt("expires_at", new Date().toISOString())
-      .eq("is_future", when === "future")
       .eq("type", rideType);
 
     if (scope === "route") {
@@ -372,7 +370,6 @@ async function FeedInner({
       <div className="pointer-events-auto fixed inset-x-0 top-0 z-[var(--z-chrome)] mx-auto w-full max-w-[480px] px-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
         <SearchForm
           key={`${sp.from?.trim() ?? ""}|${to}|${airportCode}|${sp.university?.trim() ?? ""}`}
-          when={when}
           type={rideType}
           fromDefault={sp.from?.trim() ?? ""}
           toDefault={to}
@@ -390,9 +387,9 @@ async function FeedInner({
         {memberCount !== null && memberCount > 0 ? (
           <div className="pointer-events-none fixed inset-x-0 bottom-[calc(0.35rem+env(safe-area-inset-bottom))] z-[var(--z-chrome)] flex justify-center px-4">
             <span className="glass-dark pointer-events-auto flex items-center gap-1 rounded-full px-3.5 pb-0.5 pt-0.5 text-[11px] font-medium text-white/70 opacity-[0.85]">
-              <PersonGlyph height={9} />
               ride4ride.com
-              <span>: {memberCount.toString().padStart(2, "0")}</span>
+              <PersonGlyph height={9} />
+              <span>{memberCount.toString().padStart(2, "0")}</span>
             </span>
           </div>
         ) : null}

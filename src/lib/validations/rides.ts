@@ -1,13 +1,25 @@
 import type { FieldErrors } from "@/lib/validations/auth";
+import {
+  addDays,
+  todayInZone,
+  timezoneForState,
+} from "@/lib/pickup-tz";
 
-export type RideMode = "current" | "future";
+export type DateOption = "today" | "tomorrow" | "custom";
 export type TimeMode = "asap" | "anytime" | "at";
 
 export interface Timing {
-  is_future: boolean;
-  ride_date: string | null; // YYYY-MM-DD
+  ride_date: string; // YYYY-MM-DD, always explicit
   time_mode: TimeMode;
   ride_time: string | null; // 'HH:MM' 24h, only when time_mode is 'at'
+}
+
+/** The pre-resolution shape: date option + raw custom date + clock time. */
+export interface TimingDraft {
+  time_mode: TimeMode;
+  ride_time: string | null;
+  date_option: DateOption;
+  custom_date: string;
 }
 
 /** Parse the asap/anytime/specific-time radios into DB-shaped timing. */
@@ -26,39 +38,88 @@ export function parseRideTiming(
   return { ok: true, data: { time_mode: "asap", ride_time: null } };
 }
 
-/** Parse the current/future toggle + optional date (time handled separately). */
-export function parseTiming(
-  mode: string,
-  date: string,
-): { ok: true; data: Pick<Timing, "is_future" | "ride_date"> } | { ok: false; fieldErrors: FieldErrors } {
-  const isFuture = mode === "future";
-  const trimmed = date.trim();
-
-  if (isFuture) {
-    if (!trimmed)
-      return { ok: false, fieldErrors: { ride_date: "pick a date for the ride." } };
-    const d = new Date(trimmed + "T00:00:00");
-    if (Number.isNaN(d.getTime()))
-      return { ok: false, fieldErrors: { ride_date: "that date isn't valid." } };
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (d < today)
-      return { ok: false, fieldErrors: { ride_date: "pick a date in the future." } };
-    return { ok: true, data: { is_future: true, ride_date: trimmed } };
+/** Parse the date option + custom date SHAPE (no timezone math — the
+ *  pickup state needed for that arrives later via geocoding). */
+export function parseDateFields(
+  dateOption: string,
+  customDate: string,
+): { ok: true; data: Pick<TimingDraft, "date_option" | "custom_date"> } | { ok: false; fieldErrors: FieldErrors } {
+  const opt = (dateOption || "today").trim();
+  if (opt !== "today" && opt !== "tomorrow" && opt !== "custom") {
+    return {
+      ok: false,
+      fieldErrors: { ride_date: "pick today, tomorrow, or a date." },
+    };
   }
+  const custom = customDate.trim();
+  if (opt === "custom") {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(custom)) {
+      return {
+        ok: false,
+        fieldErrors: { ride_date: "pick a valid date." },
+      };
+    }
+    const [y, m, d] = custom.split("-").map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    if (
+      dt.getUTCFullYear() !== y ||
+      dt.getUTCMonth() !== m - 1 ||
+      dt.getUTCDate() !== d
+    ) {
+      return {
+        ok: false,
+        fieldErrors: { ride_date: "pick a valid date." },
+      };
+    }
+  }
+  return {
+    ok: true,
+    data: { date_option: opt as DateOption, custom_date: custom },
+  };
+}
 
-  // Current ride: a date is optional (allowed since migration 0003).
-  return { ok: true, data: { is_future: false, ride_date: trimmed || null } };
+/**
+ * Resolve the posting date against the pickup's local day. Runs AFTER
+ * geocoding (need-ride) or directly (give-ride, which carries from_state).
+ * Rules: today/tomorrow resolve in the pickup zone; a custom date must be
+ * past tomorrow (presets cover the rest); "now" only exists for today.
+ */
+export function resolvePostDate(
+  draft: Pick<TimingDraft, "date_option" | "custom_date" | "time_mode">,
+  fromState: string,
+  now: Date = new Date(),
+): { ok: true; data: { ride_date: string } } | { ok: false; fieldErrors: FieldErrors } {
+  const tz = timezoneForState(fromState);
+  const today = todayInZone(tz, now);
+  const tomorrow = addDays(today, 1);
+  let rideDate: string;
+  if (draft.date_option === "today") rideDate = today;
+  else if (draft.date_option === "tomorrow") rideDate = tomorrow;
+  else {
+    rideDate = draft.custom_date;
+    if (rideDate <= tomorrow) {
+      return {
+        ok: false,
+        fieldErrors: { ride_date: "pick a date after tomorrow." },
+      };
+    }
+  }
+  if (draft.time_mode === "asap" && rideDate !== today) {
+    return {
+      ok: false,
+      fieldErrors: { timing: "now is only for today's rides." },
+    };
+  }
+  return { ok: true, data: { ride_date: rideDate } };
 }
 
 // Expiry is NOT computed here, and is not part of any form input.
 //
-// A post expires exactly 7 days after the ride's scheduled date passes
-// (or 7 days after creation when there is no date). That rule lives in
-// one place only: the `trg_set_ride_expiry` trigger added by migration
-// 0008, which derives `expires_at` on every insert and update and
-// discards anything a caller supplies. Computing it here as well would
-// be a second source of truth that silently drifts.
+// A post's life follows its timing (migration 0024): asap +1h, anytime to
+// end of posting day, set time +1h. That rule lives in one place only:
+// the `trg_set_ride_expiry` trigger, which derives `expires_at` on every
+// insert and update and discards anything a caller supplies. Computing it
+// here as well would be a second source of truth that silently drifts.
 
 export interface OfferInput {
   from_city: string;
@@ -68,7 +129,7 @@ export interface OfferInput {
   to_state: string;
   to_zip: string;
   description: string;
-  timing: Timing;
+  timing: TimingDraft;
   /** Captain's explicit airport tag (IATA, uppercase) or null. */
   from_airport: string | null;
 }
@@ -77,16 +138,16 @@ export interface GetInput {
   from_address: string;
   to_address: string;
   description: string;
-  timing: Timing;
+  timing: TimingDraft;
 }
 
 function commonTiming(
   raw: Record<string, string>,
   fieldErrors: FieldErrors,
-): Timing | null {
-  const t = parseTiming(raw.mode ?? "current", raw.ride_date ?? "");
-  if (!t.ok) {
-    Object.assign(fieldErrors, t.fieldErrors);
+): TimingDraft | null {
+  const d = parseDateFields(raw.date_option ?? "today", raw.custom_date ?? "");
+  if (!d.ok) {
+    Object.assign(fieldErrors, d.fieldErrors);
     return null;
   }
   const rt = parseRideTiming(raw.timing ?? "asap", raw.ride_time ?? "");
@@ -94,7 +155,7 @@ function commonTiming(
     Object.assign(fieldErrors, rt.fieldErrors);
     return null;
   }
-  return { ...t.data, ...rt.data };
+  return { ...d.data, ...rt.data };
 }
 
 export function validateOffer(

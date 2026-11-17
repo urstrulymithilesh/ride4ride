@@ -1,50 +1,99 @@
 import { describe, expect, it } from "vitest";
 import {
+  parseDateFields,
   parseRideTiming,
-  parseTiming,
+  resolvePostDate,
   validateGet,
   validateOffer,
 } from "@/lib/validations/rides";
 
-const futureDate = (() => {
-  const d = new Date();
-  d.setDate(d.getDate() + 30);
-  return d.toISOString().slice(0, 10);
-})();
+// Fixed "now" for date math: 2026-11-18 12:00 UTC (a Wednesday).
+const NOW = new Date("2026-11-18T12:00:00Z");
 
-describe("parseTiming", () => {
-  it("accepts a future ride with a future date", () => {
-    const r = parseTiming("future", futureDate);
+describe("parseDateFields", () => {
+  it("defaults to today", () => {
+    const r = parseDateFields("", "");
     expect(r.ok).toBe(true);
     if (r.ok) {
-      expect(r.data).toEqual({ is_future: true, ride_date: futureDate });
+      expect(r.data).toEqual({ date_option: "today", custom_date: "" });
     }
   });
 
-  it("rejects a future ride without a date", () => {
-    const r = parseTiming("future", "");
+  it("accepts tomorrow without a custom date", () => {
+    const r = parseDateFields("tomorrow", "");
+    expect(r.ok).toBe(true);
+  });
+
+  it("rejects an unknown option", () => {
+    const r = parseDateFields("someday", "");
     expect(r.ok).toBe(false);
   });
 
-  it("rejects a future ride with a past date", () => {
-    const r = parseTiming("future", "2020-01-01");
+  it("rejects a custom option without a valid date", () => {
+    expect(parseDateFields("custom", "").ok).toBe(false);
+    expect(parseDateFields("custom", "11/20/2026").ok).toBe(false);
+    expect(parseDateFields("custom", "2026-02-30").ok).toBe(false);
+    expect(
+      parseDateFields("custom", "2026-11-20").ok,
+    ).toBe(true);
+  });
+});
+
+describe("resolvePostDate", () => {
+  // Illinois -> America/Chicago. 2026-11-18 12:00Z is 06:00 CST, same day.
+  it("resolves today and tomorrow in the pickup zone", () => {
+    expect(
+      resolvePostDate(
+        { date_option: "today", custom_date: "", time_mode: "asap" },
+        "IL",
+        NOW,
+      ),
+    ).toEqual({ ok: true, data: { ride_date: "2026-11-18" } });
+    expect(
+      resolvePostDate(
+        { date_option: "tomorrow", custom_date: "", time_mode: "anytime" },
+        "IL",
+        NOW,
+      ),
+    ).toEqual({ ok: true, data: { ride_date: "2026-11-19" } });
+  });
+
+  it("rejects custom dates on or before tomorrow", () => {
+    const draft = {
+      date_option: "custom" as const,
+      custom_date: "",
+      time_mode: "anytime" as const,
+    };
+    expect(
+      resolvePostDate({ ...draft, custom_date: "2026-11-19" }, "IL", NOW).ok,
+    ).toBe(false);
+    expect(
+      resolvePostDate({ ...draft, custom_date: "2020-01-01" }, "IL", NOW).ok,
+    ).toBe(false);
+    expect(
+      resolvePostDate({ ...draft, custom_date: "2026-11-20" }, "IL", NOW),
+    ).toEqual({ ok: true, data: { ride_date: "2026-11-20" } });
+  });
+
+  it("rejects now for future dates", () => {
+    const r = resolvePostDate(
+      { date_option: "tomorrow", custom_date: "", time_mode: "asap" },
+      "IL",
+      NOW,
+    );
     expect(r.ok).toBe(false);
   });
 
-  it("accepts a current ride with no date", () => {
-    const r = parseTiming("current", "");
-    expect(r.ok).toBe(true);
-    if (r.ok) {
-      expect(r.data).toEqual({ is_future: false, ride_date: null });
-    }
-  });
-
-  it("accepts a current ride carrying an optional date", () => {
-    const r = parseTiming("current", futureDate);
-    expect(r.ok).toBe(true);
-    if (r.ok) {
-      expect(r.data).toEqual({ is_future: false, ride_date: futureDate });
-    }
+  it("uses the pickup zone across midnight UTC", () => {
+    // 04:00 UTC Nov 18 is still Nov 17 in Chicago.
+    const night = new Date("2026-11-18T04:00:00Z");
+    expect(
+      resolvePostDate(
+        { date_option: "today", custom_date: "", time_mode: "asap" },
+        "IL",
+        night,
+      ),
+    ).toEqual({ ok: true, data: { ride_date: "2026-11-17" } });
   });
 });
 
@@ -93,8 +142,8 @@ describe("validateOffer", () => {
     to_state: "IL",
     to_zip: "",
     description: "",
-    mode: "current",
-    ride_date: "",
+    date_option: "today",
+    custom_date: "",
   };
 
   it("accepts a minimal valid offer", () => {
@@ -128,8 +177,8 @@ describe("validateGet", () => {
     from_address: "3296 Bromley Ln, Aurora, IL 60502",
     to_address: "1014 Bradford Dr, Naperville, IL 60563",
     description: "",
-    mode: "current",
-    ride_date: "",
+    date_option: "today",
+    custom_date: "",
   };
 
   it("accepts full addresses", () => {

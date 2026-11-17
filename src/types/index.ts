@@ -96,8 +96,7 @@ export interface Ride {
   to_city: string;
   to_state: string;
   to_zip: string | null;
-  ride_date: string | null; // null => "current"/ASAP
-  is_future: boolean;
+  ride_date: string | null;
   time_mode: "asap" | "anytime" | "at";
   ride_time: string | null; // 'HH:MM' 24h, only when time_mode is 'at'
   description: string | null;

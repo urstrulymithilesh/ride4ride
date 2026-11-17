@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { isCurrentUserAdmin } from "@/lib/admin";
@@ -103,14 +102,11 @@ export default async function AdminPage() {
                 {/* Target */}
                 <div className="mt-2 text-sm">
                   {targetRide ? (
-                    <Link
-                      href={`/rides/${r.target_ride_id}`}
-                      className="wrap-anywhere text-primary"
-                    >
+                    <span className="wrap-anywhere text-primary">
                       post: {formatPlace(targetRide.from_city, targetRide.from_state)}{" "}
                       → {formatPlace(targetRide.to_city, targetRide.to_state)} (
                       {targetRide.status})
-                    </Link>
+                    </span>
                   ) : null}
                   {targetUser ? (
                     <span className="wrap-anywhere text-content">

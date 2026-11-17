@@ -229,7 +229,6 @@ console.log(`Integration tests against ${URL_BASE}\n`);
       from_state: "IL",
       to_city: "FeedProbe",
       to_state: "IL",
-      is_future: false,
       status: "active",
     },
   });

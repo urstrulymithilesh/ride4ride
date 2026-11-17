@@ -72,6 +72,12 @@ export function RidesMap({
       (new (options?: MapLibre.MarkerOptions) => MapLibre.Marker) | null
     >(null);
   const markersRef = useRef(new Map<string, MapLibre.Marker>());
+  // Viewer blue-dot marker, owned by the map instance (moved in place by
+  // the follow effect below, never recreated on GPS fixes).
+  const meRef = useRef<MapLibre.Marker | null>(null);
+  // Zoom-key the live map was created with. A new key (tab switch) is the
+  // only thing that recreates the map; GPS fixes must never tear it down.
+  const createdKey = useRef<string | null>(null);
   // Bumps whenever a fresh map instance exists, so the marker sync below
   // runs after the async map creation — not just on data changes.
   const [mapEpoch, setMapEpoch] = useState(0);
@@ -88,8 +94,24 @@ export function RidesMap({
     return () => window.removeEventListener(CHIP_PANEL_EVENT, onChip);
   }, []);
 
+  // Map lifecycle: created once per zoom-key (per tab) and destroyed on
+  // unmount or tab switch. Deliberately NOT keyed on `coords` — GPS fixes
+  // arrive constantly and recreating the map per fix reloads tiles and
+  // yanks the camera. Position updates move the dot in place (see the
+  // follow effect below); data refreshes rebuild markers only.
+  const coordsReady = !!coords;
   useEffect(() => {
     if (!coords || !containerRef.current) return;
+
+    const key = JSON.stringify([
+      interactive,
+      minZoom,
+      maxZoom,
+      landingZoom,
+      cluster,
+    ]);
+    // Steady state (GPS fix re-render): the live map stays.
+    if (mapRef.current && createdKey.current === key) return;
 
     let disposed = false;
     let readyTimer = 0;
@@ -97,6 +119,7 @@ export function RidesMap({
     const el = containerRef.current;
     // Captured for the cleanup below (lint: refs drift by cleanup time).
     const liveMarkers = markersRef.current;
+    createdKey.current = key;
 
     void (async () => {
       // Dynamic import keeps MapLibre out of the server render.
@@ -117,6 +140,14 @@ export function RidesMap({
       mapRef.current = map;
       markerCtor.current = maplibregl.Marker;
       setMapEpoch((e) => e + 1);
+      // Viewer dot, created with the map. The follow effect below moves
+      // it on GPS fixes — this construction never runs per fix.
+      const me = document.createElement("div");
+      me.className = "r4r-me";
+      me.setAttribute("aria-hidden", "true");
+      meRef.current = new maplibregl.Marker({ element: me, anchor: "center" })
+        .setLngLat([coords.lng, coords.lat])
+        .addTo(map);
       // Dev visual editor drives the live limits through
       // --r4r-min-zoom / --r4r-max-zoom (see editor-utils applyEdits).
       (window as unknown as { __r4rMap?: MapLibre.Map }).__r4rMap = map;
@@ -137,15 +168,6 @@ export function RidesMap({
       });
       map.on("load", () => {
         if (disposed) return;
-
-        // Viewer position: blue pulsing dot. Added after pins so it stays
-        // on top of overlapping markers.
-        const me = document.createElement("div");
-        me.className = "r4r-me";
-        me.setAttribute("aria-hidden", "true");
-        new maplibregl.Marker({ element: me, anchor: "center" })
-          .setLngLat([coords.lng, coords.lat])
-          .addTo(map);
 
         // Landing view: the tab's landing zoom — unless a feed
         // auto-refresh just stashed the live viewport on window, in which
@@ -204,6 +226,8 @@ export function RidesMap({
       setReady(false);
       setFailed(false);
       liveMarkers.clear();
+      meRef.current = null;
+      createdKey.current = null;
       const map = mapRef.current;
       map?.remove();
       mapRef.current = null;
@@ -211,7 +235,31 @@ export function RidesMap({
       const w = window as unknown as { __r4rMap?: unknown };
       if (w.__r4rMap === map) delete w.__r4rMap;
     };
-  }, [coords, interactive, minZoom, maxZoom, landingZoom, cluster]);
+    // `coords` is intentionally NOT a dep (see the header comment): the
+    // boolean flip is the only subscription. The live `coords` value is
+    // read on creation only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [coordsReady, interactive, minZoom, maxZoom, landingZoom, cluster]);
+
+  // Dot follow: GPS fixes move the existing marker in place. The map
+  // instance, its tiles, and the user's camera are untouched — no reload,
+  // no reframe. (Manual city picks never emit fixes, so the chosen
+  // center stands.)
+  useEffect(() => {
+    const map = mapRef.current;
+    const Ctor = markerCtor.current;
+    if (!map || !Ctor || !coords) return;
+    if (meRef.current) {
+      meRef.current.setLngLat([coords.lng, coords.lat]);
+      return;
+    }
+    const me = document.createElement("div");
+    me.className = "r4r-me";
+    me.setAttribute("aria-hidden", "true");
+    meRef.current = new Ctor({ element: me, anchor: "center" })
+      .setLngLat([coords.lng, coords.lat])
+      .addTo(map);
+  }, [coords, mapEpoch]);
 
   // Ride markers live-update without tearing the map down: on every
   // data refresh the markers rebuild in place, so tiles never reload and

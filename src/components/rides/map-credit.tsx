@@ -7,10 +7,10 @@ const OPENMAPTILES_URL = "https://openmaptiles.org/";
 const OSM_COPYRIGHT_URL = "https://www.openstreetmap.org/copyright";
 
 /**
- * Map credit for the ride feed, pinned vertically to the right-center
- * edge of the app column. Writing-mode keeps the three credits in one
- * column; only the pill itself is interactive, so the map underneath
- * stays draggable. Other pages render nothing.
+ * Map credit for the ride feed: a half-size horizontal pill centered at
+ * the bottom of the screen, just above the dock. Only the pill itself is
+ * interactive, so the map underneath stays draggable. Other pages render
+ * nothing.
  */
 export function MapCredit() {
   const pathname = usePathname();
@@ -20,8 +20,9 @@ export function MapCredit() {
   }
 
   return (
-    <div className="pointer-events-none fixed inset-y-0 left-1/2 z-30 w-full max-w-[480px] -translate-x-1/2">
-      <span className="pointer-events-auto absolute right-0 top-1/2 -translate-y-1/2 rotate-180 whitespace-nowrap rounded-full glass-dark p-0 text-[9px] leading-none text-muted [text-shadow:0_1px_2px_rgba(0,0,0,0.85)] [writing-mode:vertical-rl]">
+    <div className="pointer-events-none fixed inset-x-0 bottom-[env(safe-area-inset-bottom)] z-30 mx-auto w-full max-w-[480px] px-3">
+      <div className="flex justify-center">
+        <span className="pointer-events-auto whitespace-nowrap text-[8px] leading-none text-black [text-shadow:0_1px_2px_rgba(255,255,255,0.6)]">
         <a
           href={ATTRIBUTION_URL}
           target="_blank"
@@ -30,7 +31,7 @@ export function MapCredit() {
         >
           OpenFreeMap
         </a>
-        <span className="text-faint"> · </span>
+        <span className="text-black"> · </span>
         <a
           href={OPENMAPTILES_URL}
           target="_blank"
@@ -39,7 +40,7 @@ export function MapCredit() {
         >
           OpenMapTiles
         </a>
-        <span className="text-faint"> · </span>
+        <span className="text-black"> · </span>
         <a
           href={OSM_COPYRIGHT_URL}
           target="_blank"
@@ -49,6 +50,7 @@ export function MapCredit() {
           © OpenStreetMap
         </a>
       </span>
+      </div>
     </div>
   );
 }

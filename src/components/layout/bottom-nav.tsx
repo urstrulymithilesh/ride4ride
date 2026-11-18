@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { QuickPost, POST_DRAFT_KEY } from "@/components/rides/quick-post";
 import type { PostDraft } from "@/components/rides/quick-post";
 import { OPEN_POST_EVENT } from "@/components/rides/empty-post-cta";
@@ -78,8 +78,6 @@ function FeedDock({ menu }: { menu: React.ReactNode }) {
   const sp = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
-  // Stopwatch ring around recenter: one 30s revolution per refresh cycle.
-  const ringRef = useRef<SVGCircleElement>(null);
 
   // Feed-only auto-refresh, aligned to the wall clock (:00 and :30 of
   // every minute — 2,880 refreshes a day). The camera stash keeps the
@@ -87,15 +85,7 @@ function FeedDock({ menu }: { menu: React.ReactNode }) {
   // is dropped on tab switch so each tab keeps its own landing view.
   useEffect(() => {
     if (pathname !== "/" && pathname !== "/rides") return;
-    let raf = 0;
     let timer: ReturnType<typeof setTimeout> | null = null;
-    const RING = 2 * Math.PI * 14;
-    const tick = () => {
-      const p = (Date.now() % 30000) / 30000;
-      const el = ringRef.current;
-      if (el) el.style.strokeDashoffset = `${RING * (1 - p)}`;
-      raf = requestAnimationFrame(tick);
-    };
     const schedule = () => {
       timer = setTimeout(
         () => {
@@ -127,10 +117,8 @@ function FeedDock({ menu }: { menu: React.ReactNode }) {
         30000 - (Date.now() % 30000),
       );
     };
-    raf = requestAnimationFrame(tick);
     schedule();
     return () => {
-      cancelAnimationFrame(raf);
       if (timer) clearTimeout(timer);
       try {
         delete (window as unknown as { __r4rViewport?: unknown })
@@ -228,46 +216,13 @@ function FeedDock({ menu }: { menu: React.ReactNode }) {
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-0 z-[var(--z-chrome)] mx-auto w-full max-w-[480px] px-3 pb-[calc(1.9rem+env(safe-area-inset-bottom))]">
+      <div className="fixed inset-x-0 bottom-0 z-[var(--z-chrome)] mx-auto w-full max-w-[480px] px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         {(pathname === "/rides" || pathname === "/") ? (
           <span
             data-recenter
-            // Same footprint as the bare button; the ring draws inside
-            // its edge instead of circling outside it.
             style={{ top: "-70px" }}
-            className="absolute right-[32px] z-[var(--z-chat)] flex h-[34px] w-[34px] items-center justify-center"
+            className="absolute right-[32px] z-[var(--z-chat)] flex h-[38px] w-[38px] items-center justify-center"
           >
-            <svg
-              width="34"
-              height="34"
-              viewBox="0 0 34 34"
-              fill="none"
-              aria-hidden="true"
-              // Above the glass button: its backdrop-filter makes it a
-              // stacking context that would otherwise bury the ring.
-              // Clicks pass through to the button below.
-              className="absolute inset-0 -rotate-90 z-10 pointer-events-none"
-            >
-              <circle
-                cx="17"
-                cy="17"
-                r="14"
-                stroke="rgba(255,255,255,0.4)"
-                strokeWidth="2"
-              />
-              <circle
-                ref={ringRef}
-                cx="17"
-                cy="17"
-                r="14"
-                stroke="#ffffff"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeDasharray="87.96"
-                strokeDashoffset="87.96"
-                style={{ filter: "drop-shadow(0 0 3px rgba(255,255,255,0.9))" }}
-              />
-            </svg>
             <button
               type="button"
               onClick={() => {
@@ -294,36 +249,27 @@ function FeedDock({ menu }: { menu: React.ReactNode }) {
               });
             }}
             aria-label="recenter map on my location"
-            className="glass-dark flex h-[34px] w-[34px] items-center justify-center rounded-full text-white opacity-[0.85]"
+            className="glass-dark flex h-[38px] w-[38px] items-center justify-center rounded-full text-white opacity-90"
           >
             <svg
               width="20"
               height="20"
               viewBox="0 0 24 24"
-              fill="none"
+              fill="currentColor"
               stroke="currentColor"
-              strokeWidth="1.8"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
               aria-hidden="true"
             >
-              <circle cx="12" cy="12" r="6.5" />
-              <circle
-                cx="12"
-                cy="12"
-                r="1.5"
-                fill="currentColor"
-                stroke="none"
-              />
-              <path
-                d="M12 2v3M12 19v3M2 12h3M19 12h3"
-                strokeLinecap="round"
-              />
+              <path d="M20.2 2.8Q21.5 2.3 21 3.6L12.9 20.6Q12.4 21.4 12 20.6V12.4Q12 11.9 11.5 11.9H3.4Q2.6 11.9 2.6 11.1V10.9Q2.6 10.4 3.2 10.2Z" transform="translate(-0.05 0.55)" />
             </svg>
             </button>
           </span>
         ) : null}
         <nav
           aria-label="ride type"
-          className="glass-dark relative flex items-center justify-between rounded-[var(--bar-radius)] px-2 py-1.5 opacity-[0.85]"
+          className="glass-dark relative flex items-center justify-between rounded-[var(--bar-radius)] px-2 py-1.5 opacity-90"
         >
           {tab("get", <HailPersonIcon />, "need ride")}
           {tab("offer", <SmileyCarIcon />, "ride available")}

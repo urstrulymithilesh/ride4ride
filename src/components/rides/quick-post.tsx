@@ -262,7 +262,7 @@ export function QuickPost({
   // Mount/unmount maps exactly to open/close (the dock renders this only
   // when postOpen), so no event contract is needed.
   useEffect(() => {
-    const els = [...document.querySelectorAll("[data-feed-chips],[data-recenter]")];
+    const els = [...document.querySelectorAll("[data-feed-search],[data-recenter]")];
     const prev = els.map((el) => (el as HTMLElement).style.display);
     els.forEach((el) => {
       (el as HTMLElement).style.display = "none";

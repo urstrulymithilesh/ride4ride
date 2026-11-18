@@ -39,6 +39,7 @@ export function PlaceAutocomplete({
   onSubmit,
   surface = "glass",
   dropdownPortal,
+  disabled = false,
 }: {
   name?: string;
   id?: string;
@@ -72,6 +73,8 @@ export function PlaceAutocomplete({
    *  so the picker and quick-post don't submit on every tap. */
   submitOnPick?: boolean;
   onSubmit?: (picked: PlaceOption) => void;
+  /** Locked field: no fetching, no dropdown, no typing. */
+  disabled?: boolean;
   /**
    * Dropdown surface. "glass" is the translucent fill used over the map
    * (feed search). "soft" switches to a solid app-black fill with the
@@ -119,6 +122,7 @@ export function PlaceAutocomplete({
   }
 
   useEffect(() => {
+    if (disabled) return;
     const q = value.trim();
     if (q.length < minQuery) return;
     if (lastPicked.current === value) return;
@@ -163,7 +167,7 @@ export function PlaceAutocomplete({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [value, kind, source, minQuery, nearViewer, coords]);
+  }, [value, kind, source, minQuery, nearViewer, coords, disabled]);
 
   // Close when tapping outside the box or the portaled dropdown.
   useEffect(() => {
@@ -236,6 +240,10 @@ export function PlaceAutocomplete({
       const b = box.getBoundingClientRect();
       dd.style.left = `${r.left - b.left}px`;
       dd.style.width = `${r.width}px`;
+      // Hang the list off the ROW's bottom edge (the mt class is the
+      // 2px gap), not the input's: short inputs inside a tall bar would
+      // otherwise overlap the bar itself.
+      dd.style.top = `${r.bottom - b.top}px`;
     };
     place();
     window.addEventListener("resize", place);
@@ -380,6 +388,7 @@ export function PlaceAutocomplete({
         value={value}
         required={required}
         minLength={minLength}
+        disabled={disabled}
         onChange={(e) => {
           lastPicked.current = null;
           requestSeq.current += 1;
@@ -497,10 +506,10 @@ const DropdownList = ({
     variant === "panel"
       ? "block border-t border-hairline"
       : surface === "soft"
-        ? "thin-scrollbar absolute top-full z-30 mt-1 block max-h-60 overflow-y-auto overscroll-contain rounded-xl border border-white/25 bg-app shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)]"
+        ? "thin-scrollbar absolute top-full z-30 mt-[2px] block max-h-60 overflow-y-auto overscroll-contain rounded-xl border border-white/25 bg-app shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)]"
         : portaled
           ? "thin-scrollbar absolute z-30 block max-h-60 overflow-y-auto overscroll-contain rounded-xl glass-dark"
-          : "thin-scrollbar absolute top-full z-30 mt-1 block max-h-60 overflow-y-auto overscroll-contain rounded-xl glass-dark";
+          : "thin-scrollbar absolute top-full z-30 mt-[2px] block max-h-60 overflow-y-auto overscroll-contain rounded-xl glass-dark";
   const node = (
     <span ref={ref} className={className}>
       {children}

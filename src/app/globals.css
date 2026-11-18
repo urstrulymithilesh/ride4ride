@@ -404,12 +404,34 @@ select {
   transform: scale(0.97);
 }
 
-/* Feed chip dropdown: option rows never wrap — long airport names
-   ellipsis instead of pushing the panel taller. */
-.chip-panel [role="option"] span {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* Feed search fields: magnifier folded into the input background so the
+   single-pill bar needs no icon elements (the autocomplete boxes must
+   stay the row's direct children for full-bar dropdowns). Shown only
+   while the field is empty — the built-in clear X takes its place after
+   that. Icon sits left of the text, per the design. */
+.search-mag {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E");
+  background-size: 12px 12px;
+  background-repeat: no-repeat;
+  background-position: left 8px center;
+}
+
+/* Feed bar: some phone browsers (notably Firefox Mobile) paint their own
+   dotted focus ring on form controls no matter what the shorthand says,
+   so the longhands are stated explicitly. No visible focus change, by
+   design — the site rule bans focus rings. */
+[data-feed-search],
+[data-feed-search] input,
+[data-feed-search] button {
+  -webkit-tap-highlight-color: transparent;
+}
+[data-feed-search] input:focus,
+[data-feed-search] input:focus-visible,
+[data-feed-search] button:focus,
+[data-feed-search] button:focus-visible {
+  outline: none;
+  outline-style: none;
+  box-shadow: none;
 }
 .r4r-pin-drop {
   display: block;

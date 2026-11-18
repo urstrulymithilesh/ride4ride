@@ -4,12 +4,10 @@ import { searchPlaces } from "@/lib/places";
 import { createClient } from "@/lib/supabase/server";
 import type { RideCardData } from "@/components/rides/ride-card";
 import { SearchForm } from "@/components/places/search-form";
-import { MemberPill } from "@/components/rides/member-pill";
 import { RidesMap } from "@/components/rides/rides-map";
 import { buildMapRides } from "@/lib/ride-geo.server";
 import { recordArrival } from "@/lib/arrivals";
 import { getUser } from "@/lib/auth";
-import { getSignupCount } from "@/lib/signup-count";
 
 export const metadata: Metadata = { title: "browse rides" };
 
@@ -120,16 +118,6 @@ async function FeedInner({
   const toPlace = resolvePlace(sp.to?.trim() ?? "");
   const from = fromPlace.text;
   const to = toPlace.text;
-  // Origin kind for the drop-off list: airport/university origins restrict
-  // drop off to cities (airports/universities as destinations live on
-  // their own chips).
-  const fromKind = !from
-    ? "city"
-    : fromPlace.university
-      ? "university"
-      : /^[A-Z]{3}$/.test(from)
-        ? "airport"
-        : "city";
 
   // Airport scope (?airport=ORD): strict IATA only, and only for codes
   // in our airports table — anything else is ignored, never queried.
@@ -191,18 +179,14 @@ async function FeedInner({
   const viewer = await getUser();
   await recordArrival("feed", viewer?.id);
 
-  // Live member total for the floating pill above the dock. Cached ~60s;
-  // null hides the slot rather than showing a wrong number.
-  const memberCount = await getSignupCount();
-
   const supabase = await createClient();
   // Columns from migration 0019. Factored so the feed can retry without
   // them when the migration hasn't applied yet (degraded timing: ASAP).
   //
-  // One scope per chip group. A single scope behaves exactly like the old
-  // all-AND query; multiple scopes run in parallel and union by id, which
-  // is how pick up AND drop off narrow to the route while airport and
-  // university chips broaden to either end of the trip.
+  // One scope per filter group. A single scope behaves exactly like a
+  // plain from→to query; multiple scopes run in parallel and union by id,
+  // which is how pick up AND drop off narrow to the route while airport
+  // and university broaden to either end of the trip.
   const buildQuery = (
     columns: string,
     scope: "route" | "airport" | "uni",
@@ -367,24 +351,18 @@ async function FeedInner({
       {/* Floating filter chips at the top of the feed. Chip dropdown
           behavior: pick up / drop off filter the feed; airport and
           university set the chip label until their behavior lands. */}
-      <div data-feed-chips className="pointer-events-auto fixed inset-x-0 top-0 z-[var(--z-chrome)] mx-auto w-full max-w-[480px] px-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
+      <div data-feed-search className="pointer-events-auto fixed inset-x-0 top-0 z-[var(--z-chrome)] mx-auto w-full max-w-[480px] px-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
         <SearchForm
           key={`${sp.from?.trim() ?? ""}|${to}|${airportCode}|${sp.university?.trim() ?? ""}`}
           type={rideType}
-          fromDefault={sp.from?.trim() ?? ""}
+          fromDefault={sp.from?.trim() || airportLabel || university}
           toDefault={to}
-          airportDefault={airportValid ? airportCode : ""}
-          airportLabel={airportValid ? airportLabel : ""}
-          universityDefault={university}
-          fromKindDefault={fromKind}
         />
       </div>
 
       <main className="pointer-events-none relative z-10 flex w-full flex-1 flex-col pb-4">
         {/* The ride-type switch is the feed's bottom bar (BottomNav);
             nothing floats between the search rows and it. */}
-
-        {memberCount !== null ? <MemberPill initial={memberCount} /> : null}
 
         {ridesError ? (
           /* ERROR state — deliberately NOT the empty state. An empty board and

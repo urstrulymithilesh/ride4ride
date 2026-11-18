@@ -20,7 +20,7 @@ export function MapCredit() {
   }
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-[env(safe-area-inset-bottom)] z-30 mx-auto w-full max-w-[480px] px-3">
+    <div className="pointer-events-none fixed inset-x-0 top-[env(safe-area-inset-top)] z-30 mx-auto w-full max-w-[480px] px-3">
       <div className="flex justify-center">
         <span className="pointer-events-auto whitespace-nowrap text-[8px] leading-none text-black [text-shadow:0_1px_2px_rgba(255,255,255,0.6)]">
         <a

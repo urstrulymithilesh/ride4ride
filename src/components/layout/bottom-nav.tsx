@@ -216,7 +216,7 @@ function FeedDock({ menu }: { menu: React.ReactNode }) {
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-0 z-[var(--z-chrome)] mx-auto w-full max-w-[480px] px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+      <div className="fixed inset-x-0 bottom-0 z-[var(--z-chrome)] mx-auto w-full max-w-[480px] px-3 pb-[calc(0.75rem-4px+env(safe-area-inset-bottom))]">
         {(pathname === "/rides" || pathname === "/") ? (
           <span
             data-recenter

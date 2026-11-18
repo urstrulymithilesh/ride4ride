@@ -7,7 +7,6 @@ import type * as MapLibre from "maplibre-gl";
 import { haversineMiles } from "@/lib/geo";
 import type { MapRide } from "@/lib/ride-map";
 import { CAR_GLYPH_PATH } from "@/lib/marker-art";
-import { CHIP_PANEL_EVENT } from "@/components/places/search-form";
 import { applyMapTheme } from "@/lib/map-theme";
 import { useViewerLocation } from "@/components/location/location-context";
 
@@ -16,10 +15,6 @@ import { useViewerLocation } from "@/components/location/location-context";
  * map reads as part of the black app without exposing a Mapbox token.
  */
 const STYLE_URL = "https://tiles.openfreemap.org/styles/bright";
-
-/** Pins within this radius set the initial viewport; farther rides stay
- *  on the map but off-screen until the viewer pans out. */
-const FIT_RADIUS_MILES = 75;
 
 /** Pinch/scroll limits. Defaults match the reference: zoomed out shows the
  *  surrounding towns, zoomed in reaches street level. The visual editor
@@ -42,7 +37,6 @@ function readZoomOverride(name: string): number | null {
 export function RidesMap({
   rides,
   interactive = true,
-  showControls = true,
   minZoom = MIN_ZOOM,
   maxZoom = MAX_ZOOM,
   landingZoom,
@@ -52,8 +46,6 @@ export function RidesMap({
   /** The map stays interactive (pan/zoom/pins) everywhere it renders;
    *  the cards scroll in normal flow above it. */
   interactive?: boolean;
-  /** Count + recenter HUD. Hidden on card-first views. */
-  showControls?: boolean;
   /** Per-tab zoom limits. An explicit visual-editor edit still wins. */
   minZoom?: number;
   maxZoom?: number;
@@ -84,15 +76,6 @@ export function RidesMap({
   const { coords } = useViewerLocation();
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
-  // A chip search panel covers the count pill's corner — hide it while
-  // one is open (see CHIP_PANEL_EVENT in search-form).
-  const [chipOpen, setChipOpen] = useState(false);
-  useEffect(() => {
-    const onChip = (e: Event) =>
-      setChipOpen((e as CustomEvent<boolean>).detail === true);
-    window.addEventListener(CHIP_PANEL_EVENT, onChip);
-    return () => window.removeEventListener(CHIP_PANEL_EVENT, onChip);
-  }, []);
 
   // Map lifecycle: created once per zoom-key (per tab) and destroyed on
   // unmount or tab switch. Deliberately NOT keyed on `coords` — GPS fixes
@@ -466,19 +449,6 @@ export function RidesMap({
     };
   }, [mapEpoch, rides, cluster, coords]);
 
-  const nearbyCount = coords
-    ? rides.filter(
-        (r) =>
-          haversineMiles(coords, { lat: r.lat, lng: r.lng }) <= FIT_RADIUS_MILES,
-      ).length
-    : 0;
-
-  // Nearby count only — no "N farther" tail.
-  const countLabel =
-    rides.length === 0
-      ? "no rides yet"
-      : `${nearbyCount} ${nearbyCount === 1 ? "ride" : "rides"} near you`;
-
   return (
     <div
       className={`fixed inset-y-0 inset-x-0 z-0 mx-auto w-full max-w-[480px] overflow-hidden bg-app ${
@@ -507,16 +477,6 @@ export function RidesMap({
             retry
           </button>
         </div>
-      ) : null}
-      {ready ? (
-        <>
-          {showControls && rides.length > 0 && !chipOpen ? (
-            // Tucked under the filter chips, horizontally centered.
-            <p className="pointer-events-none absolute left-1/2 top-[calc(3.5rem+env(safe-area-inset-top))] z-10 inline-flex h-[21px] max-w-[60%] -translate-x-1/2 items-center truncate rounded-full glass-dark px-[18px] text-center text-[11px] text-white/70">
-              {countLabel}
-            </p>
-          ) : null}
-        </>
       ) : null}
     </div>
   );

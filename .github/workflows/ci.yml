@@ -55,9 +55,15 @@ jobs:
           node scripts/resolve-supabase-env.mjs --self-test
           node scripts/run-sql-proofs.mjs --self-test
 
+      # Pinned, not `latest`: resolving `latest` hits the GitHub releases
+      # API, which is rate-limited for unauthenticated CI traffic and
+      # fails the whole database job with "rate limit exceeded". A pinned
+      # version downloads the release asset directly with no API call.
+      # Bump deliberately (check the changelog first — majors have
+      # broken local behavior before, e.g. v3 dropping PG13).
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 3.2.0
 
       # `supabase start` needs a config.toml. This repo has never had one
       # (the CLI was never used locally), so generate a default when it is

@@ -341,7 +341,6 @@ async function FeedInner({
       <RidesMap
         rides={mapRides}
         interactive
-        showControls={rideType === "get"}
         minZoom={rideType === "get" ? 10 : 4}
         maxZoom={rideType === "get" ? 17 : 12}
         landingZoom={rideType === "get" ? 10 : 10}

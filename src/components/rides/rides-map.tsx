@@ -117,9 +117,15 @@ export function RidesMap({
     const viewCenter = { x: el.clientWidth / 2, y: el.clientHeight / 2 };
     const target = { x: el.clientWidth / 2, y: 128 };
     const pin = toWorld({ lng, lat });
+    // Bearing-aware: screen space is the world rotated by -bearing, so
+    // the desired screen shift is rotated by +bearing before becoming a
+    // world delta. (At bearing 0 this collapses to the plain version.)
+    const theta = (map.getBearing() * Math.PI) / 180;
+    const dx = target.x - viewCenter.x;
+    const dy = target.y - viewCenter.y;
     const centerWorld = {
-      x: pin.x - (target.x - viewCenter.x) / Z15,
-      y: pin.y - (target.y - viewCenter.y) / Z15,
+      x: pin.x - (dx * Math.cos(theta) - dy * Math.sin(theta)) / Z15,
+      y: pin.y - (dx * Math.sin(theta) + dy * Math.cos(theta)) / Z15,
     };
     const center = fromWorld(centerWorld.x, centerWorld.y);
     map.once("moveend", () => {

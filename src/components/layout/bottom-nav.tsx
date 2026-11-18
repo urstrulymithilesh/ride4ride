@@ -213,6 +213,7 @@ function FeedDock({ menu }: { menu: React.ReactNode }) {
                     flyTo: (opts: {
                       center: [number, number];
                       zoom: number;
+                      bearing?: number;
                       essential: boolean;
                     }) => void;
                   };
@@ -226,6 +227,9 @@ function FeedDock({ menu }: { menu: React.ReactNode }) {
               map.flyTo({
                 center: [coords.lng, coords.lat],
                 zoom: Number.isFinite(n) ? n : 10,
+                // Recenter also squares the compass: north up again, no
+                // matter how the map was spun.
+                bearing: 0,
                 essential: true,
               });
             }}

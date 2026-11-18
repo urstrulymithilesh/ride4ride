@@ -235,15 +235,21 @@ export function PlaceAutocomplete({
     }
     const row = box.parentElement;
     if (!row) return;
+    // The bar marks itself with data-dropdown-below so the list hangs
+    // off the BAR: full bar width, 2px below its bottom edge (the mt
+    // class is the gap). Without the marker it anchors to the wrapper
+    // (field width), which is the behavior every other surface uses.
+    const below = box.closest("[data-dropdown-below]");
     const place = () => {
       const r = row.getBoundingClientRect();
       const b = box.getBoundingClientRect();
-      dd.style.left = `${r.left - b.left}px`;
-      dd.style.width = `${r.width}px`;
-      // Hang the list off the ROW's bottom edge (the mt class is the
-      // 2px gap), not the input's: short inputs inside a tall bar would
-      // otherwise overlap the bar itself.
-      dd.style.top = `${r.bottom - b.top}px`;
+      const barRect = below ? below.getBoundingClientRect() : null;
+      const a = barRect ?? r;
+      dd.style.left = `${a.left - b.left}px`;
+      dd.style.width = `${a.width}px`;
+      if (barRect) {
+        dd.style.top = `${barRect.bottom - b.top}px`;
+      }
     };
     place();
     window.addEventListener("resize", place);
@@ -364,9 +370,14 @@ export function PlaceAutocomplete({
               <span className="block wrap-anywhere text-sm font-medium text-content">
                 {opt.title}
               </span>
-              <span className="block wrap-anywhere text-xs text-muted">
-                {opt.sub}
-              </span>
+              {/* Airport rows keep their city sub-line ("Dallas, TX");
+                  city ("US") and university ("United States") subs carry
+                  no signal, so those rows are title-only. */}
+              {opt.kind === "airport" ? (
+                <span className="block wrap-anywhere text-xs text-muted">
+                  {opt.sub}
+                </span>
+              ) : null}
             </span>
             {opt.kind === "address" ? null : (
               <span className="mt-0.5 shrink-0 self-start rounded-full border border-white/15 px-2 py-0.5 text-[10px] text-muted">

@@ -155,7 +155,7 @@ export function SearchForm({
           (dock measures 56, so 42 here — update together). Width caps
           at the 480 app column. The dropdown anchors to this row,
           full bar width. */}
-      <div className="flex h-[40px] w-[570px] max-w-full flex-row items-center justify-center gap-[2px] rounded-[10px] bg-black px-[5px] py-[10px] opacity-90 backdrop-blur-[12.5px]">
+      <div data-dropdown-below className="flex h-[40px] w-[570px] max-w-full flex-row items-center justify-center gap-[2px] rounded-[10px] bg-black px-[5px] py-[10px] opacity-90 backdrop-blur-[12.5px]">
         {field("from", from, "pickup")}
         <button
           type="button"

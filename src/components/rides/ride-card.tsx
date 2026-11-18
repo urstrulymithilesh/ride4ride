@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { FitHeadline } from "@/components/rides/fit-headline";
-import { formatClockDots, formatMiles, formatPlace, formatPostedAt } from "@/lib/utils/format";
+import { abbreviateStreet, formatClockDots, formatMiles, formatPlace, formatPostedAt } from "@/lib/utils/format";
 
 /**
  * The subset of `rides` shown on a public card. Deliberately NO address /
@@ -45,11 +45,11 @@ export function RideCard({
   // Exact addresses stay private until both sides agree (reveal flow).
   const fromLabel =
     ride.type === "get" && ride.from_street
-      ? `${ride.from_street} • ${formatPlace(ride.from_city, ride.from_state)}`
+      ? `${abbreviateStreet(ride.from_street)} • ${formatPlace(ride.from_city, ride.from_state)}`
       : formatPlace(ride.from_city, ride.from_state);
   const toLabel =
     ride.type === "get" && ride.to_street
-      ? `${ride.to_street} • ${formatPlace(ride.to_city, ride.to_state)}`
+      ? `${abbreviateStreet(ride.to_street)} • ${formatPlace(ride.to_city, ride.to_state)}`
       : formatPlace(ride.to_city, ride.to_state);
   const base =
     ride.type === "offer"

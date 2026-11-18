@@ -370,10 +370,13 @@ export function PlaceAutocomplete({
               <span className="block wrap-anywhere text-sm font-medium text-content">
                 {opt.title}
               </span>
-              {/* Airport rows keep their city sub-line ("Dallas, TX");
-                  city ("US") and university ("United States") subs carry
-                  no signal, so those rows are title-only. */}
-              {opt.kind === "airport" ? (
+              {/* Sub-lines that distinguish: airport cities ("Dallas,
+                  TX") and address localities ("Oak Brook, IL, USA").
+                  City ("US") and university ("United States") subs carry
+                  no signal, so those rows stay title-only. Without the
+                  address sub, same-street results in different cities
+                  render as identical rows. */}
+              {opt.kind === "airport" || opt.kind === "address" ? (
                 <span className="block wrap-anywhere text-xs text-muted">
                   {opt.sub}
                 </span>

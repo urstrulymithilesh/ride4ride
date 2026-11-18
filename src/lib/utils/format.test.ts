@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  abbreviateStreet,
   formatDistance,
   formatPlace,
   formatRideWhen,
@@ -35,6 +36,24 @@ describe("formatPlace", () => {
 
   it("appends zip when present", () => {
     expect(formatPlace("Riverside", "CA", "92521")).toBe("Riverside, CA 92521");
+  });
+});
+
+describe("abbreviateStreet", () => {
+  it("shortens trailing suffixes", () => {
+    expect(abbreviateStreet("Newberry Court")).toBe("Newberry Ct");
+    expect(abbreviateStreet("East New York Street")).toBe("East New York St");
+    expect(abbreviateStreet("Bromley Lane")).toBe("Bromley Ln");
+    expect(abbreviateStreet("Station Boulevard")).toBe("Station Blvd");
+    expect(abbreviateStreet("Modaff Road")).toBe("Modaff Rd");
+    expect(abbreviateStreet("Royal Saint George Drive")).toBe(
+      "Royal Saint George Dr",
+    );
+  });
+  it("leaves names and nulls alone", () => {
+    expect(abbreviateStreet("Main")).toBe("Main");
+    expect(abbreviateStreet("Park Glen")).toBe("Park Glen");
+    expect(abbreviateStreet(null)).toBeNull();
   });
 });
 

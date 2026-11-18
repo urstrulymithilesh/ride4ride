@@ -2,11 +2,12 @@
 
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type * as MapLibre from "maplibre-gl";
 import { haversineMiles } from "@/lib/geo";
 import type { MapRide } from "@/lib/ride-map";
 import { CAR_GLYPH_PATH } from "@/lib/marker-art";
+import { PinSheet } from "@/components/rides/pin-sheet";
 import { applyMapTheme } from "@/lib/map-theme";
 import { useViewerLocation } from "@/components/location/location-context";
 
@@ -76,6 +77,79 @@ export function RidesMap({
   const { coords } = useViewerLocation();
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
+  // Tapped pin: other pins hide while its sheet is up. The id mirrors
+  // into a ref so the marker rebuild (data refreshes) can re-apply the
+  // isolation without re-running the camera move.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedRef = useRef<string | null>(null);
+  // The sheet renders only once the framing flight lands (moveend), so
+  // it never pops over a still-traveling pin. A newer tap supersedes
+  // via the run token; an interruption clears both (see clearSelection).
+  const [framedId, setFramedId] = useState<string | null>(null);
+  const frameRun = useRef(0);
+
+  // Frame a tapped pin in ONE smooth flight: fly straight to the camera
+  // whose screen projection puts the pin at center-x, y=128 under zoom
+  // 15. Solved exactly in world space (screen = center + (world -
+  // centerWorld) * worldSize) instead of centering first and panning
+  // after, so there is no visible hop. A newer flyTo simply retargets
+  // the in-flight one, so rapid re-taps stay smooth too.
+  const framePin = useCallback((lat: number, lng: number, id: string) => {
+    const map = mapRef.current;
+    const el = containerRef.current;
+    if (!map || !el) return;
+    const run = ++frameRun.current;
+    const toWorld = (lngLat: { lng: number; lat: number }) => {
+      const s = Math.sin((lngLat.lat * Math.PI) / 180);
+      return {
+        x: lngLat.lng / 360 + 0.5,
+        y: 0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI),
+      };
+    };
+    const fromWorld = (x: number, y: number) => {
+      const n = Math.PI * (1 - 2 * y);
+      return {
+        lng: (x - 0.5) * 360,
+        lat: (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n))),
+      };
+    };
+    const Z15 = 512 * Math.pow(2, 15);
+    const viewCenter = { x: el.clientWidth / 2, y: el.clientHeight / 2 };
+    const target = { x: el.clientWidth / 2, y: 128 };
+    const pin = toWorld({ lng, lat });
+    const centerWorld = {
+      x: pin.x - (target.x - viewCenter.x) / Z15,
+      y: pin.y - (target.y - viewCenter.y) / Z15,
+    };
+    const center = fromWorld(centerWorld.x, centerWorld.y);
+    map.once("moveend", () => {
+      if (frameRun.current !== run) return;
+      setFramedId(id);
+    });
+    map.flyTo({ center: [center.lng, center.lat], zoom: 15 });
+  }, []);
+
+  const selectPin = useCallback(
+    (ride: MapRide) => {
+      if (selectedRef.current === ride.id) {
+        selectedRef.current = null;
+        setSelectedId(null);
+        setFramedId(null);
+        return;
+      }
+      selectedRef.current = ride.id;
+      setSelectedId(ride.id);
+      setFramedId(null);
+      framePin(ride.lat, ride.lng, ride.id);
+    },
+    [framePin],
+  );
+
+  const clearSelection = useCallback(() => {
+    selectedRef.current = null;
+    setSelectedId(null);
+    setFramedId(null);
+  }, []);
 
   // Map lifecycle: created once per zoom-key (per tab) and destroyed on
   // unmount or tab switch. Deliberately NOT keyed on `coords` — GPS fixes
@@ -302,7 +376,6 @@ export function RidesMap({
 
     const addPinMarkers = () => {
       // Nearest pins paint last so they sit on top when points overlap.
-      // Static display for now: no tap action until the pin sheet lands.
       const ordered = [...rides]
         .map((ride) => ({
           ride,
@@ -312,10 +385,22 @@ export function RidesMap({
           }),
         }))
         .sort((a, b) => a.milesAway - b.milesAway);
+      const selected = selectedRef.current;
       for (const { ride } of ordered) {
-        const markerEl = document.createElement("div");
-        markerEl.className = "r4r-pin-marker r4r-pin-static";
-        markerEl.setAttribute("aria-hidden", "true");
+        const markerEl = document.createElement("button");
+        markerEl.type = "button";
+        markerEl.className =
+          "r4r-pin-marker r4r-pin-static cursor-pointer border-0 bg-transparent p-0";
+        markerEl.setAttribute(
+          "aria-label",
+          `ride details: ${ride.miles ?? "ride"} near ${ride.city}`,
+        );
+        // Isolation: while a sheet is up every other pin hides. Applied
+        // here too (not just the selection effect) so data refreshes
+        // that rebuild markers can't flash the hidden ones back.
+        if (selected && selected !== ride.id) {
+          markerEl.style.display = "none";
+        }
         const pill = document.createElement("span");
         pill.className = "r4r-pin-label";
         // Distance reads bright; the timing half ("• Now") is dimmed.
@@ -337,6 +422,11 @@ export function RidesMap({
         drop.innerHTML =
           '<svg width="16" height="21" viewBox="45 20 137 181" fill="none" aria-hidden="true"><path fill="#000000" fill-rule="evenodd" d="M72.08 196.42 C74.45 193.90 74.51 193.40 74.83 174.17 C75.11 157.14 74.92 154.07 73.45 151.30 C70.81 146.35 63.36 144.66 54.75 147.05 C48.56 148.77 48.00 150.94 48.00 173.37 L48.00 192.85L50.59 195.92 C53.09 198.90 53.44 199.00 61.41 199.00 C68.97 199.00 69.85 198.79 72.08 196.42 Z M105.46 198.38 C109.40 196.87 110.00 193.05 110.00 169.55 L110.00 147.00L118.43 147.00 L126.87 147.00L127.18 170.59 L127.50 194.18L130.31 196.59 C134.09 199.84 139.27 199.82 142.55 196.55 L145.00 194.09L145.03 136.80 L145.05 79.50L151.63 76.56 C164.19 70.95 174.39 57.64 178.48 41.54 C180.78 32.53 180.49 29.33 177.08 25.92 C171.50 20.35 163.86 23.34 162.50 31.64 C162.15 33.76 160.96 38.60 159.86 42.39 C158.20 48.10 156.97 50.16 152.60 54.53 C143.58 63.55 137.86 65.73 119.94 66.99 C104.13 68.10 99.67 69.17 88.50 74.54 C70.54 83.18 61.06 95.50 58.06 114.08 C56.43 124.24 60.53 130.14 68.07 128.48 C72.24 127.57 74.09 124.76 75.54 117.13 C77.04 109.25 79.02 104.80 82.86 100.66 C85.21 98.13 89.96 95.00 91.45 95.00 C91.75 95.00 92.00 117.02 92.00 143.92 L92.00 192.85L94.59 195.92 C97.18 199.01 101.36 199.95 105.46 198.38 Z M127.48 55.71 C142.74 47.07 136.06 22.94 118.43 23.02 C107.56 23.06 98.80 34.72 101.90 45.05 C105.26 56.26 117.50 61.37 127.48 55.71 Z"/></svg>';
         markerEl.append(pill, drop);
+        markerEl.addEventListener("click", (e) => {
+          // Don't let this become a map-tap deselect below.
+          e.stopPropagation();
+          selectPin(ride);
+        });
         const marker = new Ctor({ element: markerEl, anchor: "bottom" })
           .setLngLat([ride.lng, ride.lat])
           .addTo(map);
@@ -439,15 +529,55 @@ export function RidesMap({
       syncCollisions();
     };
     const onMoveEnd = () => syncCollisions();
+    // A manual pan/zoom dismisses the sheet (the framed pin is gone, so
+    // the card's anchor is too). Programmatic moves from framePin carry
+    // no originalEvent and are ignored.
+    const onMoveStart = (e: { originalEvent?: unknown }) => {
+      if (e.originalEvent && selectedRef.current) clearSelection();
+    };
+    // Tapping empty map dismisses the sheet (and brings the other pins
+    // back). Marker taps stopPropagation above, so they never land here.
+    // A programmatic camera move has no originalEvent — only real taps
+    // clear. The selected pin's own re-tap toggles via selectPin.
+    const onMapClick = (e: { originalEvent: unknown }) => {
+      if (!e.originalEvent) return;
+      const t = e.originalEvent as unknown as
+        | { target?: unknown }
+        | null
+        | undefined;
+      const target = t?.target;
+      if (
+        target instanceof HTMLElement &&
+        target.closest(".r4r-pin-marker")
+      ) {
+        return;
+      }
+      if (selectedRef.current) clearSelection();
+    };
     map.on("zoom", onZoom);
     map.on("moveend", onMoveEnd);
+    map.on("movestart", onMoveStart);
+    map.on("click", onMapClick);
     return () => {
       cancelled = true;
       if (offIdle) offIdle();
       map.off("zoom", onZoom);
       map.off("moveend", onMoveEnd);
+      map.off("movestart", onMoveStart);
+      map.off("click", onMapClick);
     };
-  }, [mapEpoch, rides, cluster, coords]);
+  }, [mapEpoch, rides, cluster, coords, selectPin, clearSelection]);
+
+  // Isolation toggle: while a sheet is up every other pin hides;
+  // clearing the selection brings them back. (The rebuild path above
+  // applies the same rule, so refreshes can't flash them back either.)
+  useEffect(() => {
+    for (const [key, m] of markersRef.current) {
+      if (!key.startsWith("p:")) continue;
+      m.getElement().style.display =
+        !selectedId || key === `p:${selectedId}` ? "" : "none";
+    }
+  }, [selectedId]);
 
   return (
     <div
@@ -477,6 +607,13 @@ export function RidesMap({
             retry
           </button>
         </div>
+      ) : null}
+      {ready && framedId ? (
+        <PinSheet
+          key={framedId}
+          id={framedId}
+          onClose={clearSelection}
+        />
       ) : null}
     </div>
   );

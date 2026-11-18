@@ -7,6 +7,16 @@ const VisualEditor = dynamic(
   { ssr: false },
 );
 
+const GridOverlay = dynamic(
+  () => import("./grid-overlay").then((m) => m.GridOverlay),
+  { ssr: false },
+);
+
 export function VisualEditorWrapper() {
-  return <VisualEditor />;
+  return (
+    <>
+      <VisualEditor />
+      <GridOverlay />
+    </>
+  );
 }

@@ -38,6 +38,38 @@ export function formatClockDots(hhmm: string): string {
 }
 
 /** Posted time, e.g. "Today • 10:05 am". Days compare in server time. */
+
+/**
+ * USPS street suffixes to their short forms. Applied to the trailing
+ * word only ("Newberry Court" -> "Newberry Ct", "East New York Street"
+ * -> "East New York St"), so name words like "Saint" are never touched.
+ */
+const STREET_SUFFIXES: Record<string, string> = {
+  avenue: "Ave",
+  boulevard: "Blvd",
+  circle: "Cir",
+  court: "Ct",
+  drive: "Dr",
+  lane: "Ln",
+  parkway: "Pkwy",
+  place: "Pl",
+  plaza: "Plz",
+  road: "Rd",
+  square: "Sq",
+  street: "St",
+  terrace: "Ter",
+  trail: "Trl",
+};
+
+export function abbreviateStreet(street: string | null): string | null {
+  if (!street) return street;
+  const trimmed = street.trim();
+  const m = /^(.*\s)?([A-Za-z]+)\.?$/.exec(trimmed);
+  if (!m) return trimmed;
+  const short = STREET_SUFFIXES[m[2].toLowerCase()];
+  if (!short) return trimmed;
+  return `${m[1] ?? ""}${short}`;
+}
 export function formatPostedAt(iso: string): string {
   const d = new Date(iso);
   const now = new Date();

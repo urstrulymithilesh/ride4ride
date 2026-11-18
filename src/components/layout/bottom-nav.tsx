@@ -6,6 +6,7 @@ import { Suspense, useEffect, useState } from "react";
 import { QuickPost, POST_DRAFT_KEY } from "@/components/rides/quick-post";
 import type { PostDraft } from "@/components/rides/quick-post";
 import { OPEN_POST_EVENT } from "@/components/rides/empty-post-cta";
+import { ChatIcon } from "@/components/places/search-icons";
 import { useViewerLocation } from "@/components/location/location-context";
 import { CAR_GLYPH_PATH } from "@/lib/marker-art";
 import { HailPersonIcon } from "@/components/places/search-icons";
@@ -42,26 +43,6 @@ function PlusIcon() {
     >
       <path d="M12 5v14" />
       <path d="M5 12h14" />
-    </svg>
-  );
-}
-
-function ChatIcon() {
-  return (
-    <svg
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9.5L4 20.5V6z" />
-      <path d="M8 8.5h8" />
-      <path d="M8 12h5" />
     </svg>
   );
 }

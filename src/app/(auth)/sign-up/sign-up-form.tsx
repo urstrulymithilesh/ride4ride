@@ -46,13 +46,22 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
         required
       />
       <TextField
-        label="email"
+        label="phone number"
+        name="phone"
+        type="tel"
+        autoComplete="tel"
+        placeholder="(312) 555-0148"
+        error={state.fieldErrors?.phone}
+        required
+      />
+      <TextField
+        label="email (optional)"
         name="email"
         type="email"
         autoComplete="email"
-        placeholder="you@school.edu"
+        placeholder="you@gmail.com — skip for now if you like"
+        hint="optional. gmail, hotmail, outlook, yahoo, icloud, or .edu. add it now or later in settings."
         error={state.fieldErrors?.email}
-        required
       />
       <TextField
         label="password"

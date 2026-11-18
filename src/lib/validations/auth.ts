@@ -8,6 +8,33 @@ export type FieldErrors = Record<string, string>;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
+ * Normalize a phone number to E.164 for Supabase Auth (which only
+ * accepts E.164 for phone sign-up/sign-in).
+ *
+ * US-first: 10 digits (or 11 starting with 1) become +1...; anything
+ * with an explicit leading + passes through after stripping formatting.
+ * Returns null when the input cannot be a phone number.
+ */
+export function normalizePhone(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return null;
+  if (/[a-zA-Z]/.test(trimmed)) return null;
+  const hasPlus = trimmed.startsWith("+");
+  const digits = trimmed.replace(/\D/g, "");
+  if (hasPlus) {
+    if (digits.length < 7 || digits.length > 15) return null;
+    return `+${digits}`;
+  }
+  let national = digits;
+  // Tolerate a leading US country code or trunk prefix.
+  if (national.length === 11 && national.startsWith("1")) {
+    national = national.slice(1);
+  }
+  if (national.length !== 10) return null;
+  return `+1${national}`;
+}
+
+/**
  * Current version of the Terms. Bump this whenever the Terms change in a
  * way that should require re-acceptance; `profiles.tos_version` records
  * what each user actually agreed to, so `profiles_missing_tos()` can find
@@ -16,7 +43,9 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const TOS_VERSION = "2026-09-03";
 
 export interface SignUpInput {
-  email: string;
+  phone: string;
+  /** Null when skipped at sign-up (can be added later in settings). */
+  email: string | null;
   password: string;
   displayName: string;
   username: string;
@@ -33,7 +62,10 @@ export interface SignUpInput {
 }
 
 export interface SignInInput {
-  email: string;
+  /** "phone" for a number (E.164 value), "username" for a handle. */
+  kind: "phone" | "username";
+  /** E.164 phone, or lowercased username. */
+  value: string;
   password: string;
 }
 
@@ -94,6 +126,7 @@ export function validateUsername(username: string): string | null {
 }
 
 export function validateSignUp(raw: {
+  phone: string;
   email: string;
   password: string;
   displayName: string;
@@ -102,12 +135,17 @@ export function validateSignUp(raw: {
   tosAccepted: boolean;
 }): { ok: true; data: SignUpInput } | { ok: false; fieldErrors: FieldErrors } {
   const fieldErrors: FieldErrors = {};
-  const email = raw.email.trim().toLowerCase();
+  const phone = normalizePhone(raw.phone);
+  if (!phone) fieldErrors.phone = "enter a valid phone number.";
+  // Email is skippable: empty means "later in settings". When given it
+  // must be valid; the domain allowlist is enforced server-side.
+  const emailRaw = raw.email.trim().toLowerCase();
+  const email = emailRaw ? emailRaw : null;
+  if (email && !EMAIL_RE.test(email))
+    fieldErrors.email = "enter a valid email address.";
   const displayName = raw.displayName.trim();
   const username = raw.username.trim().toLowerCase();
   const password = raw.password;
-
-  if (!EMAIL_RE.test(email)) fieldErrors.email = "enter a valid email address.";
   if (displayName.length < 2)
     fieldErrors.displayName = "display name must be at least 2 characters.";
   if (displayName.length > 50)
@@ -129,6 +167,7 @@ export function validateSignUp(raw: {
   return {
     ok: true,
     data: {
+      phone: phone as string,
       email,
       password,
       displayName,
@@ -140,17 +179,38 @@ export function validateSignUp(raw: {
 }
 
 export function validateSignIn(raw: {
-  email: string;
+  identifier: string;
   password: string;
 }): { ok: true; data: SignInInput } | { ok: false; fieldErrors: FieldErrors } {
   const fieldErrors: FieldErrors = {};
-  const email = raw.email.trim().toLowerCase();
+  const identifier = raw.identifier.trim();
 
-  if (!EMAIL_RE.test(email)) fieldErrors.email = "enter a valid email address.";
+  // Email is not a sign-in method: username or phone only.
+  let kind: "phone" | "username" | null = null;
+  let value = "";
+  if (identifier.includes("@")) {
+    fieldErrors.identifier = "sign in with your username or phone number.";
+  } else {
+    const phone = normalizePhone(identifier);
+    if (phone) {
+      kind = "phone";
+      value = phone;
+    } else {
+      const username = identifier.toLowerCase();
+      const usernameError = validateUsername(username);
+      if (usernameError)
+        fieldErrors.identifier = "sign in with your username or phone number.";
+      else {
+        kind = "username";
+        value = username;
+      }
+    }
+  }
   if (!raw.password) fieldErrors.password = "enter your password.";
 
-  if (Object.keys(fieldErrors).length > 0) return { ok: false, fieldErrors };
-  return { ok: true, data: { email, password: raw.password } };
+  if (Object.keys(fieldErrors).length > 0 || !kind)
+    return { ok: false, fieldErrors };
+  return { ok: true, data: { kind, value, password: raw.password } };
 }
 
 /**

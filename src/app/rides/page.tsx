@@ -4,7 +4,7 @@ import { searchPlaces } from "@/lib/places";
 import { createClient } from "@/lib/supabase/server";
 import type { RideCardData } from "@/components/rides/ride-card";
 import { SearchForm } from "@/components/places/search-form";
-import { PersonGlyph } from "@/components/places/search-icons";
+import { MemberPill } from "@/components/rides/member-pill";
 import { RidesMap } from "@/components/rides/rides-map";
 import { buildMapRides } from "@/lib/ride-geo.server";
 import { recordArrival } from "@/lib/arrivals";
@@ -367,7 +367,7 @@ async function FeedInner({
       {/* Floating filter chips at the top of the feed. Chip dropdown
           behavior: pick up / drop off filter the feed; airport and
           university set the chip label until their behavior lands. */}
-      <div className="pointer-events-auto fixed inset-x-0 top-0 z-[var(--z-chrome)] mx-auto w-full max-w-[480px] px-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
+      <div data-feed-chips className="pointer-events-auto fixed inset-x-0 top-0 z-[var(--z-chrome)] mx-auto w-full max-w-[480px] px-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
         <SearchForm
           key={`${sp.from?.trim() ?? ""}|${to}|${airportCode}|${sp.university?.trim() ?? ""}`}
           type={rideType}
@@ -384,15 +384,7 @@ async function FeedInner({
         {/* The ride-type switch is the feed's bottom bar (BottomNav);
             nothing floats between the search rows and it. */}
 
-        {memberCount !== null && memberCount > 0 ? (
-          <div className="pointer-events-none fixed inset-x-0 bottom-[calc(0.35rem+env(safe-area-inset-bottom))] z-[var(--z-chrome)] flex justify-center px-4">
-            <span className="glass-dark pointer-events-auto flex items-center gap-1 rounded-full px-3.5 pb-0.5 pt-0.5 text-[11px] font-medium text-white/70 opacity-[0.85]">
-              ride4ride.com
-              <PersonGlyph height={9} />
-              <span>{memberCount.toString().padStart(2, "0")}</span>
-            </span>
-          </div>
-        ) : null}
+        {memberCount !== null ? <MemberPill initial={memberCount} /> : null}
 
         {ridesError ? (
           /* ERROR state — deliberately NOT the empty state. An empty board and

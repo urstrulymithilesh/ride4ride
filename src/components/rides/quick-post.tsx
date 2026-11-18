@@ -257,6 +257,23 @@ export function QuickPost({
     }
   };
 
+  // While the post popup is open the feed chrome stands down: the
+  // filter chips and the recenter control hide, and return on close.
+  // Mount/unmount maps exactly to open/close (the dock renders this only
+  // when postOpen), so no event contract is needed.
+  useEffect(() => {
+    const els = [...document.querySelectorAll("[data-feed-chips],[data-recenter]")];
+    const prev = els.map((el) => (el as HTMLElement).style.display);
+    els.forEach((el) => {
+      (el as HTMLElement).style.display = "none";
+    });
+    return () => {
+      els.forEach((el, i) => {
+        (el as HTMLElement).style.display = prev[i] ?? "";
+      });
+    };
+  }, []);
+
   // Action outcome: success clears the draft and hands control back
   // (the detail page is gone pending redesign, so there is nowhere to
   // navigate — the popup simply closes). A terminal error also clears

@@ -297,7 +297,9 @@ select {
   display: none;
 }
 
-/* Viewer position: blue pulsing nav dot with a white center ring. */
+/* Viewer position: blue nav dot with a white ring. The blue breathes at
+   the same 1.6s cadence as the post button; there is no halo — the dot
+   itself is the pulse. */
 .r4r-me {
   position: relative;
   width: 16px;
@@ -313,25 +315,16 @@ select {
   border-radius: 50%;
   background: #0d99ff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  animation: r4r-me-breathe 1.6s ease-in-out infinite;
 }
 
-.r4r-me::after {
-  content: "";
-  position: absolute;
-  inset: -6px;
-  border-radius: 50%;
-  border: 2px solid #0d99ff;
-  animation: r4r-me-pulse 1.6s ease-out infinite;
-}
-
-@keyframes r4r-me-pulse {
-  0% {
-    transform: scale(0.4);
-    opacity: 0.8;
-  }
+@keyframes r4r-me-breathe {
+  0%,
   100% {
-    transform: scale(1.6);
-    opacity: 0;
+    scale: 1;
+  }
+  50% {
+    scale: 0.8889;
   }
 }
 

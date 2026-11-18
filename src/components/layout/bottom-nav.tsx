@@ -231,6 +231,7 @@ function FeedDock({ menu }: { menu: React.ReactNode }) {
       <div className="fixed inset-x-0 bottom-0 z-[var(--z-chrome)] mx-auto w-full max-w-[480px] px-3 pb-[calc(1.9rem+env(safe-area-inset-bottom))]">
         {(pathname === "/rides" || pathname === "/") ? (
           <span
+            data-recenter
             // Same footprint as the bare button; the ring draws inside
             // its edge instead of circling outside it.
             style={{ top: "-70px" }}

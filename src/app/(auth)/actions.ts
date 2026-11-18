@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   TOS_VERSION,
   validateSignUp,
@@ -34,6 +35,7 @@ export async function signUp(
   formData: FormData,
 ): Promise<AuthState> {
   const result = validateSignUp({
+    phone: String(formData.get("phone") ?? ""),
     email: String(formData.get("email") ?? ""),
     password: String(formData.get("password") ?? ""),
     displayName: String(formData.get("displayName") ?? ""),
@@ -45,7 +47,7 @@ export async function signUp(
   if (!result.ok) return { fieldErrors: result.fieldErrors };
 
   const redirectTo = sanitizeRedirect(String(formData.get("redirectTo") ?? ""));
-  const { email, password, displayName, username } = result.data;
+  const { phone, email, password, displayName, username } = result.data;
   const supabase = await createClient();
 
   // Unique-handle pre-check for a friendly field error. The unique index
@@ -58,11 +60,12 @@ export async function signUp(
     return { fieldErrors: { username: "that username is taken." } };
   }
 
-  // In "restrict" mode, only allow-listed email domains may create an
-  // account. The list lives in the DB (allowed_email_domains) so it can be
+  // Email is optional at sign-up, but when given it must be allow-listed.
+  // In "restrict" mode, only allow-listed email domains may be attached.
+  // The list lives in the DB (allowed_email_domains) so it can be
   // changed without a redeploy. Since 0013 that table is a SIGNUP
   // ALLOWLIST ONLY — it no longer grants any badge.
-  if (getVerificationMode() === "restrict") {
+  if (email && getVerificationMode() === "restrict") {
     const { data: allowed } = await supabase.rpc("is_allowed_student_email", {
       p_email: email,
     });
@@ -78,7 +81,8 @@ export async function signUp(
   const origin = await siteOrigin();
 
   const { data, error } = await supabase.auth.signUp({
-    email,
+    phone,
+    ...(email ? { email } : {}),
     password,
     options: {
       // Carried into profiles by handle_new_user() in the same transaction
@@ -100,19 +104,25 @@ export async function signUp(
     if (/username|duplicate|already exists/i.test(error.message)) {
       return { fieldErrors: { username: "that username is taken." } };
     }
+    // A taken phone number (or email) must not say which one exists.
+    if (/already registered|already exists|duplicate|taken|in use/i.test(error.message)) {
+      return { error: "an account with those details already exists." };
+    }
     return { error: error.message };
   }
 
-  // If email confirmation is disabled, a session exists immediately.
+  // If confirmation is disabled, a session exists immediately.
   if (data.session) {
     revalidatePath("/", "layout");
     redirect(redirectTo);
   }
 
-  // Otherwise prompt the user to confirm via email.
+  // Otherwise prompt the user to confirm (email link or SMS code,
+  // depending on what they signed up with).
   return {
-    message:
-      "check your email to confirm your account, then sign in to continue.",
+    message: email
+      ? "check your email to confirm your account, then sign in to continue."
+      : "check your texts for a confirmation code, then sign in to continue.",
   };
 }
 
@@ -121,7 +131,9 @@ export async function signIn(
   formData: FormData,
 ): Promise<AuthState> {
   const result = validateSignIn({
-    email: String(formData.get("email") ?? ""),
+    identifier: String(
+      formData.get("identifier") ?? formData.get("phone") ?? "",
+    ),
     password: String(formData.get("password") ?? ""),
   });
   if (!result.ok) return { fieldErrors: result.fieldErrors };
@@ -129,10 +141,39 @@ export async function signIn(
   const redirectTo = sanitizeRedirect(String(formData.get("redirectTo") ?? ""));
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signInWithPassword(result.data);
+  // Username has no direct Supabase credential: resolve it to the
+  // account's phone (preferred) or email via the service role, then
+  // sign in normally. Every failure collapses to the same generic
+  // message so login never reveals whether a handle exists.
+  let login: { phone: string } | { email: string } | null =
+    result.data.kind === "phone" ? { phone: result.data.value } : null;
+  if (!login) {
+    try {
+      const admin = createAdminClient();
+      const { data: profile } = await admin
+        .from("profiles")
+        .select("id")
+        .eq("username", result.data.value)
+        .maybeSingle();
+      const { data: userData } = profile
+        ? await admin.auth.admin.getUserById(profile.id)
+        : { data: { user: null } };
+      const user = userData.user;
+      if (user?.phone) login = { phone: user.phone };
+      else if (user?.email) login = { email: user.email };
+    } catch {
+      login = null;
+    }
+  }
+  const { error } = login
+    ? await supabase.auth.signInWithPassword({
+        ...login,
+        password: result.data.password,
+      })
+    : { error: new Error("invalid credentials") };
   if (error) {
     // Keep the message generic to avoid leaking which part was wrong.
-    return { error: "invalid email or password." };
+    return { error: "invalid username, phone number, or password." };
   }
 
   revalidatePath("/", "layout");

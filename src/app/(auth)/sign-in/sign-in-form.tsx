@@ -21,12 +21,11 @@ export function SignInForm({
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="redirectTo" value={redirectTo} />
       <TextField
-        label="email"
-        name="email"
-        type="email"
-        autoComplete="email"
-        placeholder="you@school.edu"
-        error={state.fieldErrors?.email}
+        label="username or phone"
+        name="identifier"
+        autoComplete="username"
+        placeholder="alex_r123 or (312) 555-0148"
+        error={state.fieldErrors?.identifier}
         required
       />
       <TextField

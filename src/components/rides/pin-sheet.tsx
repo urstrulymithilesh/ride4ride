@@ -92,15 +92,23 @@ export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
   const routeRef = useRef<HTMLParagraphElement | null>(null);
 
   // One-line route fit: widen the card first, then shrink the type,
-  // stopping at the screen edge and at 10px. Driven from the fetch
+  // stopping at the screen edge and at 9px. Driven from the fetch
   // callback (plus rAF rechecks), never from an effect, so each step
-  // measures committed DOM. All reads come from the DOM (never stale
-  // state); every step strictly progresses, so the loop always ends.
+  // measures committed DOM. Retries also cover the commit landing after
+  // the first frame. All reads come from the DOM (never stale state);
+  // every step strictly progresses, so the loop always ends.
   // useCallback (stable, ref/state-setter only) so the fetch effect can
   // depend on it without refetching.
-  const fitRoute = useCallback(function fit(): void {
+  const fitRoute = useRef(0);
+  const fit = useCallback(function fit(): void {
     const el = routeRef.current;
-    if (!el) return;
+    // The fetch callback fires before React commits the new route text;
+    // poll (bounded) instead of assuming the DOM is ready, and the same
+    // retries cover a slow first paint.
+    if (!el) {
+      if (fitRoute.current++ < 120) requestAnimationFrame(fit);
+      return;
+    }
     if (el.scrollWidth <= el.clientWidth + 1) return;
     const card = el.closest("[data-sheet-card]");
     const cardWNow = card instanceof HTMLElement ? card.clientWidth : 360;
@@ -125,7 +133,8 @@ export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
           setRide(data.ride as PinRide);
           setCardW(360);
           setFontPx(15);
-          requestAnimationFrame(fitRoute);
+          fitRoute.current = 0;
+          requestAnimationFrame(fit);
         } else setFailed(true);
       })
       .catch(() => {
@@ -134,7 +143,7 @@ export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
     return () => {
       live = false;
     };
-  }, [id, fitRoute]);
+  }, [id, fitRoute, fit]);
 
   return (
     <div className="pointer-events-none fixed inset-x-0 top-[136px] z-[var(--z-chrome)] mx-auto flex w-full max-w-[480px] justify-center px-3">
@@ -143,17 +152,17 @@ export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
         aria-label={ride ? "ride details" : "loading ride"}
         data-sheet-card
         style={{ width: cardW }}
-        className="glass-dark pointer-events-auto relative max-h-[240px] max-w-[calc(100vw-24px)] overflow-y-auto rounded-[10px] px-3 pt-3 pb-[4px] opacity-90"
+        className="glass-dark pointer-events-auto relative max-h-[240px] max-w-[calc(100vw-24px)] overflow-y-auto rounded-[10px] px-3 pt-[18px] pb-[4px] opacity-90"
       >
         <button
           type="button"
           onClick={onClose}
           aria-label="close details"
-          className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full text-white/60 hover:text-white"
+          className="absolute top-2 right-2 flex h-[42px] w-[42px] items-center justify-center rounded-full text-white/60 hover:text-white"
         >
           <svg
-            width="12"
-            height="12"
+            width="18"
+            height="18"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -189,7 +198,7 @@ export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
               <p
                 ref={routeRef}
                 style={{ fontSize: fontPx }}
-                className="mt-1 whitespace-nowrap tracking-tight text-white/70"
+                className="mt-[6px] whitespace-nowrap tracking-tight text-white/70"
               >
                 {endLabel(ride.from_street, ride.from_city, ride.from_state)}
                 <span aria-hidden="true" className="mx-2">
@@ -202,7 +211,7 @@ export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
               <>
                 <div
                   aria-hidden="true"
-                  className="-mx-3 mt-2 border-t-2 border-white opacity-50"
+                  className="-mx-3 mt-2 border-t border-white opacity-50"
                 />
                 <div className="-mx-3 flex items-center justify-center gap-3 px-3 pt-2 text-[13px] text-white">
                 {ride.username ? (

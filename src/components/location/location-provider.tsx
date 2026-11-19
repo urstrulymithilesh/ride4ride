@@ -282,28 +282,28 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     { title: string; body: string; action: string | null }
   > = {
     checking: {
-      title: "finding you",
-      body: "asking your browser for a city-level location.",
+      title: "Finding you",
+      body: "Asking your browser for a city-level location.",
       action: null,
     },
     prompt: {
-      title: "find rides near you",
-      body: "ride4ride needs your location to center the map and sort rides by distance. allow it, or choose a city manually.",
-      action: "allow location",
+      title: "Find rides near you",
+      body: "ride4ride needs your location to center the map and sort rides by distance. Allow it, or choose a city manually.",
+      action: "Allow location",
     },
     denied: {
-      title: "location is blocked",
-      body: "allow location for this site in your browser settings, then try again. or choose a city manually.",
-      action: "try again",
+      title: "Location is blocked",
+      body: "Allow location for this site in your browser settings, then try again. Or choose a city manually.",
+      action: "Try again",
     },
     error: {
-      title: "couldn't get your location",
-      body: "turn on location services, check your connection, then try again. or choose a city manually.",
-      action: "try again",
+      title: "Couldn't get your location",
+      body: "Turn on location services, check your connection, then try again. Or choose a city manually.",
+      action: "Try again",
     },
     unsupported: {
-      title: "location isn't available",
-      body: "this browser can't share a location. choose a city manually to continue.",
+      title: "Location isn't available",
+      body: "This browser can't share a location. Choose a city manually to continue.",
       action: null,
     },
   };
@@ -334,10 +334,10 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
                 id="location-gate-title"
                 className="mt-5 text-xl font-semibold text-white"
               >
-                set your location
+                Set your location
               </h1>
               <p className="mt-2 max-w-xs text-sm leading-relaxed text-muted">
-                search for your city or nearest airport. we&apos;ll use its
+                Search for your city or nearest airport. We&apos;ll use its
                 approximate center and remember it on this device.
               </p>
               <div className="mt-5 w-full max-w-xs">
@@ -345,8 +345,8 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
                   value={manualQuery}
                   onValueChange={setManualQuery}
                   kind="all"
-                  placeholder="city, university or airport"
-                  ariaLabel="city or airport"
+                  placeholder="City, University or Airport"
+                  ariaLabel="City or airport"
                   surface="soft"
                   inputClassName="input placeholder:text-muted"
                   onPick={(place: PlaceOption) => {
@@ -368,7 +368,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
                 onClick={() => setManualOpen(false)}
                 className="mt-4 text-xs font-medium text-muted underline decoration-1 underline-offset-4 hover:text-content"
               >
-                back
+                Back
               </button>
             </>
           ) : (
@@ -392,7 +392,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
                 </button>
               ) : gateStatus === "checking" ? (
                 <p className="mt-6 text-xs text-faint" aria-live="polite">
-                  checking location…
+                  Checking location…
                 </p>
               ) : null}
               {gateStatus !== "checking" ? (
@@ -401,14 +401,14 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
                   onClick={() => setManualOpen(true)}
                   className="mt-4 text-xs font-medium text-muted underline decoration-1 underline-offset-4 hover:text-content"
                 >
-                  choose a city instead
+                  Choose a city instead
                 </button>
               ) : null}
             </>
           )}
           <p className="mt-6 max-w-xs text-[11px] leading-relaxed text-faint">
-            your location stays on this device and is remembered for 30 days so
-            you aren&apos;t asked every time. we use it only to center the map
+            Your location stays on this device and is remembered for 30 days so
+            You aren&apos;t asked every time. We use it only to center the map
             and sort rides by distance.
           </p>
           <div className="mt-3 flex items-center gap-2 text-[11px] text-faint">
@@ -416,14 +416,14 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
               href="/privacy"
               className="underline decoration-1 underline-offset-4 hover:text-muted"
             >
-              privacy
+              Privacy
             </Link>
             <span aria-hidden="true">·</span>
             <Link
               href="/terms"
               className="underline decoration-1 underline-offset-4 hover:text-muted"
             >
-              terms
+              Terms
             </Link>
           </div>
         </div>

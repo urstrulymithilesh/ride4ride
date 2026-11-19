@@ -7,7 +7,7 @@ import { sanitizeRedirect } from "@/lib/validations/auth";
  * via `redirectTo` so they land back here after signing in.
  */
 export function SignInPrompt({
-  action = "continue",
+  action = "Continue",
   redirectTo,
   compact = false,
 }: {
@@ -23,16 +23,16 @@ export function SignInPrompt({
     <div
       className={`card text-center ${compact ? "p-4" : "p-6"}`}
     >
-      <p className="text-sm font-medium text-content">sign in to {action}</p>
+      <p className="text-sm font-medium text-content">Sign in to {action}</p>
       <p className="mt-1 text-sm text-muted">
-        browsing is open to everyone, but you&apos;ll need an account for this.
+        Browsing is open to everyone, but you&apos;ll need an account for this.
       </p>
       <div className="mt-4 flex justify-center gap-2">
         <Link href={`/sign-in${q}`} className="btn btn-primary flex-1">
-          sign in
+          Log in
         </Link>
         <Link href={`/sign-up${q}`} className="btn btn-secondary flex-1">
-          create account
+          Create account
         </Link>
       </div>
     </div>

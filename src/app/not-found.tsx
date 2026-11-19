@@ -7,14 +7,14 @@ export default function NotFound() {
         404
       </p>
       <h1 className="mt-2 text-xl font-semibold text-content">
-        page not found
+        Page not found
       </h1>
       <p className="mt-2 text-sm text-muted">
-        this page doesn&apos;t exist, or the post may have expired or been
+        This page doesn&apos;t exist, or the post may have expired or been
         removed.
       </p>
       <Link href="/" className="btn btn-primary mt-6 w-full">
-        browse rides
+        Browse rides
       </Link>
     </main>
   );

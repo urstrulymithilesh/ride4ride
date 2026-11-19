@@ -40,7 +40,7 @@ function PostButton({ skippable }: { skippable: boolean }) {
       disabled={pending}
       className="min-h-11 w-full rounded-xl bg-white text-[15px] font-semibold text-black hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:text-base"
     >
-      {pending ? "posting…" : skippable ? "skip & post" : "post"}
+      {pending ? "Posting…" : skippable ? "Skip & post" : "Post"}
     </button>
   );
 }
@@ -129,7 +129,7 @@ function BackArrow({ onBack }: { onBack: () => void }) {
     <button
       type="button"
       onClick={onBack}
-      aria-label="back"
+      aria-label="Back"
       className="inline-flex min-h-14 min-w-14 items-center text-5xl text-muted transition-colors hover:text-content active:text-white"
     >
       <span aria-hidden="true" className="leading-none">←</span>
@@ -293,12 +293,12 @@ export function QuickPost({
 
   const addrPlaceholder =
     postMode === "need"
-      ? "complete address is required for accuracy"
-      : "city, university or airport";
+      ? "Complete address is required for accuracy"
+      : "City, University or Airport";
   const optPlaceholder =
     postMode === "need"
-      ? "write something..\n'i have luggage' or\n'need ride for 2 people' or\n'can split gas money' or\n'i will pay $10'"
-      : "write something..\n'space available for up to 3 people' or\n'split gas money'";
+      ? "Write something..\n'I have luggage' or\n'Need ride for 2 people' or\n'Can split gas money' or\n'I will pay $10'"
+      : "Write something..\n'Space available for up to 3 people' or\n'Split gas money'";
 
   const pill = (active: boolean) =>
     `min-h-10 flex-1 rounded-xl border px-2 text-[13px] font-medium transition-colors sm:min-h-11 sm:px-3 sm:text-sm ${
@@ -335,10 +335,10 @@ export function QuickPost({
               className="flex flex-col gap-2 sm:gap-4"
             >
               <h2 className="text-left text-lg font-semibold text-content">
-                new post
+                New post
               </h2>
               <p className="text-center text-[11px] text-muted sm:text-xs">
-                your privacy is most important and respected.
+                Your privacy is most important and respected.
               </p>
               <input type="hidden" name="postMode" value={postMode ?? "need"} />
               <input type="hidden" name="timing" value={timing ?? "anytime"} />
@@ -361,7 +361,7 @@ export function QuickPost({
               ) : null}
 
               {step === 0 ? (
-                <div className="flex gap-2" role="group" aria-label="post type">
+                <div className="flex gap-2" role="group" aria-label="Post type">
                   {(["need", "give"] as const).map((m) => (
                     <button
                       key={m}
@@ -373,7 +373,7 @@ export function QuickPost({
                       aria-pressed={postMode === m}
                       className={`${pill(postMode === m)} flex min-h-11 flex-1 items-center justify-center`}
                     >
-                      {m === "need" ? "i need ride" : "i give ride"}
+                      {m === "need" ? "I need ride" : "I give ride"}
                     </button>
                   ))}
                 </div>
@@ -382,7 +382,7 @@ export function QuickPost({
               {step === 1 ? (
                 <>
                   <fieldset className="rounded-2xl border border-white/15 px-3 pb-1 sm:pb-3">
-                    <legend className="px-1 text-[11px] text-muted sm:text-xs">{postMode === "give" ? "from" : "pick up"}</legend>
+                    <legend className="px-1 text-[11px] text-muted sm:text-xs">{postMode === "give" ? "From" : "Pick up"}</legend>
                     {postMode === "give" ? (
                       <PlaceAutocomplete
                         name="from_address"
@@ -391,7 +391,7 @@ export function QuickPost({
                         required
                         minLength={5}
                         placeholder={addrPlaceholder}
-                        ariaLabel="pickup place"
+                        ariaLabel="Pickup place"
                         kind="all"
                         variant="default"
                         surface="soft"
@@ -405,7 +405,7 @@ export function QuickPost({
                         required
                         minLength={5}
                         placeholder={addrPlaceholder}
-                        ariaLabel="pickup address"
+                        ariaLabel="Pickup address"
                         source="address"
                         nearViewer
                         surface="soft"
@@ -414,7 +414,7 @@ export function QuickPost({
                     )}
                   </fieldset>
                   <fieldset className="rounded-2xl border border-white/15 px-3 pb-1 sm:pb-3">
-                    <legend className="px-1 text-[11px] text-muted sm:text-xs">{postMode === "give" ? "to" : "drop off"}</legend>
+                    <legend className="px-1 text-[11px] text-muted sm:text-xs">{postMode === "give" ? "To" : "Drop off"}</legend>
                     {postMode === "give" ? (
                       <PlaceAutocomplete
                         name="to_address"
@@ -423,7 +423,7 @@ export function QuickPost({
                         required
                         minLength={5}
                         placeholder={addrPlaceholder}
-                        aria-label="drop-off place"
+                        aria-label="Drop-off place"
                         kind="all"
                         variant="default"
                         surface="soft"
@@ -437,7 +437,7 @@ export function QuickPost({
                         required
                         minLength={5}
                         placeholder={addrPlaceholder}
-                        ariaLabel="drop-off address"
+                        ariaLabel="Drop-off address"
                         source="address"
                         surface="soft"
                         inputClassName="input min-h-[22px] border-0 bg-transparent px-4 text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:min-h-11 sm:text-sm sm:placeholder:text-xs"
@@ -446,7 +446,7 @@ export function QuickPost({
                   </fieldset>
                   {postMode === "need" ? (
                     <p className="-mt-2 text-center text-[11px] text-muted sm:text-xs">
-                      don&apos;t worry, address information is kept private.
+                      Don&apos;t worry, address information is kept private.
                     </p>
                   ) : null}
                   <button
@@ -455,7 +455,7 @@ export function QuickPost({
                     disabled={!placesReady}
                     className="min-h-11 w-full rounded-xl text-sm text-muted hover:text-content disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    continue →
+                    Continue →
                   </button>
                   <BackArrow onBack={() => setStep(0)} />
                 </>
@@ -466,7 +466,7 @@ export function QuickPost({
                   <div
                     className="flex gap-2"
                     role="group"
-                    aria-label="ride date"
+                    aria-label="Ride date"
                   >
                     {(
                       ["today", "tomorrow", "custom"] as const
@@ -486,10 +486,10 @@ export function QuickPost({
                         className={`${pill(dateOption === o)} flex min-h-10 flex-1 items-center justify-center sm:min-h-11`}
                       >
                         {o === "today"
-                          ? "today"
+                          ? "Today"
                           : o === "tomorrow"
-                            ? "tomorrow"
-                            : "set date"}
+                            ? "Tomorrow"
+                            : "Set date"}
                       </button>
                     ))}
                   </div>
@@ -501,7 +501,7 @@ export function QuickPost({
                         value={customDate}
                         min={addDays(deviceToday(), 2)}
                         onChange={(e) => setCustomDate(e.target.value)}
-                        aria-label="pick a date"
+                        aria-label="Pick a date"
                         className="input min-h-11 w-full text-center [color-scheme:dark]"
                       />
                       <button
@@ -510,7 +510,7 @@ export function QuickPost({
                         disabled={!customDate}
                         className="min-h-11 w-full rounded-xl text-sm text-muted hover:text-content disabled:cursor-not-allowed disabled:opacity-40"
                       >
-                        continue →
+                        Continue →
                       </button>
                     </>
                   ) : null}
@@ -524,14 +524,14 @@ export function QuickPost({
                     <div
                       className="flex gap-2"
                       role="group"
-                      aria-label="timing"
+                      aria-label="Timing"
                     >
                       {(
                         [
                           ...(dateOption === "today"
-                            ? [["asap", "now"] as const]
+                            ? [["asap", "Now"] as const]
                             : []),
-                          ["anytime", "anytime"],
+                          ["anytime", "Anytime"],
                         ] as const
                       ).map(([value, label]) => (
                         <button
@@ -559,15 +559,15 @@ export function QuickPost({
                         aria-expanded={timing === "at" && clockOpen}
                         className={`${pill(timing === "at")} flex min-h-10 flex-1 items-center justify-center sm:min-h-11`}
                       >
-                        {timing === "at" ? displayTime : "enter time"}
+                        {timing === "at" ? displayTime : "Enter time"}
                       </button>
                     </div>
                     {timing === "at" && clockOpen ? (
                       <div className="thin-scrollbar absolute right-0 top-full z-50 mt-1 flex max-h-60 w-3/4 gap-2 overflow-hidden overscroll-contain rounded-xl border border-white/25 bg-app/60 p-3 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-xl backdrop-saturate-150">
                         {(
                           [
-                            ["hour", HOURS, hour, setHour],
-                            ["minute", MINUTES, minute, setMinute],
+                            ["Hour", HOURS, hour, setHour],
+                            ["Minute", MINUTES, minute, setMinute],
                           ] as const
                         ).map(([label, opts, current, set]) => (
                           <LoopColumn
@@ -621,25 +621,25 @@ export function QuickPost({
                     </p>
                     <p className="mt-0.5 text-muted">
                       {dateOption === "today"
-                        ? "today"
+                        ? "Today"
                         : dateOption === "tomorrow"
-                          ? "tomorrow"
-                          : customDate || "pick a date"}{" "}
+                          ? "Tomorrow"
+                          : customDate || "Pick a date"}{" "}
                       ·{" "}
                       {timing === "at"
                         ? displayTime
-                        : (timing ?? "anytime")}
+                        : (timing ?? "Anytime")}
                     </p>
                   </div>
                   <fieldset className="rounded-2xl border border-white/15 px-3 pb-0.5 sm:pb-3">
-                    <legend className="px-1 text-[11px] text-muted sm:text-xs">note (optional)</legend>
+                    <legend className="px-1 text-[11px] text-muted sm:text-xs">Note (optional)</legend>
                     <textarea
                       name="description"
                       rows={postMode === "need" ? 5 : 3}
                       value={noteValue}
                       onChange={(e) => setNoteValue(e.target.value)}
                       placeholder={optPlaceholder}
-                      aria-label="optional details"
+                      aria-label="Optional details"
                       className="input resize-none border-0 bg-transparent py-1 text-center text-[11px] leading-relaxed placeholder:text-[11px] sm:py-2 sm:text-xs sm:placeholder:text-xs"
                     />
                   </fieldset>

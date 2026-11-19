@@ -41,11 +41,11 @@ export async function allowedDomainsHint(
   try {
     const { data } = await supabase.from("allowed_email_domains").select("suffix");
     const list = (data ?? []).map((d) => d.suffix).sort();
-    if (list.length === 0) return "an allowed email provider";
+    if (list.length === 0) return "An allowed email provider";
     if (list.length === 1) return list[0];
     return `${list.slice(0, -1).join(", ")} or ${list[list.length - 1]}`;
   } catch {
-    return "an allowed email provider";
+    return "An allowed email provider";
   }
 }
 

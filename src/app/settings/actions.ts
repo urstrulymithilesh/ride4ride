@@ -17,36 +17,36 @@ export interface ProfileState {
 
 function validateDisplayName(displayName: string): string | null {
   if (displayName.length < 2)
-    return "display name must be at least 2 characters.";
+    return "Display name must be at least 2 characters.";
   if (displayName.length > 50)
-    return "display name must be 50 characters or fewer.";
+    return "Display name must be 50 characters or fewer.";
   return null;
 }
 
 function validateDob(dob: string): string | null {
-  if (!dob) return "enter your date of birth.";
+  if (!dob) return "Enter your date of birth.";
   const d = new Date(dob + "T00:00:00");
-  if (Number.isNaN(d.getTime())) return "that date isn't valid.";
+  if (Number.isNaN(d.getTime())) return "That date isn't valid.";
   const now = new Date();
-  if (d > now) return "date of birth can't be in the future.";
+  if (d > now) return "Date of birth can't be in the future.";
   let age = now.getFullYear() - d.getFullYear();
   const m = now.getMonth() - d.getMonth();
   if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
-  if (age < 18) return "you must be 18 or older.";
+  if (age < 18) return "You must be 18 or older.";
   return null;
 }
 
 function validatePhone(phone: string): string | null {
   if (!phone) return null;
   if (!/^[+()\-.\s\d]{7,20}$/.test(phone))
-    return "enter a valid phone number.";
+    return "Enter a valid phone number.";
   return null;
 }
 
 function validateEmailAddress(email: string): string | null {
-  if (!email) return "enter your email address.";
+  if (!email) return "Enter your email address.";
   if (!/^\S+@\S+\.\S+$/.test(email))
-    return "enter a valid email address.";
+    return "Enter a valid email address.";
   return null;
 }
 
@@ -61,7 +61,7 @@ export async function updateProfile(
   formData: FormData,
 ): Promise<ProfileState> {
   const user = await getUser();
-  if (!user) return { error: "you must be signed in to edit your profile." };
+  if (!user) return { error: "You must be signed in to edit your profile." };
 
   const displayName = String(formData.get("displayName") ?? "").trim();
   const username = String(formData.get("username") ?? "")
@@ -93,7 +93,7 @@ export async function updateProfile(
   if (email && email !== (user.email ?? "").toLowerCase()) {
     const { error: emailError } = await supabase.auth.updateUser({ email });
     if (emailError) {
-      return { fieldErrors: { email: "couldn't change email. please try again." } };
+      return { fieldErrors: { email: "Couldn't change email. Please try again." } };
     }
   }
 
@@ -110,7 +110,7 @@ export async function updateProfile(
       p_username: username,
     });
     if (available === false) {
-      return { fieldErrors: { username: "that username is taken." } };
+      return { fieldErrors: { username: "That username is taken." } };
     }
   }
 
@@ -126,17 +126,17 @@ export async function updateProfile(
 
   if (error) {
     if (/username|duplicate|already exists/i.test(error.message)) {
-      return { fieldErrors: { username: "that username is taken." } };
+      return { fieldErrors: { username: "That username is taken." } };
     }
     if (/date_of_birth|phone[^s]|column/i.test(error.message)) {
       // Migration 0020 hasn't applied: the new columns don't exist yet,
       // so the whole update fails and nothing is saved.
       return {
         error:
-          "couldn't save — new profile fields aren't ready yet (database update pending). please try again later.",
+          "couldn't save — New profile fields aren't ready yet (database update pending). Please try again later.",
       };
     }
-    return { error: "couldn't save your profile. please try again." };
+    return { error: "Couldn't save your profile. Please try again." };
   }
 
   revalidatePath("/settings");
@@ -144,8 +144,8 @@ export async function updateProfile(
   return {
     message:
       email && email !== (user.email ?? "").toLowerCase()
-        ? "profile saved. confirmation sent to the new email."
-        : "profile saved.",
+        ? "Profile saved. Confirmation sent to the new email."
+        : "Profile saved.",
   };
 }
 
@@ -158,22 +158,22 @@ export async function changePassword(
   formData: FormData,
 ): Promise<ProfileState> {
   const user = await getUser();
-  if (!user) return { error: "you must be signed in to change your password." };
+  if (!user) return { error: "You must be signed in to change your password." };
 
   const next = String(formData.get("newPassword") ?? "");
   const confirm = String(formData.get("confirmPassword") ?? "");
 
   const fieldErrors: FieldErrors = {};
   if (next.length < 8)
-    fieldErrors.newPassword = "password must be at least 8 characters.";
+    fieldErrors.newPassword = "Password must be at least 8 characters.";
   else if (next !== confirm)
-    fieldErrors.confirmPassword = "passwords don't match.";
+    fieldErrors.confirmPassword = "Passwords don't match.";
   if (Object.keys(fieldErrors).length > 0) return { fieldErrors };
 
   const supabase = await createClient();
   const { error } = await supabase.auth.updateUser({ password: next });
   if (error) {
-    return { error: "couldn't change password. please try again." };
+    return { error: "Couldn't change password. Please try again." };
   }
-  return { message: "password changed." };
+  return { message: "Password changed." };
 }

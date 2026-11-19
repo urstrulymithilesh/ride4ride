@@ -56,10 +56,10 @@ describe("allowedDomainsHint", () => {
 
   it("falls back when the table is empty or errors", async () => {
     expect(await allowedDomainsHint(client([]))).toBe(
-      "an allowed email provider",
+      "An allowed email provider",
     );
     expect(await allowedDomainsHint(client(null))).toBe(
-      "an allowed email provider",
+      "An allowed email provider",
     );
   });
 });

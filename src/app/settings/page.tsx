@@ -3,7 +3,7 @@ import Link from "next/link";
 import { requireUser, getProfile } from "@/lib/auth";
 import { PasswordForm, ProfileDetails } from "@/components/profile/profile-details";
 
-export const metadata: Metadata = { title: "settings" };
+export const metadata: Metadata = { title: "Settings" };
 
 /** YYYY-MM-DD -> m/d/yyyy for display. */
 function formatDob(iso: string | null): string {
@@ -18,14 +18,14 @@ export default async function ProfilePage() {
   const profile = await getProfile();
 
   if (!profile) {
-    throw new Error("couldn't load your profile.");
+    throw new Error("Couldn't load your profile.");
   }
 
   return (
     <main className="mx-auto w-full max-w-xl flex-1 px-4 py-6">
-      <h1 className="text-xl font-semibold text-content">settings</h1>
+      <h1 className="text-xl font-semibold text-content">Settings</h1>
       <p className="mt-1 text-sm text-muted">
-        logged in as @{profile.username}.
+        Logged in as @{profile.username}.
       </p>
 
       <ProfileDetails
@@ -39,10 +39,10 @@ export default async function ProfilePage() {
 
       <PasswordForm />
 
-      <nav aria-label="settings" className="mt-3 flex flex-col gap-2">
+      <nav aria-label="Settings" className="mt-3 flex flex-col gap-2">
         {profile.is_admin ? (
           <Link href="/admin" className="btn btn-secondary w-full">
-            admin
+            Admin
           </Link>
         ) : null}
       </nav>

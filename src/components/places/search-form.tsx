@@ -9,6 +9,11 @@ import { PlaceAutocomplete } from "@/components/places/place-autocomplete";
  *  listens. */
 export const CHIP_PANEL_EVENT = "r4r:chip-panel";
 
+/** Fired when the recenter button is tapped. The map listens and drops
+ *  any pin selection first, so the sheet closes and the hidden pins
+ *  return before the camera flies home. */
+export const RECENTER_EVENT = "r4r:recenter";
+
 /**
  * Feed from→to search bar: two fields with a swap button between them.
  * Each field takes a city, university, or airport — picks commit the
@@ -115,14 +120,14 @@ export function SearchForm({
           value={value}
           onValueChange={(v) => change(side, v)}
           kind="all"
-          placeholder="city, university or airport"
+          placeholder="City, University or Airport"
           ariaLabel={`${label} search`}
           submitOnPick
           onSubmit={(opt) => pick(side, opt)}
           clearable
           disabled={locked}
           inputClassName={`h-[20px] w-full bg-transparent text-[16px] leading-[20px] text-white outline-none placeholder:text-white/50 focus:outline-none disabled:cursor-not-allowed ${
-            value ? "pl-[30px] pr-8" : "search-mag pl-[32px] pr-0 placeholder:text-[12.5px] placeholder:tracking-tighter"
+            value ? "pl-[30px] pr-8" : "search-mag pl-[30px] pr-0 placeholder:text-[11px] placeholder:tracking-tighter"
           } ${locked ? "opacity-40" : ""}`}
         />
       </div>
@@ -156,12 +161,12 @@ export function SearchForm({
           at the 480 app column. The dropdown anchors to this row,
           full bar width. */}
       <div data-dropdown-below className="flex h-[40px] w-[570px] max-w-full flex-row items-center justify-center gap-[2px] rounded-[10px] bg-black px-[5px] py-[10px] opacity-90 backdrop-blur-[12.5px]">
-        {field("from", from, "pickup")}
+        {field("from", from, "Pickup")}
         <button
           type="button"
           onClick={swap}
           disabled={!from.trim() && !to.trim()}
-          aria-label="swap pickup and drop off"
+          aria-label="Swap pickup and drop off"
           className="flex h-9 w-5 shrink-0 items-center justify-center rounded-full text-white/60 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
         >
           <svg
@@ -179,7 +184,7 @@ export function SearchForm({
             <path d="M17 16H6l3 3" />
           </svg>
         </button>
-        {field("to", to, "drop off")}
+        {field("to", to, "Drop off")}
       </div>
     </form>
   );

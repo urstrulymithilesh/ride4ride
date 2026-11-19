@@ -32,7 +32,7 @@ export function parseRideTiming(
   if (t === "at") {
     const m = /^([01][0-9]|2[0-3]):([0-5][0-9])$/.exec(time.trim());
     if (!m)
-      return { ok: false, fieldErrors: { ride_time: "pick a time for the ride." } };
+      return { ok: false, fieldErrors: { ride_time: "Pick a time for the ride." } };
     return { ok: true, data: { time_mode: "at", ride_time: `${m[1]}:${m[2]}` } };
   }
   return { ok: true, data: { time_mode: "asap", ride_time: null } };
@@ -48,7 +48,7 @@ export function parseDateFields(
   if (opt !== "today" && opt !== "tomorrow" && opt !== "custom") {
     return {
       ok: false,
-      fieldErrors: { ride_date: "pick today, tomorrow, or a date." },
+      fieldErrors: { ride_date: "Pick today, tomorrow, or a date." },
     };
   }
   const custom = customDate.trim();
@@ -56,7 +56,7 @@ export function parseDateFields(
     if (!/^\d{4}-\d{2}-\d{2}$/.test(custom)) {
       return {
         ok: false,
-        fieldErrors: { ride_date: "pick a valid date." },
+        fieldErrors: { ride_date: "Pick a valid date." },
       };
     }
     const [y, m, d] = custom.split("-").map(Number);
@@ -68,7 +68,7 @@ export function parseDateFields(
     ) {
       return {
         ok: false,
-        fieldErrors: { ride_date: "pick a valid date." },
+        fieldErrors: { ride_date: "Pick a valid date." },
       };
     }
   }
@@ -100,14 +100,14 @@ export function resolvePostDate(
     if (rideDate <= tomorrow) {
       return {
         ok: false,
-        fieldErrors: { ride_date: "pick a date after tomorrow." },
+        fieldErrors: { ride_date: "Pick a date after tomorrow." },
       };
     }
   }
   if (draft.time_mode === "asap" && rideDate !== today) {
     return {
       ok: false,
-      fieldErrors: { timing: "now is only for today's rides." },
+      fieldErrors: { timing: "Now is only for today's rides." },
     };
   }
   return { ok: true, data: { ride_date: rideDate } };
@@ -167,16 +167,16 @@ export function validateOffer(
   const to_city = (raw.to_city ?? "").trim();
   const to_state = (raw.to_state ?? "").trim();
 
-  if (!from_city) fieldErrors.from_city = "enter the origin city.";
-  if (!from_state) fieldErrors.from_state = "enter the origin state.";
-  if (!to_city) fieldErrors.to_city = "enter the destination city.";
-  if (!to_state) fieldErrors.to_state = "enter the destination state.";
+  if (!from_city) fieldErrors.from_city = "Enter the origin city.";
+  if (!from_state) fieldErrors.from_state = "Enter the origin state.";
+  if (!to_city) fieldErrors.to_city = "Enter the destination city.";
+  if (!to_state) fieldErrors.to_state = "Enter the destination state.";
 
   // Optional captain airport tag. Validated here (friendlier error) AND
   // by the DB check constraint; normalized to uppercase for the RPC.
   const airportRaw = (raw.from_airport ?? "").trim().toUpperCase();
   if (airportRaw && !/^[A-Z]{3}$/.test(airportRaw)) {
-    fieldErrors.from_airport = "use a 3-letter airport code, like ord.";
+    fieldErrors.from_airport = "Use a 3-letter airport code, like ORD.";
   }
 
   const timing = commonTiming(raw, fieldErrors);
@@ -207,9 +207,9 @@ export function validateGet(
   const to_address = (raw.to_address ?? "").trim();
 
   if (from_address.length < 5)
-    fieldErrors.from_address = "enter a full pickup address.";
+    fieldErrors.from_address = "Enter a full pickup address.";
   if (to_address.length < 5)
-    fieldErrors.to_address = "enter a full drop-off address.";
+    fieldErrors.to_address = "Enter a full drop-off address.";
 
   const timing = commonTiming(raw, fieldErrors);
   if (Object.keys(fieldErrors).length > 0 || !timing)

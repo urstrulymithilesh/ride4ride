@@ -115,13 +115,13 @@ export const RESERVED_USERNAMES: ReadonlySet<string> = new Set([
 
 /** Single place for the handle rules (DB check + signup form share these). */
 export function validateUsername(username: string): string | null {
-  if (!username) return "choose a username.";
+  if (!username) return "Choose a username.";
   if (username.length < 3 || username.length > 20)
     return "username must be 3–20 characters.";
   if (!USERNAME_RE.test(username))
-    return "letters, numbers, and _ only, starting with a letter.";
+    return "Letters, numbers, and _ only, starting with a letter.";
   if (RESERVED_USERNAMES.has(username))
-    return "that name is reserved. try another.";
+    return "That name is reserved. Try another.";
   return null;
 }
 
@@ -136,32 +136,32 @@ export function validateSignUp(raw: {
 }): { ok: true; data: SignUpInput } | { ok: false; fieldErrors: FieldErrors } {
   const fieldErrors: FieldErrors = {};
   const phone = normalizePhone(raw.phone);
-  if (!phone) fieldErrors.phone = "enter a valid phone number.";
+  if (!phone) fieldErrors.phone = "Enter a valid phone number.";
   // Email is skippable: empty means "later in settings". When given it
   // must be valid; the domain allowlist is enforced server-side.
   const emailRaw = raw.email.trim().toLowerCase();
   const email = emailRaw ? emailRaw : null;
   if (email && !EMAIL_RE.test(email))
-    fieldErrors.email = "enter a valid email address.";
+    fieldErrors.email = "Enter a valid email address.";
   const displayName = raw.displayName.trim();
   const username = raw.username.trim().toLowerCase();
   const password = raw.password;
   if (displayName.length < 2)
-    fieldErrors.displayName = "display name must be at least 2 characters.";
+    fieldErrors.displayName = "Display name must be at least 2 characters.";
   if (displayName.length > 50)
-    fieldErrors.displayName = "display name must be 50 characters or fewer.";
+    fieldErrors.displayName = "Display name must be 50 characters or fewer.";
   const usernameError = validateUsername(username);
   if (usernameError) fieldErrors.username = usernameError;
   if (password.length < 8)
-    fieldErrors.password = "password must be at least 8 characters.";
+    fieldErrors.password = "Password must be at least 8 characters.";
   // Both blocking, not advisory, and checked separately so the user is
   // told which one they missed. Neither can be applied retroactively to a
   // ride that has already happened.
   if (!raw.ageConfirmed18)
-    fieldErrors.ageConfirmed18 = "you must confirm you are 18 or older.";
+    fieldErrors.ageConfirmed18 = "You must confirm you are 18 or older.";
   if (!raw.tosAccepted)
     fieldErrors.tosAccepted =
-      "you must accept the terms and privacy policy to create an account.";
+      "You must accept the terms and privacy policy to create an account.";
 
   if (Object.keys(fieldErrors).length > 0) return { ok: false, fieldErrors };
   return {
@@ -189,7 +189,7 @@ export function validateSignIn(raw: {
   let kind: "phone" | "username" | null = null;
   let value = "";
   if (identifier.includes("@")) {
-    fieldErrors.identifier = "sign in with your username or phone number.";
+    fieldErrors.identifier = "Sign in with your username or phone number.";
   } else {
     const phone = normalizePhone(identifier);
     if (phone) {
@@ -199,14 +199,14 @@ export function validateSignIn(raw: {
       const username = identifier.toLowerCase();
       const usernameError = validateUsername(username);
       if (usernameError)
-        fieldErrors.identifier = "sign in with your username or phone number.";
+        fieldErrors.identifier = "Sign in with your username or phone number.";
       else {
         kind = "username";
         value = username;
       }
     }
   }
-  if (!raw.password) fieldErrors.password = "enter your password.";
+  if (!raw.password) fieldErrors.password = "Enter your password.";
 
   if (Object.keys(fieldErrors).length > 0 || !kind)
     return { ok: false, fieldErrors };

@@ -21,27 +21,30 @@ export function SignInForm({
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="redirectTo" value={redirectTo} />
       <TextField
-        label="username or phone"
+        label="username or phone number"
         name="identifier"
         autoComplete="username"
-        placeholder="alex_r123 or (312) 555-0148"
+        placeholder="username or phone number"
         error={state.fieldErrors?.identifier}
         required
+        hideLabel
       />
       <TextField
-        label="password"
+        label="Password"
         name="password"
         type="password"
         autoComplete="current-password"
+        placeholder="Password"
         error={state.fieldErrors?.password}
         required
+        hideLabel
       />
       {error ? (
         <p className="text-sm text-danger" role="alert">
           {error}
         </p>
       ) : null}
-      <SubmitButton pendingText="signing in…">sign in</SubmitButton>
+      <SubmitButton pendingText="Logging in…">Log in</SubmitButton>
     </form>
   );
 }

@@ -9,7 +9,7 @@ import {
 } from "@/lib/validations/auth";
 import { RideCard, type RideCardData } from "@/components/rides/ride-card";
 
-export const metadata: Metadata = { title: "profile" };
+export const metadata: Metadata = { title: "Profile" };
 
 interface ProfileRow {
   id: string;
@@ -24,7 +24,7 @@ function memberSince(iso: string): string {
   const mon = d
     .toLocaleDateString("en-US", { month: "short" })
     .toLowerCase();
-  return `member since ${mon}, ${d.getFullYear()}`;
+  return `Member since ${mon}, ${d.getFullYear()}`;
 }
 
 /**
@@ -80,7 +80,7 @@ export default async function MemberPage({
         href="/"
         className="inline-flex min-h-11 items-center text-sm text-muted hover:text-content"
       >
-        ← back
+        ← Back
       </Link>
 
       <div className="card mt-3 p-5">
@@ -96,11 +96,11 @@ export default async function MemberPage({
       </div>
 
       <h1 className="mt-6 text-sm font-semibold text-content">
-        active posts · {list.length}
+        Active posts · {list.length}
       </h1>
       {list.length === 0 ? (
         <div className="card mt-3 border border-dashed border-hairline bg-transparent p-8 text-center">
-          <p className="text-sm text-muted">no active posts right now.</p>
+          <p className="text-sm text-muted">No active posts right now.</p>
         </div>
       ) : (
         <ul className="mt-3 flex flex-col gap-3">

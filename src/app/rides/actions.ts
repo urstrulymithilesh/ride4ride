@@ -83,13 +83,13 @@ export async function createOfferRide(
   // "Couldn't create the post", with nothing in the server log to say why.
   if (error) {
     console.error("[rides] create_offer_ride failed:", error.message, error);
-    return { error: `couldn't create the post. please try again. (${error.message.slice(0, 160)})` };
+    return { error: `Couldn't create the post. Please try again. (${error.message.slice(0, 160)})` };
   }
 
   const ride = Array.isArray(data) ? data[0] : data;
   if (!ride?.id) {
     console.error("[rides] create_offer_ride returned no row:", data);
-    return { error: "couldn't create the post. please try again. (empty response)" };
+    return { error: "Couldn't create the post. Please try again. (empty response)" };
   }
 
   await saveTiming(supabase, ride.id, d.timing);
@@ -117,12 +117,12 @@ export async function createGetRide(
       geocodeAddress(d.to_address),
     ]);
   } catch {
-    return { error: "address lookup is unavailable right now. please try again." };
+    return { error: "Address lookup is unavailable right now. Please try again." };
   }
 
   const fieldErrors: FieldErrors = {};
-  if (!from) fieldErrors.from_address = "we couldn't find that pickup address.";
-  if (!to) fieldErrors.to_address = "we couldn't find that drop-off address.";
+  if (!from) fieldErrors.from_address = "We couldn't find that pickup address.";
+  if (!to) fieldErrors.to_address = "We couldn't find that drop-off address.";
   if (!from || !to) return { fieldErrors };
 
   const distance_meters = await drivingDistanceMeters(from, to);
@@ -183,13 +183,13 @@ export async function createGetRide(
   // "Couldn't create the post", with nothing in the server log to say why.
   if (error) {
     console.error("[rides] create_get_ride failed:", error.message, error);
-    return { error: `couldn't create the post. please try again. (${error.message.slice(0, 160)})` };
+    return { error: `Couldn't create the post. Please try again. (${error.message.slice(0, 160)})` };
   }
 
   const ride = Array.isArray(data) ? data[0] : data;
   if (!ride?.id) {
     console.error("[rides] create_get_ride returned no row:", data);
-    return { error: "couldn't create the post. please try again. (empty response)" };
+    return { error: "Couldn't create the post. Please try again. (empty response)" };
   }
 
   await saveTiming(supabase, ride.id, d.timing);
@@ -218,9 +218,9 @@ export async function submitQuickPost(
   const fromAddress = String(formData.get("from_address") ?? "").trim();
   const toAddress = String(formData.get("to_address") ?? "").trim();
   if (fromAddress.length < 5)
-    return { fieldErrors: { from_address: "enter a full pickup address." } };
+    return { fieldErrors: { from_address: "Enter a full pickup address." } };
   if (toAddress.length < 5)
-    return { fieldErrors: { to_address: "enter a full drop-off address." } };
+    return { fieldErrors: { to_address: "Enter a full drop-off address." } };
 
   let from, to;
   try {
@@ -229,13 +229,13 @@ export async function submitQuickPost(
       geocodeAddress(toAddress),
     ]);
   } catch {
-    return { error: "address lookup is unavailable right now. please try again." };
+    return { error: "Address lookup is unavailable right now. Please try again." };
   }
   if (!from || !to) {
     return {
       fieldErrors: {
-        ...(!from ? { from_address: "we couldn't find that pickup address." } : {}),
-        ...(!to ? { to_address: "we couldn't find that drop-off address." } : {}),
+        ...(!from ? { from_address: "We couldn't find that pickup address." } : {}),
+        ...(!to ? { to_address: "We couldn't find that drop-off address." } : {}),
       },
     };
   }

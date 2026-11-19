@@ -13,7 +13,7 @@ import { ChangeLocationButton } from "@/components/location/change-location";
 export async function AppMenu({ triggerTone }: { triggerTone?: string }) {
   const [user, profile] = await Promise.all([getUser(), getProfile()]);
   const joined = profile?.created_at
-    ? `member since ${new Date(profile.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
+    ? `Member since ${new Date(profile.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
     : null;
 
   // Active post count for the identity header. Owner-readable under RLS;
@@ -65,9 +65,9 @@ export async function AppMenu({ triggerTone }: { triggerTone?: string }) {
               <div aria-hidden="true" className="mt-3 h-px bg-hairline" />
             </div>
           ) : null}
-          <nav aria-label="menu" className="flex flex-1 flex-col overflow-y-auto py-2">
+          <nav aria-label="Menu" className="flex flex-1 flex-col overflow-y-auto py-2">
             <Link href="/settings" className={item}>
-              settings
+              Settings
             </Link>
             {/* Dev-only: manual location override for testing. Production
                 builds hide it — real users go through device location. */}
@@ -75,13 +75,13 @@ export async function AppMenu({ triggerTone }: { triggerTone?: string }) {
               <ChangeLocationButton className={`${item} text-left`} />
             ) : null}
             <Link href="/privacy" className={item}>
-              privacy & terms
+              Privacy & terms
             </Link>
             <Link href="/about" className={item}>
-              about
+              About
             </Link>
             <Link href="/support" className={item}>
-              support
+              Support
             </Link>
             {user ? (
               <form action={signOut}>
@@ -89,7 +89,7 @@ export async function AppMenu({ triggerTone }: { triggerTone?: string }) {
                   type="submit"
                   className="flex min-h-12 w-full items-center px-5 text-lg text-content hover:bg-white/10"
                 >
-                  log out
+                  Log out
                 </button>
               </form>
             ) : (
@@ -98,7 +98,7 @@ export async function AppMenu({ triggerTone }: { triggerTone?: string }) {
                   href="/sign-in"
                   className="flex min-h-12 w-full items-center justify-center rounded-xl bg-white text-base font-semibold text-black"
                 >
-                  log in
+                  Log in
                 </Link>
               </div>
             )}

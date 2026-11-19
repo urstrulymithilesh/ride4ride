@@ -20,7 +20,7 @@ interface RideForChat {
   to_state: string;
 }
 
-export const metadata: Metadata = { title: "conversation" };
+export const metadata: Metadata = { title: "Conversation" };
 
 export default async function ConversationPage({
   params,
@@ -43,7 +43,7 @@ export default async function ConversationPage({
   // the read failed. Throw so error.tsx renders a real error instead.
   if (convoError) {
     console.error("[messages/:id] conversation query failed:", convoError.message, convoError);
-    throw new Error("couldn't load this conversation.");
+    throw new Error("Couldn't load this conversation.");
   }
 
   if (!convo) notFound();
@@ -82,7 +82,7 @@ export default async function ConversationPage({
         .maybeSingle(),
     ]);
 
-  const otherName = other?.display_name ?? "the other person";
+  const otherName = other?.display_name ?? "The other person";
   const iBlocked = Boolean(block);
 
   // Reveal handshake state (only for 'get' rides, which have addresses).
@@ -128,10 +128,10 @@ export default async function ConversationPage({
             href="/chat"
             className="inline-flex min-h-11 items-center text-xs text-muted hover:text-content"
           >
-            ← all messages
+            ← All messages
           </Link>
           <h1 className="flex items-center gap-1.5 font-semibold text-content">
-            <span className="truncate">{other?.display_name ?? "a member"}</span>
+            <span className="truncate">{other?.display_name ?? "A member"}</span>
           </h1>
         </div>
         {ride ? (
@@ -147,7 +147,7 @@ export default async function ConversationPage({
         {iBlocked ? (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-danger-soft p-2 text-xs">
             <span className="text-content">
-              you blocked this person. messaging is paused.
+              You blocked this person. Messaging is paused.
             </span>
             <form action={unblockUser}>
               <input type="hidden" name="targetUserId" value={otherId} />
@@ -173,10 +173,10 @@ export default async function ConversationPage({
                   type="submit"
                   className="inline-flex min-h-11 items-center font-medium text-danger"
                 >
-                  block this person
+                  Block this person
                 </button>
               </form>
-              <ReportButton targetType="user" targetUserId={otherId} label="report this person" />
+              <ReportButton targetType="user" targetUserId={otherId} label="Report this person" />
             </div>
           </details>
         )}

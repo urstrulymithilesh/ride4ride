@@ -110,6 +110,6 @@ describe("sendMessage", () => {
       body: "hello",
       imagePath: null,
     });
-    expect(r.error).toBe("couldn't send the message. please try again.");
+    expect(r.error).toBe("Couldn't send the message. Please try again.");
   });
 });

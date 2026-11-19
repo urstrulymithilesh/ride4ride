@@ -63,11 +63,11 @@ export function ProfileDetails({
   const fe = state.fieldErrors;
 
   return (
-    <section aria-label="profile details" className="card relative mt-4 p-5">
+    <section aria-label="Profile details" className="card relative mt-4 p-5">
       <button
         type="button"
         onClick={() => setEditing((v) => !v)}
-        aria-label={editing ? "cancel editing" : "edit profile"}
+        aria-label={editing ? "Cancel editing" : "Edit profile"}
         aria-expanded={editing}
         className="absolute right-3 top-3 inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-muted hover:bg-white/10 hover:text-content"
       >
@@ -76,30 +76,30 @@ export function ProfileDetails({
 
       {!editing ? (
         <dl className="grid grid-cols-2 gap-3 pr-10 text-sm">
-          <Detail label="username" value={`@${username}`} />
-          <Detail label="name" value={displayName} />
-          <Detail label="date of birth" value={dobDisplay} />
-          <Detail label="email" value={email} />
-          <Detail label="phone number" value={phone || "—"} />
+          <Detail label="Username" value={`@${username}`} />
+          <Detail label="Name" value={displayName} />
+          <Detail label="Date of birth" value={dobDisplay} />
+          <Detail label="Email" value={email} />
+          <Detail label="Phone number" value={phone || "—"} />
         </dl>
       ) : (
         <form action={formAction} className="flex flex-col gap-3 pr-10">
           <TextField
-            label="username"
+            label="Username"
             name="username"
             defaultValue={username}
             error={fe?.username}
             required
           />
           <TextField
-            label="name"
+            label="Name"
             name="displayName"
             defaultValue={displayName}
             error={fe?.displayName}
             required
           />
           <TextField
-            label="date of birth"
+            label="Date of birth"
             name="dob"
             type="date"
             defaultValue={dob}
@@ -107,7 +107,7 @@ export function ProfileDetails({
             required
           />
           <TextField
-            label="email"
+            label="Email"
             name="email"
             type="email"
             defaultValue={email}
@@ -115,7 +115,7 @@ export function ProfileDetails({
             required
           />
           <TextField
-            label="phone number"
+            label="Phone number"
             name="phone"
             type="tel"
             autoComplete="tel"
@@ -132,7 +132,7 @@ export function ProfileDetails({
               {state.message}
             </p>
           ) : null}
-          <SubmitButton pendingText="saving…">save changes</SubmitButton>
+          <SubmitButton pendingText="Saving…">Save changes</SubmitButton>
         </form>
       )}
     </section>
@@ -145,11 +145,11 @@ export function PasswordForm() {
   const fe = state.fieldErrors;
 
   return (
-    <section aria-label="change password" className="card mt-3 p-5">
-      <h2 className="text-sm font-semibold text-content">change password</h2>
+    <section aria-label="Change password" className="card mt-3 p-5">
+      <h2 className="text-sm font-semibold text-content">Change password</h2>
       <form action={formAction} className="mt-3 flex flex-col gap-3">
         <TextField
-          label="new password"
+          label="New password"
           name="newPassword"
           type="password"
           autoComplete="new-password"
@@ -157,7 +157,7 @@ export function PasswordForm() {
           required
         />
         <TextField
-          label="confirm new password"
+          label="Confirm new password"
           name="confirmPassword"
           type="password"
           autoComplete="new-password"
@@ -174,7 +174,7 @@ export function PasswordForm() {
             {state.message}
           </p>
         ) : null}
-        <SubmitButton pendingText="saving…">change password</SubmitButton>
+        <SubmitButton pendingText="Saving…">Change password</SubmitButton>
       </form>
     </section>
   );

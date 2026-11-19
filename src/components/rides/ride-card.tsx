@@ -53,8 +53,8 @@ export function RideCard({
       : formatPlace(ride.to_city, ride.to_state);
   const base =
     ride.type === "offer"
-      ? "ride available"
-      : "need ride";
+      ? "Ride available"
+      : "Need ride";
   const headline = `${base}${miles ? ` for ${miles}` : ""}`;
   // Timing folds into the headline: ", @1.45 pm" for a set time,
   // "- now" for asap, "- anytime" for flexible.
@@ -62,8 +62,8 @@ export function RideCard({
     ride.time_mode === "at" && ride.ride_time
       ? `, @${formatClockDots(ride.ride_time)}`
       : ride.time_mode === "anytime"
-        ? " - anytime"
-        : " - now";
+        ? " - Anytime"
+        : " - Now";
 
   return (
     <article className="rounded-[20px] border border-white/15 bg-app px-4 pb-3 pt-3">
@@ -75,7 +75,7 @@ export function RideCard({
                 @{ride.username}
               </Link>
             ) : (
-              "new post"
+              "New post"
             )}
           </p>
           <p className="mt-0.5 text-[9px] leading-[12px] text-muted">
@@ -94,11 +94,11 @@ export function RideCard({
       <div className="mt-1.5 flex items-center gap-3">
         <div className="min-w-0 flex-1 text-[13px] leading-snug text-white/80">
           <p className="wrap-anywhere">
-            {ride.type === "offer" ? "from : " : "pick up : "}
+            {ride.type === "offer" ? "From : " : "Pick up : "}
             {fromLabel}
           </p>
           <p className="wrap-anywhere mt-1">
-            {ride.type === "offer" ? "to : " : "drop off : "}
+            {ride.type === "offer" ? "To : " : "Drop off : "}
             {toLabel}
           </p>
         </div>
@@ -107,7 +107,7 @@ export function RideCard({
           Signed-out viewers get no box rather than a wrong one. */}
       {signedIn && ride.description?.trim() ? (
         <p className="mt-2 truncate rounded-[10px] border border-white/15 px-3 py-2 text-[13px]">
-          <span className="font-semibold text-muted">note: </span>
+          <span className="font-semibold text-muted">Note: </span>
           <span className="text-white">{ride.description.trim()}</span>
         </p>
       ) : null}

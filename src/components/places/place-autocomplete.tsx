@@ -335,7 +335,7 @@ export function PlaceAutocomplete({
           >
             <span className="block min-w-0 flex-1 wrap-anywhere">{opt.title}</span>
             {opt.kind === "address" ? null : (
-              <span className="shrink-0 rounded-full border border-white/15 px-2 py-0.5 text-[10px] text-muted">
+              <span className="shrink-0 rounded-full border border-white/15 px-2 py-0.5 text-[10px] capitalize text-muted">
                 {opt.kind}
               </span>
             )}
@@ -383,7 +383,7 @@ export function PlaceAutocomplete({
               ) : null}
             </span>
             {opt.kind === "address" ? null : (
-              <span className="mt-0.5 shrink-0 self-start rounded-full border border-white/15 px-2 py-0.5 text-[10px] text-muted">
+              <span className="mt-0.5 shrink-0 self-start rounded-full border border-white/15 px-2 py-0.5 text-[10px] capitalize text-muted">
                 {opt.kind}
               </span>
             )}
@@ -443,7 +443,7 @@ export function PlaceAutocomplete({
       {clearable && value ? (
         <button
           type="button"
-          aria-label="clear"
+          aria-label="Clear"
           onMouseDown={(e) => {
             e.preventDefault();
           }}
@@ -491,7 +491,7 @@ export function PlaceAutocomplete({
               {richRows}
               {source === "address" ? (
                 <p className="sticky bottom-0 border-t border-white/10 bg-app px-3 py-1.5 text-[10px] text-muted">
-                  address suggestions by Mapbox
+                  Address suggestions by Mapbox
                 </p>
               ) : null}
             </>

@@ -12,7 +12,7 @@ export default function AuthLayout({
           href="/"
           className="mx-auto mb-8 flex min-h-11 items-center justify-center text-lg font-semibold tracking-tight text-content"
         >
-          ride4ride
+          ride4ride.com
         </Link>
         {children}
       </div>

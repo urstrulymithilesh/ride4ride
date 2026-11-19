@@ -7,6 +7,7 @@ import { QuickPost, POST_DRAFT_KEY } from "@/components/rides/quick-post";
 import type { PostDraft } from "@/components/rides/quick-post";
 import { OPEN_POST_EVENT } from "@/components/rides/empty-post-cta";
 import { ChatIcon } from "@/components/places/search-icons";
+import { RECENTER_EVENT } from "@/components/places/search-form";
 import { useViewerLocation } from "@/components/location/location-context";
 import { CAR_GLYPH_PATH } from "@/lib/marker-art";
 import { HailPersonIcon } from "@/components/places/search-icons";
@@ -207,7 +208,10 @@ function FeedDock({ menu }: { menu: React.ReactNode }) {
             <button
               type="button"
               onClick={() => {
-              const map = (
+                // Drop any pin selection first: the sheet closes and the
+                // hidden pins return before the camera flies home.
+                window.dispatchEvent(new Event(RECENTER_EVENT));
+                const map = (
                 window as unknown as {
                   __r4rMap?: {
                     flyTo: (opts: {
@@ -233,7 +237,7 @@ function FeedDock({ menu }: { menu: React.ReactNode }) {
                 essential: true,
               });
             }}
-            aria-label="recenter map on my location"
+            aria-label="Recenter map on my location"
             className="glass-dark flex h-[38px] w-[38px] items-center justify-center rounded-full text-white opacity-90"
           >
             <svg
@@ -253,16 +257,16 @@ function FeedDock({ menu }: { menu: React.ReactNode }) {
           </span>
         ) : null}
         <nav
-          aria-label="ride type"
+          aria-label="Ride type"
           className="glass-dark relative flex items-center justify-between rounded-[var(--bar-radius)] px-2 py-1.5 opacity-90"
         >
-          {tab("get", <HailPersonIcon />, "need ride")}
-          {tab("offer", <SmileyCarIcon />, "ride available")}
+          {tab("get", <HailPersonIcon />, "Need ride")}
+          {tab("offer", <SmileyCarIcon />, "Ride available")}
           <span className="flex min-h-10 flex-1 items-center justify-center">
             <button
               type="button"
               onClick={() => (postOpen ? closePost() : setPostOpen(true))}
-              aria-label={postOpen ? "close" : "post a ride"}
+              aria-label={postOpen ? "Close" : "Post a ride"}
               aria-expanded={postOpen}
               aria-haspopup="dialog"
               // Absolute against the nav: bottom edge sits exactly on the
@@ -280,7 +284,7 @@ function FeedDock({ menu }: { menu: React.ReactNode }) {
           </span>
           <Link
             href="/chat"
-            aria-label="chats"
+            aria-label="Chats"
             aria-current={isMessages ? "page" : undefined}
             className={`flex min-h-10 min-w-0 flex-1 items-center justify-center rounded-full ${
               isMessages ? "text-white" : "text-white/40 hover:text-content"

@@ -9,6 +9,7 @@ export function TextField({
   hint,
   error,
   required,
+  hideLabel,
 }: {
   label: string;
   name: string;
@@ -19,11 +20,15 @@ export function TextField({
   hint?: string;
   error?: string;
   required?: boolean;
+  hideLabel?: boolean;
 }) {
   const id = `field-${name}`;
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium text-content">
+      <label
+        htmlFor={id}
+        className={`text-sm font-medium text-content ${hideLabel ? "sr-only" : ""}`}
+      >
         {label}
       </label>
       <input

@@ -57,7 +57,7 @@ export async function signUp(
     p_username: username,
   });
   if (available === false) {
-    return { fieldErrors: { username: "that username is taken." } };
+    return { fieldErrors: { username: "That username is taken." } };
   }
 
   // Email is optional at sign-up, but when given it must be allow-listed.
@@ -72,7 +72,7 @@ export async function signUp(
     if (!allowed) {
       return {
         fieldErrors: {
-          email: `sign up with ${await allowedDomainsHint(supabase)}.`,
+          email: `Sign up with ${await allowedDomainsHint(supabase)}.`,
         },
       };
     }
@@ -102,11 +102,11 @@ export async function signUp(
     // Concurrent signup with the same handle hits the 0017 unique index.
     // Map it to the field so the user can pick another name.
     if (/username|duplicate|already exists/i.test(error.message)) {
-      return { fieldErrors: { username: "that username is taken." } };
+      return { fieldErrors: { username: "That username is taken." } };
     }
     // A taken phone number (or email) must not say which one exists.
     if (/already registered|already exists|duplicate|taken|in use/i.test(error.message)) {
-      return { error: "an account with those details already exists." };
+      return { error: "An account with those details already exists." };
     }
     return { error: error.message };
   }
@@ -121,8 +121,8 @@ export async function signUp(
   // depending on what they signed up with).
   return {
     message: email
-      ? "check your email to confirm your account, then sign in to continue."
-      : "check your texts for a confirmation code, then sign in to continue.",
+      ? "Check your email to confirm your account, then sign in to continue."
+      : "Check your texts for a confirmation code, then sign in to continue.",
   };
 }
 
@@ -173,7 +173,7 @@ export async function signIn(
     : { error: new Error("invalid credentials") };
   if (error) {
     // Keep the message generic to avoid leaking which part was wrong.
-    return { error: "invalid username, phone number, or password." };
+    return { error: "Invalid username, phone number, or password." };
   }
 
   revalidatePath("/", "layout");

@@ -58,7 +58,7 @@ export function MenuButton({
     <button
       type="button"
       onClick={() => setOpen((v) => !v)}
-      aria-label="menu"
+      aria-label="Menu"
       aria-expanded={open}
       className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full ${open ? "text-white" : tone}`}
     >
@@ -77,7 +77,7 @@ export function MenuButton({
               {/* Scrim dims + blurs the feed behind the drawer. */}
               <button
                 type="button"
-                aria-label="close menu"
+                aria-label="Close menu"
                 onClick={() => setOpen(false)}
                 className="fixed inset-0 z-50 cursor-default bg-transparent"
               />
@@ -110,7 +110,7 @@ export function MenuButton({
                     <button
                       type="button"
                       onClick={() => setOpen(false)}
-                      aria-label="close menu"
+                      aria-label="Close menu"
                       className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-content"
                     >
                       <svg

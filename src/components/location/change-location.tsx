@@ -21,7 +21,7 @@ export function ChangeLocationButton({ className }: { className?: string }) {
       }}
       className={className}
     >
-      change location
+      Change location
     </button>
   );
 }

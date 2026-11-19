@@ -7,6 +7,7 @@ import type * as MapLibre from "maplibre-gl";
 import { haversineMiles } from "@/lib/geo";
 import type { MapRide } from "@/lib/ride-map";
 import { CAR_GLYPH_PATH } from "@/lib/marker-art";
+import { RECENTER_EVENT } from "@/components/places/search-form";
 import { PinSheet } from "@/components/rides/pin-sheet";
 import { applyMapTheme } from "@/lib/map-theme";
 import { useViewerLocation } from "@/components/location/location-context";
@@ -270,7 +271,7 @@ export function RidesMap({
         map.resize();
       });
 
-      // Don't leave the feed stuck on "loading map…" if the style or
+      // Don't leave the feed stuck on "Loading map…" if the style or
       // network never completes.
       readyTimer = window.setTimeout(() => {
         if (!disposed && !map.loaded()) setFailed(true);
@@ -399,7 +400,7 @@ export function RidesMap({
           "r4r-pin-marker r4r-pin-static cursor-pointer border-0 bg-transparent p-0";
         markerEl.setAttribute(
           "aria-label",
-          `ride details: ${ride.miles ?? "ride"} near ${ride.city}`,
+          `Ride details: ${ride.miles ?? "ride"} near ${ride.city}`,
         );
         // Isolation: while a sheet is up every other pin hides. Applied
         // here too (not just the selection effect) so data refreshes
@@ -585,6 +586,14 @@ export function RidesMap({
     }
   }, [selectedId]);
 
+  // Recenter drops the selection first: the sheet closes and the hidden
+  // pins return, then the dock's own flyTo runs.
+  useEffect(() => {
+    const onRecenter = () => clearSelection();
+    window.addEventListener(RECENTER_EVENT, onRecenter);
+    return () => window.removeEventListener(RECENTER_EVENT, onRecenter);
+  }, [clearSelection]);
+
   return (
     <div
       className={`fixed inset-y-0 inset-x-0 z-0 mx-auto w-full max-w-[480px] overflow-hidden bg-app ${
@@ -594,23 +603,23 @@ export function RidesMap({
       <div
         ref={containerRef}
         role="application"
-        aria-label="map of rides near you"
+        aria-label="Map of rides near you"
         className="r4r-map absolute inset-0 z-0"
       />
       {!ready && !failed ? (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-app/90 backdrop-blur-2xl">
-          <p className="text-xs text-faint">loading map…</p>
+          <p className="text-xs text-faint">Loading map…</p>
         </div>
       ) : null}
       {failed ? (
         <div className="pointer-events-auto absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-app/90 px-6 text-center backdrop-blur-2xl">
-          <p className="text-xs text-faint">couldn&apos;t load the map.</p>
+          <p className="text-xs text-faint">Couldn&apos;t load the map.</p>
           <button
             type="button"
             onClick={() => window.location.reload()}
             className="text-xs font-medium text-primary"
           >
-            retry
+            Retry
           </button>
         </div>
       ) : null}

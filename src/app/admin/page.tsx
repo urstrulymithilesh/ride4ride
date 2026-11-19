@@ -6,7 +6,7 @@ import { formatPlace } from "@/lib/utils/format";
 import { setReportStatus, takedownRide, banUser, unbanUser } from "./actions";
 import type { Report } from "@/types";
 
-export const metadata: Metadata = { title: "admin · reports", robots: { index: false } };
+export const metadata: Metadata = { title: "Admin · reports", robots: { index: false } };
 
 export default async function AdminPage() {
   // Hide the route's existence from non-admins.
@@ -25,7 +25,7 @@ export default async function AdminPage() {
   // Throw rather than show a reassuring empty queue.
   if (reportsError) {
     console.error("[admin] reports query failed:", reportsError.message, reportsError);
-    throw new Error("couldn't load reports.");
+    throw new Error("Couldn't load reports.");
   }
 
   const list = reports ?? [];
@@ -54,14 +54,14 @@ export default async function AdminPage() {
 
   return (
     <main className="w-full flex-1 px-4 py-6">
-      <h1 className="text-xl font-semibold text-content">reports</h1>
+      <h1 className="text-xl font-semibold text-content">Reports</h1>
       <p className="mt-1 mb-4 text-sm text-muted">
         {openCount} open · {list.length} total
       </p>
 
       {list.length === 0 ? (
         <p className="card border border-dashed border-hairline bg-transparent p-8 text-center text-sm text-muted">
-          no reports.
+          No reports.
         </p>
       ) : (
         <ul className="space-y-3">
@@ -96,21 +96,21 @@ export default async function AdminPage() {
                 </div>
 
                 <p className="mt-2 text-sm text-muted">
-                  reported by {reporter?.display_name ?? "unknown"}.
+                  Reported by {reporter?.display_name ?? "unknown"}.
                 </p>
 
                 {/* Target */}
                 <div className="mt-2 text-sm">
                   {targetRide ? (
                     <span className="wrap-anywhere text-primary">
-                      post: {formatPlace(targetRide.from_city, targetRide.from_state)}{" "}
+                      Post: {formatPlace(targetRide.from_city, targetRide.from_state)}{" "}
                       → {formatPlace(targetRide.to_city, targetRide.to_state)} (
                       {targetRide.status})
                     </span>
                   ) : null}
                   {targetUser ? (
                     <span className="wrap-anywhere text-content">
-                      user: {targetUser.display_name}
+                      User: {targetUser.display_name}
                       {targetUser.is_banned ? " (banned)" : ""}
                     </span>
                   ) : null}
@@ -127,7 +127,7 @@ export default async function AdminPage() {
                   {r.target_ride_id && targetRide?.status !== "cancelled" ? (
                     <form action={takedownRide}>
                       <input type="hidden" name="rideId" value={r.target_ride_id} />
-                      <AdminButton label="take down post" danger />
+                      <AdminButton label="Take down post" danger />
                     </form>
                   ) : null}
 
@@ -135,12 +135,12 @@ export default async function AdminPage() {
                     targetUser?.is_banned ? (
                       <form action={unbanUser}>
                         <input type="hidden" name="userId" value={r.target_user_id} />
-                        <AdminButton label="unban user" />
+                        <AdminButton label="Unban user" />
                       </form>
                     ) : (
                       <form action={banUser}>
                         <input type="hidden" name="userId" value={r.target_user_id} />
-                        <AdminButton label="ban user" danger />
+                        <AdminButton label="Ban user" danger />
                       </form>
                     )
                   ) : null}
@@ -152,12 +152,12 @@ export default async function AdminPage() {
                       defaultValue={r.status}
                       className="input h-11 w-auto text-xs"
                     >
-                      <option value="open">open</option>
-                      <option value="reviewed">reviewed</option>
-                      <option value="actioned">actioned</option>
-                      <option value="dismissed">dismissed</option>
+                      <option value="open">Open</option>
+                      <option value="reviewed">Reviewed</option>
+                      <option value="actioned">Actioned</option>
+                      <option value="dismissed">Dismissed</option>
                     </select>
-                    <AdminButton label="save" />
+                    <AdminButton label="Save" />
                   </form>
                 </div>
               </li>

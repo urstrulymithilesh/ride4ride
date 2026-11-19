@@ -19,7 +19,7 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
       >
         {state.message}{" "}
         <Link href="/sign-in" className="font-medium text-success">
-          go to sign in
+          Go to Log in
         </Link>
       </div>
     );
@@ -29,48 +29,51 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="redirectTo" value={redirectTo} />
       <TextField
-        label="display name"
+        label="Display name"
         name="displayName"
         autoComplete="name"
-        placeholder="alex rivera"
+        placeholder="Name"
         error={state.fieldErrors?.displayName}
         required
+        hideLabel
       />
       <TextField
         label="username"
         name="username"
         autoComplete="username"
-        placeholder="alex_r123"
-        hint="3–20 characters: letters, numbers, _ — unique to you."
+        placeholder="username"
         error={state.fieldErrors?.username}
         required
+        hideLabel
       />
       <TextField
-        label="phone number"
+        label="Phone number"
         name="phone"
         type="tel"
         autoComplete="tel"
-        placeholder="(312) 555-0148"
+        placeholder="Phone number"
         error={state.fieldErrors?.phone}
         required
+        hideLabel
       />
       <TextField
-        label="email (optional)"
+        label="Email (optional)"
         name="email"
         type="email"
         autoComplete="email"
-        placeholder="you@gmail.com — skip for now if you like"
-        hint="optional. gmail, hotmail, outlook, yahoo, icloud, or .edu. add it now or later in settings."
+        placeholder="Email (Optional)"
         error={state.fieldErrors?.email}
+        hideLabel
       />
       <TextField
-        label="password"
+        label="Password"
         name="password"
         type="password"
         autoComplete="new-password"
-        placeholder="at least 8 characters"
+        placeholder="Password"
         error={state.fieldErrors?.password}
         required
+        hideLabel
       />
       {/* Two SEPARATE consents, deliberately not combined. Bundling them
           would mean a user can only ever be shown to have agreed to the
@@ -93,7 +96,7 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
               }
               className="mt-0.5 size-4 shrink-0"
             />
-            <span>i confirm i am 18 years of age or older.</span>
+            <span>I confirm I am 18 years of age or older.</span>
           </label>
           {state.fieldErrors?.ageConfirmed18 ? (
             <p id="ageConfirmed18-error" className="text-xs text-danger" role="alert">
@@ -118,7 +121,7 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
               className="mt-0.5 size-4 shrink-0"
             />
             <span>
-              i agree to the{" "}
+              I agree to the{" "}
               <Link href="/terms" className="font-medium text-primary underline">
                 terms
               </Link>{" "}
@@ -142,7 +145,7 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
           {state.error}
         </p>
       ) : null}
-      <SubmitButton pendingText="creating account…">create account</SubmitButton>
+      <SubmitButton pendingText="Creating account…">Create account</SubmitButton>
     </form>
   );
 }

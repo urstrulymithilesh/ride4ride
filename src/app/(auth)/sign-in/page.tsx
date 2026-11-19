@@ -5,7 +5,7 @@ import { getUser } from "@/lib/auth";
 import { sanitizeRedirect } from "@/lib/validations/auth";
 import { SignInForm } from "./sign-in-form";
 
-export const metadata: Metadata = { title: "sign in" };
+export const metadata: Metadata = { title: "Log in" };
 
 export default async function SignInPage({
   searchParams,
@@ -20,27 +20,27 @@ export default async function SignInPage({
 
   const initialError =
     error === "confirmation_failed"
-      ? "that confirmation link is invalid or has expired. try signing in."
+      ? "That confirmation link is invalid or has expired. Try signing in."
       : undefined;
 
   return (
     <div className="flex flex-col gap-6">
       <div className="text-center">
-        <h1 className="text-xl font-semibold text-content">welcome back</h1>
+        <h1 className="text-xl font-semibold text-content">Welcome back</h1>
         <p className="mt-1 text-sm text-muted">
-          sign in to post, message, and view ride details.
+          Log in to post, message, and view ride details.
         </p>
       </div>
 
       <SignInForm redirectTo={redirectTo} initialError={initialError} />
 
       <p className="text-center text-sm text-muted">
-        new here?{" "}
+        New here?{" "}
         <Link
           href={`/sign-up${rawRedirect ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ""}`}
           className="font-medium text-primary"
         >
-          create an account
+          Create an account
         </Link>
       </p>
     </div>

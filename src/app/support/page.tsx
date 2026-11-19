@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "support" };
+export const metadata: Metadata = { title: "Support" };
 
 /**
  * Support: where to go for help. Account and post issues route to the
@@ -10,12 +10,12 @@ export const metadata: Metadata = { title: "support" };
 export default function SupportPage() {
   return (
     <main className="mx-auto w-full max-w-xl flex-1 px-4 py-6">
-      <h1 className="text-xl font-semibold text-content">support</h1>
+      <h1 className="text-xl font-semibold text-content">Support</h1>
       <div className="card mt-4 space-y-4 p-5 text-sm leading-6 text-muted">
         <section>
-          <h2 className="font-semibold text-content">something wrong?</h2>
+          <h2 className="font-semibold text-content">Something wrong?</h2>
           <p className="mt-1">
-            email{" "}
+            Email{" "}
             <a
               href="mailto:admin@ride4ride.com"
               className="font-medium text-primary"
@@ -27,17 +27,17 @@ export default function SupportPage() {
         </section>
         <section>
           <h2 className="font-semibold text-content">
-            someone bothering you?
+            Someone bothering you?
           </h2>
           <p className="mt-1">
-            use the report buttons on the post or in the chat, or block them
-            from the conversation. reports go to a human review queue.
+            Use the report buttons on the post or in the chat, or block them
+            from the conversation. Reports go to a human review queue.
           </p>
         </section>
         <section>
-          <h2 className="font-semibold text-content">your account</h2>
+          <h2 className="font-semibold text-content">Your account</h2>
           <p className="mt-1">
-            display name and username are editable from your profile page.
+            Display name and username are editable from your profile page.
           </p>
         </section>
       </div>

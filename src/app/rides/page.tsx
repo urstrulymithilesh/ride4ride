@@ -9,7 +9,7 @@ import { buildMapRides } from "@/lib/ride-geo.server";
 import { recordArrival } from "@/lib/arrivals";
 import { getUser } from "@/lib/auth";
 
-export const metadata: Metadata = { title: "browse rides" };
+export const metadata: Metadata = { title: "Browse rides" };
 
 // Named columns only — NEVER select *. The `rides` table has no address
 // columns (those live in the row-protected `ride_locations` table), and
@@ -372,17 +372,17 @@ async function FeedInner({
               className="glass pointer-events-auto w-full max-w-sm rounded-2xl border border-danger/60 p-6 text-center"
             >
               <p className="text-sm font-semibold text-content">
-                couldn&apos;t load rides.
+                Couldn&apos;t load rides.
               </p>
               <p className="mt-1 text-sm text-muted">
-                something went wrong on our side, so we can&apos;t show the board
-                right now. this is not the same as there being no rides.
+                Something went wrong on our side, so we can&apos;t show the
+                board right now. This is not the same as there being no rides.
               </p>
               <Link
                 href={hrefWith({})}
                 className="mt-3 inline-block text-sm font-medium text-primary"
               >
-                try again
+                Try again
               </Link>
             </div>
           </div>

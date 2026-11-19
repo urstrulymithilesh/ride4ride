@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     default: "ride4ride",
     template: "%s · ride4ride",
   },
-  description: "ride-sharing for the student community.",
+  description: "Ride-sharing for the student community.",
 };
 
 // viewport-fit=cover is required for env(safe-area-inset-*) to take effect.

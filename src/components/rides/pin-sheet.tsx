@@ -149,7 +149,7 @@ export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
     <div className="pointer-events-none fixed inset-x-0 top-[136px] z-[var(--z-chrome)] mx-auto flex w-full max-w-[480px] justify-center px-3">
       <div
         role="dialog"
-        aria-label={ride ? "ride details" : "loading ride"}
+        aria-label={ride ? "Ride details" : "Loading ride"}
         data-sheet-card
         style={{ width: cardW }}
         className="glass-dark pointer-events-auto relative max-h-[240px] max-w-[calc(100vw-24px)] overflow-y-auto rounded-[10px] px-3 pt-[18px] pb-[4px] opacity-90"
@@ -157,7 +157,7 @@ export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
         <button
           type="button"
           onClick={onClose}
-          aria-label="close details"
+          aria-label="Close details"
           className="absolute top-2 right-2 flex h-[42px] w-[42px] items-center justify-center rounded-full text-white/60 hover:text-white"
         >
           <svg
@@ -175,11 +175,11 @@ export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
           </svg>
         </button>
         {!ride && !failed ? (
-          <p className="mt-8 text-center text-xs text-faint">loading…</p>
+          <p className="mt-8 text-center text-xs text-faint">Loading…</p>
         ) : null}
         {failed ? (
           <p className="mt-8 text-center text-xs text-muted">
-            couldn&apos;t load this ride.
+            Couldn&apos;t load this ride.
           </p>
         ) : null}
         {ride ? (
@@ -226,7 +226,7 @@ export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
                   <input type="hidden" name="rideId" value={ride.id} />
                   <button
                     type="submit"
-                    aria-label="message about this ride"
+                    aria-label="Message about this ride"
                     className="flex h-9 w-9 items-center justify-center rounded-full text-white hover:text-white"
                   >
                     <ChatIcon size={20} />

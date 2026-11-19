@@ -92,7 +92,7 @@ export default async function ProfilePage({
           {isOwner ? (
             <Link
               href="/settings"
-              className="rounded-lg border border-white/20 px-3 py-1 text-xs text-muted hover:text-content"
+              className="rounded-lg border-[0.5px] border-white/20 px-3 py-1 text-xs text-muted hover:text-content"
             >
               Edit Profile
             </Link>
@@ -101,7 +101,7 @@ export default async function ProfilePage({
         <div className="min-w-0 flex-1 pt-0.5">
           <p className="wrap-anywhere truncate text-[15px] font-semibold text-content">
             {profile.display_name}
-            {age !== null ? `, ${age}` : ""}
+            {age !== null ? <span className="text-muted">, {age}</span> : ""}
           </p>
           <p className="wrap-anywhere truncate text-[13px] text-muted">
             @{profile.username}

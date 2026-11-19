@@ -275,6 +275,24 @@ select {
   .thin-scrollbar:hover::-webkit-scrollbar-thumb {
     background-color: rgba(255, 255, 255, 0.4);
   }
+
+  /* Page scrollbar: dim white thumb at the divider's dimness (white
+     50%), transparent track. Firefox gets the same via scrollbar-*.
+     Element scrollbars (.thin-scrollbar above) keep their own rules. */
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.5) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 999px;
+  }
 }
 
 /* ==================================================================

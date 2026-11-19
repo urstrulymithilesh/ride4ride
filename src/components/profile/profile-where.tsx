@@ -44,12 +44,21 @@ function agoText(fixedAt: number, now: number): string | null {
 export function ProfileWhere() {
   const { coords } = useViewerLocation();
   const [city, setCity] = useState<string | null>(null);
-  // Mount-time seed: the last persisted fix, so a fresh load still shows
-  // an honest age instead of "Just now".
-  const [fixedAt, setFixedAt] = useState<number | null>(() =>
-    typeof window === "undefined" ? null : readCacheAt(),
-  );
+  // Starts null (matching the server render) and seeds from the last
+  // persisted fix post-hydration: reading localStorage during the first
+  // client render desyncs the server HTML and React discards the tree.
+  const [fixedAt, setFixedAt] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    let live = true;
+    Promise.resolve().then(() => {
+      if (live) setFixedAt(readCacheAt());
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!coords) return;

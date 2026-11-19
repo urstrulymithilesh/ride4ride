@@ -9,13 +9,13 @@ import {
 } from "@/lib/validations/auth";
 import { signOut } from "@/app/(auth)/actions";
 import {
-  formatActiveAgo,
   formatAge,
   formatJoined,
 } from "@/lib/utils/format";
 import { BackButton } from "@/components/ui/back-button";
 import { ChangeLocationButton } from "@/components/location/change-location";
 import { Avatar } from "@/components/profile/avatar";
+import { ProfileWhere } from "@/components/profile/profile-where";
 import type { Profile } from "@/types";
 
 export const metadata: Metadata = { title: "Profile" };
@@ -54,8 +54,8 @@ export default async function ProfilePage({
 
   const isOwner = profile.id === viewer.id;
 
-  // Owner city = latest active post's pickup. Absent when they never
-  // posted; the segment is then omitted rather than guessed.
+  // Other people's city = their latest active post's pickup (their GPS
+  // is theirs). Owners get the live line instead (see ProfileWhere).
   const { data: latestRide } = await supabase
     .from("rides")
     .select("from_city, from_state")
@@ -66,23 +66,11 @@ export default async function ProfilePage({
     .limit(1)
     .maybeSingle<{ from_city: string; from_state: string }>();
 
-  // Last-active is only knowable for yourself (your own auth record).
-  const { data: viewerUser } = isOwner
-    ? await supabase.auth.getUser()
-    : { data: { user: null } };
-
   const age = formatAge(profile.date_of_birth);
   const joined = formatJoined(profile.created_at);
-  const activeAgo = isOwner
-    ? formatActiveAgo(viewerUser?.user?.last_sign_in_at ?? null)
-    : null;
   const city = latestRide
     ? `${latestRide.from_city}, ${latestRide.from_state}`
     : null;
-  const whereLine =
-    city && activeAgo
-      ? `${city} • ${activeAgo}`
-      : (city ?? activeAgo);
 
   const row =
     "flex min-h-14 w-full items-center text-[26px] font-medium text-content hover:text-white";
@@ -121,7 +109,9 @@ export default async function ProfilePage({
           {joined ? (
             <p className="mt-0.5 text-[13px] text-muted">Joined {joined}</p>
           ) : null}
-          {whereLine ? (
+          {isOwner ? (
+            <ProfileWhere />
+          ) : city ? (
             <p className="mt-0.5 flex items-center gap-1 text-[13px] text-muted">
               <svg
                 width="12"
@@ -136,7 +126,7 @@ export default async function ProfilePage({
               >
                 <path d="M20.2 2.8Q21.5 2.3 21 3.6L12.9 20.6Q12.4 21.4 12 20.6V12.4Q12 11.9 11.5 11.9H3.4Q2.6 11.9 2.6 11.1V10.9Q2.6 10.4 3.2 10.2Z" />
               </svg>
-              <span className="wrap-anywhere truncate">{whereLine}</span>
+              <span className="wrap-anywhere truncate">{city}</span>
             </p>
           ) : null}
         </div>

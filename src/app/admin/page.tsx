@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { formatPlace } from "@/lib/utils/format";
 import { setReportStatus, takedownRide, banUser, unbanUser } from "./actions";
 import type { Report } from "@/types";
+import { BackButton } from "@/components/ui/back-button";
 
 export const metadata: Metadata = { title: "Admin · reports", robots: { index: false } };
 
@@ -53,8 +54,14 @@ export default async function AdminPage() {
   const openCount = list.filter((r) => r.status === "open").length;
 
   return (
-    <main className="w-full flex-1 px-4 py-6">
-      <h1 className="text-xl font-semibold text-content">Reports</h1>
+    <main className="w-full flex-1 px-5 py-4">
+      <div className="flex items-center gap-3">
+        <BackButton fallback="/" />
+        <h1 className="flex-1 text-center text-[17px] font-semibold text-content">
+          Reports
+        </h1>
+        <span aria-hidden="true" className="block h-11 w-11 shrink-0" />
+      </div>
       <p className="mt-1 mb-4 text-sm text-muted">
         {openCount} open · {list.length} total
       </p>

@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { ChatThread } from "@/components/chat/chat-thread";
+import { BackButton } from "@/components/ui/back-button";
 import { RevealPanel } from "@/components/chat/reveal-panel";
 import { ReportButton } from "@/components/safety/report-button";
 import { blockUser, unblockUser } from "@/app/safety/actions";
@@ -139,23 +139,19 @@ export default async function ConversationPage({
 
   return (
     <main className="flex w-full flex-1 flex-col px-4 py-4">
-      <div className="flex items-center justify-between gap-3 border-b border-hairline pb-3">
-        <div className="min-w-0">
-          <Link
-            href="/chat"
-            className="inline-flex min-h-11 items-center text-xs text-muted hover:text-content"
-          >
-            ← All messages
-          </Link>
-          <h1 className="flex items-center gap-1.5 font-semibold text-content">
-            <span className="truncate">{other?.display_name ?? "A member"}</span>
+      <div className="border-b border-hairline pb-3">
+        <div className="flex items-center gap-3">
+          <BackButton fallback="/chat" />
+          <h1 className="flex-1 truncate text-center text-[17px] font-semibold text-content">
+            {other?.display_name ?? "A member"}
           </h1>
+          <span aria-hidden="true" className="block h-11 w-11 shrink-0" />
         </div>
         {ride ? (
-          <span className="wrap-anywhere shrink-0 text-right text-xs text-muted">
+          <p className="wrap-anywhere mt-1 text-right text-xs text-muted">
             {formatPlace(ride.from_city, ride.from_state)} →{" "}
             {formatPlace(ride.to_city, ride.to_state)}
-          </span>
+          </p>
         ) : null}
       </div>
 

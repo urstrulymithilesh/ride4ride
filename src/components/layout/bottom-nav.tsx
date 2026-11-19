@@ -317,33 +317,11 @@ function FeedDock() {
 function BottomNavInner() {
   const pathname = usePathname();
 
-  // The chat thread has its own sticky bottom composer — stay out of its
-  // way there. Profile pages have no dock at all (back arrow + menu rows
-  // replace it): any one- or two-segment path that isn't a known static
-  // route is a /<username>[/posts] page.
-  if (pathname.startsWith("/chat/")) {
-    return null;
-  }
-  const segments = pathname.split("/").filter(Boolean);
-  const STATIC_FIRST = new Set([
-    "rides",
-    "chat",
-    "settings",
-    "admin",
-    "about",
-    "privacy",
-    "terms",
-    "support",
-    "sign-in",
-    "sign-up",
-    "auth",
-    "api",
-  ]);
-  if (
-    segments.length >= 1 &&
-    segments.length <= 2 &&
-    !STATIC_FIRST.has(segments[0])
-  ) {
+  // The dock lives on the two feed routes only. Everywhere else —
+  // chat threads (own composer), profiles (back arrow + menu rows),
+  // settings, legal, auth — the page chrome is a top-left back button
+  // instead (see BackButton usages).
+  if (pathname !== "/" && pathname !== "/rides") {
     return null;
   }
 
@@ -351,9 +329,9 @@ function BottomNavInner() {
 }
 
 /**
- * Phone-app bottom chrome. One glass bar everywhere — hail | car | + |
- * chats | profile — with the + straddling the top edge. Hidden on chat
- * thread and profile pages, which have their own chrome.
+ * Phone-app bottom chrome. One glass bar on the two feed routes only —
+ * hail | car | + | chats | profile — with the + straddling the top
+ * edge. Everywhere else the page owns a top-left back button instead.
  */
 export function BottomNav() {
   return (

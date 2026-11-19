@@ -14,6 +14,7 @@ import {
   formatJoined,
 } from "@/lib/utils/format";
 import { BackButton } from "@/components/ui/back-button";
+import { ChangeLocationButton } from "@/components/location/change-location";
 import { Avatar } from "@/components/profile/avatar";
 import type { Profile } from "@/types";
 
@@ -104,7 +105,7 @@ export default async function ProfilePage({
           Profile
         </h1>
         {/* Spacer balances the back arrow so the title stays centered. */}
-        <span aria-hidden="true" className="min-h-11 min-w-11" />
+        <span aria-hidden="true" className="block h-11 w-11 shrink-0" />
       </div>
 
       <div className="mt-4 flex items-start gap-4">
@@ -158,7 +159,7 @@ export default async function ProfilePage({
         className="mt-4 h-px bg-white/10"
       />
 
-      <nav aria-label="Profile" className="mt-6 flex flex-col gap-1">
+      <nav aria-label="Profile" className="mt-4 flex flex-col gap-1">
         <Link href={`/${profile.username}/posts`} className={row}>
           {isOwner ? "My posts" : "Posts"}
         </Link>
@@ -182,7 +183,34 @@ export default async function ProfilePage({
             </button>
           </form>
         ) : null}
+        {/* Dev-only: the drawer that used to host this is unwired from
+            the dock, so manual location override lives here in dev. */}
+        {isOwner && process.env.NODE_ENV !== "production" ? (
+          <ChangeLocationButton className={`${row} text-left`} />
+        ) : null}
       </nav>
+
+      <footer className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+10px)] z-30 mx-auto w-full max-w-[480px] px-4">
+        <nav
+          aria-label="Legal"
+          className="pointer-events-auto flex items-center justify-center gap-2 text-[11px] text-muted"
+        >
+          <Link href="/privacy" className="underline underline-offset-4 hover:text-content">
+            Privacy & Terms
+          </Link>
+          <span aria-hidden="true">•</span>
+          <Link href="/about" className="underline underline-offset-4 hover:text-content">
+            About
+          </Link>
+          <span aria-hidden="true">•</span>
+          <Link
+            href="/developer-info"
+            className="underline underline-offset-4 hover:text-content"
+          >
+            Developer info
+          </Link>
+        </nav>
+      </footer>
     </main>
   );
 }

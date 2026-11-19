@@ -55,11 +55,11 @@ export default async function ProfilePostsPage({
         <h1 className="flex-1 text-center text-[17px] font-semibold text-content">
           Posts
         </h1>
-        <span aria-hidden="true" className="min-h-11 min-w-11" />
+        <span aria-hidden="true" className="block h-11 w-11 shrink-0" />
       </div>
 
       {list.length === 0 ? (
-        <div className="card mt-6 border border-dashed border-hairline bg-transparent p-8 text-center">
+        <div className="card mt-4 border border-dashed border-hairline bg-transparent p-8 text-center">
           <p className="text-sm text-muted">No active posts right now.</p>
         </div>
       ) : (

@@ -2,10 +2,11 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { BackButton } from "@/components/ui/back-button";
 import { formatPlace } from "@/lib/utils/format";
 import type { Conversation } from "@/types";
 
-export const metadata: Metadata = { title: "Messages" };
+export const metadata: Metadata = { title: "Chats" };
 
 interface RideRoute {
   id: string;
@@ -61,15 +62,22 @@ export default async function MessagesPage() {
   const rideById = new Map((rides ?? []).map((r) => [r.id, r]));
 
   return (
-    <main className="w-full flex-1 px-4 py-6">
-      <h1 className="mb-4 text-xl font-semibold text-content">Messages</h1>
+    <main className="w-full flex-1 px-5 py-4">
+      <div className="flex items-center gap-3">
+        <BackButton fallback="/" />
+        <h1 className="flex-1 text-center text-[17px] font-semibold text-content">
+          Chats
+        </h1>
+        {/* Spacer balances the back arrow so the title stays centered. */}
+        <span aria-hidden="true" className="block h-11 w-11 shrink-0" />
+      </div>
 
       {convosError ? (
         /* ERROR state, deliberately not the empty state: "no conversations"
            and "we couldn't load your conversations" mean opposite things. */
         <div
           role="alert"
-          className="card border border-danger bg-transparent p-8 text-center"
+          className="card mt-4 border border-danger bg-transparent p-8 text-center"
         >
           <p className="text-sm font-semibold text-content">
             Couldn&apos;t load your messages.
@@ -96,7 +104,7 @@ export default async function MessagesPage() {
           </Link>
         </div>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="mt-4 flex flex-col gap-2">
           {convos.map((c) => {
             const otherId =
               c.participant_one === user.id ? c.participant_two : c.participant_one;

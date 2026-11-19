@@ -90,6 +90,7 @@ export const RESERVED_USERNAMES: ReadonlySet<string> = new Set([
   "login",
   "logout",
   "messages",
+  "me",
   "mod",
   "moderator",
   "needride",

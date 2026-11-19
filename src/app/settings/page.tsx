@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser, getProfile } from "@/lib/auth";
 import { PasswordForm, ProfileDetails } from "@/components/profile/profile-details";
+import { BackButton } from "@/components/ui/back-button";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -22,8 +23,14 @@ export default async function ProfilePage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-xl flex-1 px-4 py-6">
-      <h1 className="text-xl font-semibold text-content">Settings</h1>
+    <main className="mx-auto w-full max-w-xl flex-1 px-5 py-4">
+      <div className="flex items-center gap-3">
+        <BackButton fallback="/" />
+        <h1 className="flex-1 text-center text-[17px] font-semibold text-content">
+          Settings
+        </h1>
+        <span aria-hidden="true" className="block h-11 w-11 shrink-0" />
+      </div>
       <p className="mt-1 text-sm text-muted">
         Logged in as @{profile.username}.
       </p>

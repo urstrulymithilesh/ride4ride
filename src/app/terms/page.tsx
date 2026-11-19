@@ -1,16 +1,24 @@
 import type { Metadata } from "next";
+import { BackButton } from "@/components/ui/back-button";
 
 export const metadata: Metadata = { title: "Terms of service" };
 
 export default function TermsPage() {
   return (
-    <main className="w-full flex-1 px-4 py-8">
-      <div className="mb-6 rounded-xl bg-danger-soft p-3 text-sm text-content">
+    <main className="w-full flex-1 px-5 py-4">
+      <div className="flex items-center gap-3">
+        <BackButton fallback="/" />
+        <h1 className="flex-1 text-center text-[17px] font-semibold text-content">
+          Terms of service
+        </h1>
+        <span aria-hidden="true" className="block h-11 w-11 shrink-0" />
+      </div>
+      <div className="mb-6 mt-4 rounded-xl bg-danger-soft p-3 text-sm text-content">
         <strong>Placeholder — not legal advice.</strong> This is a template.
         Have a qualified attorney review and finalize these terms before launch.
       </div>
 
-      <h1 className="text-2xl font-semibold text-content">Terms of service</h1>
+      <h1 className="sr-only">Terms of service</h1>
       <p className="mt-2 text-sm text-muted">
         Last updated: (date). By using ride4ride you agree to these terms.
       </p>

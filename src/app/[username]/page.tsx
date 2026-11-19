@@ -72,16 +72,6 @@ export default async function ProfilePage({
     : { data: { user: null } };
 
   const age = formatAge(profile.date_of_birth);
-  const genderLabel =
-    profile.gender === "male"
-      ? "Male"
-      : profile.gender === "female"
-        ? "Female"
-        : null;
-  const whoLine =
-    [genderLabel, age !== null ? `${age} years` : null]
-      .filter(Boolean)
-      .join(", ") || null;
   const joined = formatJoined(profile.created_at);
   const activeAgo = isOwner
     ? formatActiveAgo(viewerUser?.user?.last_sign_in_at ?? null)
@@ -123,13 +113,11 @@ export default async function ProfilePage({
         <div className="min-w-0 flex-1 pt-0.5">
           <p className="wrap-anywhere truncate text-[15px] font-semibold text-content">
             {profile.display_name}
+            {age !== null ? `, ${age}` : ""}
           </p>
           <p className="wrap-anywhere truncate text-[13px] text-muted">
             @{profile.username}
           </p>
-          {whoLine ? (
-            <p className="mt-0.5 text-[13px] text-muted">{whoLine}</p>
-          ) : null}
           {joined ? (
             <p className="mt-0.5 text-[13px] text-muted">Joined {joined}</p>
           ) : null}

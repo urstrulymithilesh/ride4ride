@@ -11,6 +11,7 @@ const base = {
   password: "password123",
   displayName: "Alex Rivera",
   username: "alex_r123",
+  gender: "male",
   ageConfirmed18: true,
   tosAccepted: true,
 };
@@ -54,6 +55,14 @@ describe("validateSignUp", () => {
       expect(r.fieldErrors.phone).toBeTruthy();
       expect(r.fieldErrors.email).toBeTruthy();
     }
+  });
+
+  it("requires male or female", () => {
+    expect(validateSignUp({ ...base, gender: "" }).ok).toBe(false);
+    expect(validateSignUp({ ...base, gender: "other" }).ok).toBe(false);
+    const r = validateSignUp({ ...base, gender: "Female" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.data.gender).toBe("female");
   });
 });
 

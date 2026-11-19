@@ -3,7 +3,6 @@ import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { MapCredit } from "@/components/rides/map-credit";
-import { AppMenu } from "@/components/layout/app-menu";
 import { LocationProvider } from "@/components/location/location-provider";
 import { VisualEditorWrapper } from "@/components/dev/visual-editor-wrapper";
 
@@ -52,7 +51,7 @@ export default async function RootLayout({
             <div id="main" className="relative flex flex-1 flex-col pb-24">
               {children}
             </div>
-            <BottomNav menu={<AppMenu triggerTone="text-white/40 transition-colors group-hover:text-white" />} />
+            <BottomNav />
           </div>
         </LocationProvider>
         <VisualEditorWrapper />

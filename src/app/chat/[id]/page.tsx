@@ -48,6 +48,23 @@ export default async function ConversationPage({
 
   if (!convo) notFound();
 
+  // Opening the thread marks it read (drives the dock badge). Awaited:
+  // a failed mark only leaves the badge stale, never blocks chat.
+  // RLS restricts the row to (this conversation, this user).
+  try {
+    const { error: readError } = await supabase
+      .from("conversation_reads")
+      .upsert(
+        { conversation_id: id, user_id: user.id, last_read_at: new Date().toISOString() },
+        { onConflict: "conversation_id,user_id" },
+      );
+    if (readError) {
+      console.error("[messages/:id] mark-read failed:", readError.message);
+    }
+  } catch {
+    // Badge staleness only — never block the thread on this.
+  }
+
   const otherId =
     convo.participant_one === user.id
       ? convo.participant_two

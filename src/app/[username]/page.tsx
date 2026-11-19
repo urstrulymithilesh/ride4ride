@@ -7,42 +7,30 @@ import {
   RESERVED_USERNAMES,
   USERNAME_RE,
 } from "@/lib/validations/auth";
-import { RideCard, type RideCardData } from "@/components/rides/ride-card";
+import { signOut } from "@/app/(auth)/actions";
+import {
+  formatActiveAgo,
+  formatAge,
+  formatJoined,
+} from "@/lib/utils/format";
+import { BackButton } from "@/components/ui/back-button";
+import { Avatar } from "@/components/profile/avatar";
+import type { Profile } from "@/types";
 
 export const metadata: Metadata = { title: "Profile" };
 
-interface ProfileRow {
-  id: string;
-  display_name: string;
-  username: string;
-  created_at: string;
-}
-
-function memberSince(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  const mon = d
-    .toLocaleDateString("en-US", { month: "short" })
-    .toLowerCase();
-  return `Member since ${mon}, ${d.getFullYear()}`;
-}
-
 /**
- * Public member page: ride4ride.com/<username>.
- *
- * Identity (name + posts) is full-details material, so viewing requires
- * sign-in — the same rule as the poster name on the detail page. Static
- * routes win over this dynamic segment, so /rides, /chat, /admin and
- * friends never land here; handles colliding with those names are
- * rejected at signup (RESERVED_USERNAMES) and 404 here as a second wall.
- * Only active posts, coarse columns only — never addresses.
+ * Profile page: ride4ride.com/<username>. No dock here — the back arrow
+ * returns to wherever you came from, and the menu rows below replace
+ * the dock's destinations (My posts, Notifications, Settings, Support,
+ * Log out).
  */
-export default async function MemberPage({
+export default async function ProfilePage({
   params,
 }: {
   params: Promise<{ username: string }>;
 }) {
-  await requireUser();
+  const viewer = await requireUser();
   const { username: raw } = await params;
   const name = (raw ?? "").toLowerCase();
   if (!USERNAME_RE.test(name) || RESERVED_USERNAMES.has(name)) notFound();
@@ -50,67 +38,151 @@ export default async function MemberPage({
   const supabase = await createClient();
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, display_name, username, created_at")
+    .select(
+      "id, display_name, username, date_of_birth, gender, created_at",
+    )
     .ilike("username", name)
-    .maybeSingle<ProfileRow>();
+    .maybeSingle<
+      Pick<
+        Profile,
+        "id" | "display_name" | "username" | "date_of_birth" | "gender" | "created_at"
+      >
+    >();
 
   if (!profile) notFound();
 
-  const { data: rides } = await supabase
+  const isOwner = profile.id === viewer.id;
+
+  // Owner city = latest active post's pickup. Absent when they never
+  // posted; the segment is then omitted rather than guessed.
+  const { data: latestRide } = await supabase
     .from("rides")
-    .select(
-      "id, type, owner_id, created_at, from_city, from_state, to_city, to_state, ride_date, time_mode, ride_time, distance_meters, from_street, to_street, description",
-    )
+    .select("from_city, from_state")
     .eq("owner_id", profile.id)
     .eq("status", "active")
     .gt("expires_at", new Date().toISOString())
     .order("created_at", { ascending: false })
-    .limit(60)
-    .returns<RideCardData[]>();
+    .limit(1)
+    .maybeSingle<{ from_city: string; from_state: string }>();
 
-  const list = (rides ?? []).map((r) => ({
-    ...r,
-    username: profile.username,
-  }));
-  const since = memberSince(profile.created_at);
+  // Last-active is only knowable for yourself (your own auth record).
+  const { data: viewerUser } = isOwner
+    ? await supabase.auth.getUser()
+    : { data: { user: null } };
+
+  const age = formatAge(profile.date_of_birth);
+  const genderLabel =
+    profile.gender === "male"
+      ? "Male"
+      : profile.gender === "female"
+        ? "Female"
+        : null;
+  const whoLine =
+    [genderLabel, age !== null ? `${age} years` : null]
+      .filter(Boolean)
+      .join(", ") || null;
+  const joined = formatJoined(profile.created_at);
+  const activeAgo = isOwner
+    ? formatActiveAgo(viewerUser?.user?.last_sign_in_at ?? null)
+    : null;
+  const city = latestRide
+    ? `${latestRide.from_city}, ${latestRide.from_state}`
+    : null;
+  const whereLine =
+    city && activeAgo
+      ? `${city} • ${activeAgo}`
+      : (city ?? activeAgo);
+
+  const row =
+    "flex min-h-14 w-full items-center text-[26px] font-medium text-content hover:text-white";
 
   return (
-    <main className="w-full flex-1 px-4 py-6">
-      <Link
-        href="/"
-        className="inline-flex min-h-11 items-center text-sm text-muted hover:text-content"
-      >
-        ← Back
-      </Link>
-
-      <div className="card mt-3 p-5">
-        <p className="wrap-anywhere text-xl font-semibold text-content">
-          @{profile.username}
-        </p>
-        <p className="wrap-anywhere mt-1 text-sm text-muted">
-          {profile.display_name}
-        </p>
-        {since ? (
-          <p className="mt-1 text-xs text-muted">{since}</p>
-        ) : null}
+    <main className="mx-auto w-full max-w-xl flex-1 px-5 py-4">
+      <div className="flex items-center gap-3">
+        <BackButton fallback="/" />
+        <h1 className="flex-1 text-center text-[17px] font-semibold text-content">
+          Profile
+        </h1>
+        {/* Spacer balances the back arrow so the title stays centered. */}
+        <span aria-hidden="true" className="min-h-11 min-w-11" />
       </div>
 
-      <h1 className="mt-6 text-sm font-semibold text-content">
-        Active posts · {list.length}
-      </h1>
-      {list.length === 0 ? (
-        <div className="card mt-3 border border-dashed border-hairline bg-transparent p-8 text-center">
-          <p className="text-sm text-muted">No active posts right now.</p>
+      <div className="mt-4 flex items-start gap-4">
+        <div className="flex shrink-0 flex-col items-center gap-2">
+          <Avatar gender={profile.gender} size={72} />
+          {isOwner ? (
+            <Link
+              href="/settings"
+              className="rounded-lg border border-white/20 px-3 py-1 text-xs text-muted hover:text-content"
+            >
+              Edit Profile
+            </Link>
+          ) : null}
         </div>
-      ) : (
-        <ul className="mt-3 flex flex-col gap-3">
-          {list.map((r) => (
-            <li key={r.id}>
-              <RideCard ride={r} signedIn />
-            </li>
-          ))}
-        </ul>
-      )}
+        <div className="min-w-0 flex-1 pt-0.5">
+          <p className="wrap-anywhere truncate text-[15px] font-semibold text-content">
+            {profile.display_name}
+          </p>
+          <p className="wrap-anywhere truncate text-[13px] text-muted">
+            @{profile.username}
+          </p>
+          {whoLine ? (
+            <p className="mt-0.5 text-[13px] text-muted">{whoLine}</p>
+          ) : null}
+          {joined ? (
+            <p className="mt-0.5 text-[13px] text-muted">Joined {joined}</p>
+          ) : null}
+          {whereLine ? (
+            <p className="mt-0.5 flex items-center gap-1 text-[13px] text-muted">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M20.2 2.8Q21.5 2.3 21 3.6L12.9 20.6Q12.4 21.4 12 20.6V12.4Q12 11.9 11.5 11.9H3.4Q2.6 11.9 2.6 11.1V10.9Q2.6 10.4 3.2 10.2Z" />
+              </svg>
+              <span className="wrap-anywhere truncate">{whereLine}</span>
+            </p>
+          ) : null}
+        </div>
+      </div>
+
+      <div
+        aria-hidden="true"
+        className="mt-4 h-px bg-white/10"
+      />
+
+      <nav aria-label="Profile" className="mt-6 flex flex-col gap-1">
+        <Link href={`/${profile.username}/posts`} className={row}>
+          {isOwner ? "My posts" : "Posts"}
+        </Link>
+        {isOwner ? (
+          <Link href="/settings" className={row}>
+            Notifications
+          </Link>
+        ) : null}
+        {isOwner ? (
+          <Link href="/settings" className={row}>
+            Settings
+          </Link>
+        ) : null}
+        <Link href="/support" className={row}>
+          Support
+        </Link>
+        {isOwner ? (
+          <form action={signOut}>
+            <button type="submit" className={row}>
+              Log out
+            </button>
+          </form>
+        ) : null}
+      </nav>
     </main>
   );
 }

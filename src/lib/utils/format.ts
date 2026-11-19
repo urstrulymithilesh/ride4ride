@@ -112,3 +112,48 @@ export function formatPlace(
 ): string {
   return `${city}, ${state}${zip ? ` ${zip}` : ""}`;
 }
+
+/**
+ * Whole years between a YYYY-MM-DD date and now (for "Male, 24 years").
+ * Null when there is no usable date.
+ */
+export function formatAge(ymd: string | null, now: Date = new Date()): number | null {
+  if (!ymd) return null;
+  const [y, m, d] = ymd.split("-").map(Number);
+  if (!y || !m || !d) return null;
+  let age = now.getFullYear() - y;
+  const beforeBirthday =
+    now.getMonth() + 1 < m ||
+    (now.getMonth() + 1 === m && now.getDate() < d);
+  if (beforeBirthday) age -= 1;
+  return age >= 0 ? age : null;
+}
+
+/** "Mon YYYY" for "Joined Nov 2026". Empty string when unusable. */
+export function formatJoined(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
+}
+
+/**
+ * Relative activity for the profile line ("55 Minutes ago", "2 Hours
+ * ago", "3 Days ago"). Units read capitalized per the profile design.
+ * Null when there is nothing recent to show (or no timestamp at all).
+ */
+export function formatActiveAgo(
+  iso: string | null,
+  now: number = Date.now(),
+): string | null {
+  if (!iso) return null;
+  const ms = now - new Date(iso).getTime();
+  if (Number.isNaN(ms) || ms < 0) return null;
+  const minutes = Math.floor(ms / 60000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} Minute${minutes === 1 ? "" : "s"} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} Hour${hours === 1 ? "" : "s"} ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} Day${days === 1 ? "" : "s"} ago`;
+  return null;
+}

@@ -16,6 +16,8 @@ export interface Profile {
   username: string;
   date_of_birth: string | null; // YYYY-MM-DD
   phone: string | null;
+  /** Signup-declared gender; picks the default avatar. Null pre-0029. */
+  gender: "male" | "female" | null;
   school: string | null;
   verification: VerificationStatus;
   is_admin: boolean;

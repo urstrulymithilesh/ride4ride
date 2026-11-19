@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { signUp, type AuthState } from "@/app/(auth)/actions";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -10,6 +10,7 @@ const initialState: AuthState = {};
 
 export function SignUpForm({ redirectTo }: { redirectTo: string }) {
   const [state, formAction] = useActionState(signUp, initialState);
+  const [gender, setGender] = useState("");
 
   if (state.message) {
     return (
@@ -75,6 +76,33 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
         required
         hideLabel
       />
+      {/* Gender picks the default avatar. Required: every profile gets
+          a face on day one. */}
+      <div>
+        <input type="hidden" name="gender" value={gender} />
+        <div className="flex gap-2" role="group" aria-label="Gender">
+          {(["male", "female"] as const).map((g) => (
+            <button
+              key={g}
+              type="button"
+              onClick={() => setGender(g)}
+              aria-pressed={gender === g}
+              className={`min-h-11 flex-1 rounded-xl border px-2 text-[13px] font-medium transition-colors sm:min-h-12 sm:text-sm ${
+                gender === g
+                  ? "border-white bg-white text-black"
+                  : "border-white/20 text-muted hover:border-white/40 hover:text-content"
+              }`}
+            >
+              {g === "male" ? "Male" : "Female"}
+            </button>
+          ))}
+        </div>
+        {state.fieldErrors?.gender ? (
+          <p className="mt-1.5 text-xs text-danger" role="alert">
+            {state.fieldErrors.gender}
+          </p>
+        ) : null}
+      </div>
       {/* Two SEPARATE consents, deliberately not combined. Bundling them
           would mean a user can only ever be shown to have agreed to the
           pair, never to either on its own. Both are recorded on the

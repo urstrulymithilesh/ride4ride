@@ -5,6 +5,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { QuickPost, POST_DRAFT_KEY } from "@/components/rides/quick-post";
 import type { PostDraft } from "@/components/rides/quick-post";
+import { ProfileLink } from "@/components/layout/profile-link";
+import { ChatBadge } from "@/components/chat/chat-badge";
 import { OPEN_POST_EVENT } from "@/components/rides/empty-post-cta";
 import { ChatIcon } from "@/components/places/search-icons";
 import { RECENTER_EVENT } from "@/components/places/search-form";
@@ -49,13 +51,12 @@ function PlusIcon() {
 }
 
 /**
- * Feed-only dock: one glass bar with hail | car | + | chats | menu.
- * The + straddles the top edge. The menu slot reuses the same drawer
- * trigger as the top bar (passed in as `menu`). Tabs preserve every
- * other search param (mirroring the page's hrefWith defaults), so
- * switching type never clears filters.
+ * Feed-only dock: one glass bar with hail | car | + | chats | profile.
+ * The + straddles the top edge. The profile slot links to your own
+ * profile page. Tabs preserve every other search param (mirroring the
+ * page's hrefWith defaults), so switching type never clears filters.
  */
-function FeedDock({ menu }: { menu: React.ReactNode }) {
+function FeedDock() {
   const { coords } = useViewerLocation();
   const sp = useSearchParams();
   const pathname = usePathname();
@@ -286,7 +287,7 @@ function FeedDock({ menu }: { menu: React.ReactNode }) {
             href="/chat"
             aria-label="Chats"
             aria-current={isMessages ? "page" : undefined}
-            className={`flex min-h-10 min-w-0 flex-1 items-center justify-center rounded-full ${
+            className={`relative flex min-h-10 min-w-0 flex-1 items-center justify-center rounded-full ${
               isMessages ? "text-white" : "text-white/40 hover:text-content"
             }`}
           >
@@ -297,12 +298,9 @@ function FeedDock({ menu }: { menu: React.ReactNode }) {
             >
               <ChatIcon />
             </span>
+            <ChatBadge />
           </Link>
-          <span className="group flex min-h-10 min-w-0 flex-1 items-center justify-center text-white/40 transition-colors hover:text-white">
-            <span className="flex scale-90 transition-transform duration-200 active:scale-110">
-              {menu}
-            </span>
-          </span>
+          <ProfileLink />
         </nav>
       </div>
       {postOpen ? (
@@ -316,28 +314,51 @@ function FeedDock({ menu }: { menu: React.ReactNode }) {
   );
 }
 
-function BottomNavInner({ menu }: { menu: React.ReactNode }) {
+function BottomNavInner() {
   const pathname = usePathname();
 
   // The chat thread has its own sticky bottom composer — stay out of its
-  // way there. Everywhere else the phone chrome is the one glass bar:
-  // hail | car | + | chats | menu.
+  // way there. Profile pages have no dock at all (back arrow + menu rows
+  // replace it): any one- or two-segment path that isn't a known static
+  // route is a /<username>[/posts] page.
   if (pathname.startsWith("/chat/")) {
     return null;
   }
+  const segments = pathname.split("/").filter(Boolean);
+  const STATIC_FIRST = new Set([
+    "rides",
+    "chat",
+    "settings",
+    "admin",
+    "about",
+    "privacy",
+    "terms",
+    "support",
+    "sign-in",
+    "sign-up",
+    "auth",
+    "api",
+  ]);
+  if (
+    segments.length >= 1 &&
+    segments.length <= 2 &&
+    !STATIC_FIRST.has(segments[0])
+  ) {
+    return null;
+  }
 
-  return <FeedDock menu={menu} />;
+  return <FeedDock />;
 }
 
 /**
  * Phone-app bottom chrome. One glass bar everywhere — hail | car | + |
- * chats | menu — with the + straddling the top edge. Hidden on chat
- * thread pages, which have their own sticky input.
+ * chats | profile — with the + straddling the top edge. Hidden on chat
+ * thread and profile pages, which have their own chrome.
  */
-export function BottomNav({ menu }: { menu: React.ReactNode }) {
+export function BottomNav() {
   return (
     <Suspense fallback={null}>
-      <BottomNavInner menu={menu} />
+      <BottomNavInner />
     </Suspense>
   );
 }

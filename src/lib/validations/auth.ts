@@ -42,6 +42,8 @@ export function normalizePhone(raw: string): string | null {
  */
 export const TOS_VERSION = "2026-09-03";
 
+export type Gender = "male" | "female";
+
 export interface SignUpInput {
   phone: string;
   /** Null when skipped at sign-up (can be added later in settings). */
@@ -49,6 +51,7 @@ export interface SignUpInput {
   password: string;
   displayName: string;
   username: string;
+  gender: Gender;
   /**
    * Deliberately two separate consents, not one combined checkbox.
    * Bundling "I am 18+" with "I accept the Terms" makes each weaker: a
@@ -131,6 +134,7 @@ export function validateSignUp(raw: {
   password: string;
   displayName: string;
   username: string;
+  gender: string;
   ageConfirmed18: boolean;
   tosAccepted: boolean;
 }): { ok: true; data: SignUpInput } | { ok: false; fieldErrors: FieldErrors } {
@@ -152,6 +156,9 @@ export function validateSignUp(raw: {
     fieldErrors.displayName = "Display name must be 50 characters or fewer.";
   const usernameError = validateUsername(username);
   if (usernameError) fieldErrors.username = usernameError;
+  const gender = raw.gender.trim().toLowerCase();
+  if (gender !== "male" && gender !== "female")
+    fieldErrors.gender = "Choose male or female.";
   if (password.length < 8)
     fieldErrors.password = "Password must be at least 8 characters.";
   // Both blocking, not advisory, and checked separately so the user is
@@ -172,6 +179,7 @@ export function validateSignUp(raw: {
       password,
       displayName,
       username,
+      gender: gender as Gender,
       ageConfirmed18: true,
       tosAccepted: true,
     },

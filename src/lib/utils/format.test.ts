@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   abbreviateStreet,
+  formatActiveAgo,
+  formatAge,
   formatDistance,
+  formatJoined,
   formatPlace,
   formatRideWhen,
 } from "@/lib/utils/format";
@@ -54,6 +57,33 @@ describe("abbreviateStreet", () => {
     expect(abbreviateStreet("Main")).toBe("Main");
     expect(abbreviateStreet("Park Glen")).toBe("Park Glen");
     expect(abbreviateStreet(null)).toBeNull();
+  });
+});
+
+describe("profile header", () => {
+  it("computes whole-year ages", () => {
+    const now = new Date("2026-11-19T12:00:00Z");
+    expect(formatAge("2002-11-19", now)).toBe(24);
+    expect(formatAge("2002-11-20", now)).toBe(23);
+    expect(formatAge(null, now)).toBeNull();
+    expect(formatAge("not-a-date", now)).toBeNull();
+  });
+  it("renders joined month", () => {
+    expect(formatJoined("2026-11-02T10:00:00Z")).toBe("Nov 2026");
+    expect(formatJoined("garbage")).toBe("");
+  });
+  it("renders capitalized activity recency", () => {
+    const now = new Date("2026-11-19T12:00:00Z").getTime();
+    expect(
+      formatActiveAgo(new Date(now - 55 * 60000).toISOString(), now),
+    ).toBe("55 Minutes ago");
+    expect(
+      formatActiveAgo(new Date(now - 60 * 60000).toISOString(), now),
+    ).toBe("1 Hour ago");
+    expect(
+      formatActiveAgo(new Date(now - 5 * 86400000).toISOString(), now),
+    ).toBe("5 Days ago");
+    expect(formatActiveAgo(null, now)).toBeNull();
   });
 });
 

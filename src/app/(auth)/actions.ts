@@ -40,6 +40,7 @@ export async function signUp(
     password: String(formData.get("password") ?? ""),
     displayName: String(formData.get("displayName") ?? ""),
     username: String(formData.get("username") ?? ""),
+    gender: String(formData.get("gender") ?? ""),
     // An unchecked checkbox submits nothing at all, so absence is "no".
     ageConfirmed18: formData.get("ageConfirmed18") === "on",
     tosAccepted: formData.get("tosAccepted") === "on",
@@ -47,7 +48,7 @@ export async function signUp(
   if (!result.ok) return { fieldErrors: result.fieldErrors };
 
   const redirectTo = sanitizeRedirect(String(formData.get("redirectTo") ?? ""));
-  const { phone, email, password, displayName, username } = result.data;
+  const { phone, email, password, displayName, username, gender } = result.data;
   const supabase = await createClient();
 
   // Unique-handle pre-check for a friendly field error. The unique index
@@ -91,6 +92,7 @@ export async function signUp(
       data: {
         display_name: displayName,
         username,
+        gender,
         age_confirmed_18: true,
         tos_version: TOS_VERSION,
       },

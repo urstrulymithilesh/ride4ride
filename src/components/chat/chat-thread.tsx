@@ -59,7 +59,12 @@ export function ChatThread({
 
   // Keep pinned to the newest message.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    bottomRef.current?.scrollIntoView({
+      behavior: reduced ? "auto" : "smooth",
+    });
   }, [messages]);
 
   function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -159,15 +164,17 @@ export function ChatThread({
         className="safe-bottom sticky bottom-0 border-t border-hairline bg-app pt-3"
       >
         {file ? (
-          <div className="mb-2 flex items-center gap-2 text-xs text-muted">
-            <span className="truncate">📎 {file.name}</span>
+          <div className="mb-2 flex min-w-0 items-center gap-2 text-xs text-muted">
+            <span className="wrap-anywhere min-w-0 flex-1 truncate">
+              📎 {file.name}
+            </span>
             <button
               type="button"
               onClick={() => {
                 setFile(null);
                 if (fileInputRef.current) fileInputRef.current.value = "";
               }}
-              className="text-danger"
+              className="shrink-0 text-danger"
             >
               Remove
             </button>
@@ -209,6 +216,9 @@ export function ChatThread({
             rows={1}
             maxLength={MAX_MESSAGE_LENGTH}
             placeholder="Type a message…"
+            enterKeyHint="send"
+            autoCapitalize="sentences"
+            autoCorrect="on"
             className="input max-h-32 flex-1 resize-none py-2"
           />
           <button

@@ -82,29 +82,44 @@ export default async function ProfilePage({
         <h1 className="flex-1 text-center text-[17px] font-semibold text-content">
           Profile
         </h1>
-        {/* Spacer balances the back arrow so the title stays centered. */}
-        <span aria-hidden="true" className="block h-11 w-11 shrink-0" />
+        {isOwner ? (
+          <Link
+            href="/settings"
+            aria-label="Settings"
+            className="flex h-11 w-11 items-center justify-center text-white"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </Link>
+        ) : (
+          <span aria-hidden="true" className="block h-11 w-11 shrink-0" />
+        )}
       </div>
 
       <div className="mt-4 flex items-start gap-4">
         <div className="flex shrink-0 flex-col items-center gap-2">
           <Avatar gender={profile.gender} size={72} />
-          {isOwner ? (
-            <Link
-              href="/settings"
-              className="rounded-lg border-[0.5px] border-white/20 px-3 py-1 text-xs text-muted hover:text-content"
-            >
-              Edit Profile
-            </Link>
-          ) : null}
+          <p className="wrap-anywhere rounded-lg border-[0.5px] border-white/20 px-2 py-0.5 text-center text-[12px] text-muted">
+            <span className="font-normal text-muted">@</span>
+            <span className="font-semibold text-content">{profile.username}</span>
+          </p>
         </div>
         <div className="min-w-0 flex-1 pt-0.5">
           <p className="wrap-anywhere truncate text-[15px] font-semibold text-content">
             {profile.display_name}
-            {age !== null ? <span className="text-muted">, {age}</span> : ""}
-          </p>
-          <p className="wrap-anywhere truncate text-[13px] text-muted">
-            @{profile.username}
+            {age !== null ? `, ${age}` : ""}
           </p>
           {joined ? (
             <p className="mt-0.5 text-[13px] text-muted">Joined {joined}</p>
@@ -144,11 +159,6 @@ export default async function ProfilePage({
         {isOwner ? (
           <Link href="/settings" className={row}>
             Notifications
-          </Link>
-        ) : null}
-        {isOwner ? (
-          <Link href="/settings" className={row}>
-            Settings
           </Link>
         ) : null}
         <Link href="/support" className={row}>

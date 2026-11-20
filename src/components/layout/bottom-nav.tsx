@@ -189,7 +189,7 @@ function FeedDock() {
         }`}
       >
         <span
-          className={`flex transition-transform duration-200 ${isActive ? "scale-110" : "scale-90"}`}
+          className={`flex transition-transform duration-200 active:scale-95 ${isActive ? "scale-110" : "scale-90"}`}
         >
           {label}
         </span>
@@ -235,7 +235,12 @@ function FeedDock() {
                 // Recenter also squares the compass: north up again, no
                 // matter how the map was spun.
                 bearing: 0,
-                essential: true,
+                essential:
+                  typeof window !== "undefined" &&
+                  window.matchMedia("(prefers-reduced-motion: reduce)")
+                    .matches
+                    ? false
+                    : true,
               });
             }}
             aria-label="Recenter map on my location"
@@ -292,7 +297,7 @@ function FeedDock() {
             }`}
           >
             <span
-              className={`flex transition-transform duration-200 active:scale-110 ${
+              className={`flex transition-transform duration-200 active:scale-95 ${
                 isMessages ? "scale-110" : "scale-90"
               }`}
             >

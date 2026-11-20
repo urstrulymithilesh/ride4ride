@@ -106,7 +106,10 @@ export function RideCard({
       {/* Note box: free text, so same gate as handles — signed-in only.
           Signed-out viewers get no box rather than a wrong one. */}
       {signedIn && ride.description?.trim() ? (
-        <p className="mt-2 truncate rounded-[10px] border border-white/15 px-3 py-2 text-[13px]">
+        <p
+          title={ride.description.trim()}
+          className="mt-2 line-clamp-2 rounded-[10px] border border-white/15 px-3 py-2 text-[13px]"
+        >
           <span className="font-semibold text-muted">Note: </span>
           <span className="text-white">{ride.description.trim()}</span>
         </p>

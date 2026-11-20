@@ -47,7 +47,7 @@ export function ChatBadge() {
   return (
     <span
       aria-label={`${unread} unread messages`}
-      className="pointer-events-none absolute -top-0.5 right-1/2 flex h-[18px] min-w-[18px] translate-x-6 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold leading-none text-white"
+      className="pointer-events-none absolute -top-0.5 right-1/2 flex h-[18px] min-w-[18px] translate-x-6 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold leading-none text-white tabular-nums"
     >
       {unread > 99 ? "99+" : unread}
     </span>

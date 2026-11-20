@@ -399,6 +399,12 @@ export function PlaceAutocomplete({
         ref={inputRef}
         id={id}
         name={name}
+        type="text"
+        inputMode="search"
+        enterKeyHint="search"
+        autoCapitalize="off"
+        autoCorrect="off"
+        spellCheck={false}
         value={value}
         required={required}
         minLength={minLength}

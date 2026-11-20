@@ -24,8 +24,12 @@ export const metadata: Metadata = {
 
 // viewport-fit=cover is required for env(safe-area-inset-*) to take effect.
 export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
   themeColor: "#000000",
   viewportFit: "cover",
+  colorScheme: "dark",
+  interactiveWidget: "resizes-content",
 };
 
 export default async function RootLayout({

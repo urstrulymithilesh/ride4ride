@@ -322,10 +322,10 @@ export function QuickPost({
         aria-hidden="true"
         className="absolute inset-0 bg-black/60 backdrop-blur-md"
       />
-      <div className="pointer-events-auto absolute inset-0 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
+      <div className="pointer-events-auto absolute inset-0 overflow-y-auto px-4 py-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-6">
         <div className="flex min-h-full">
           <div className="m-auto w-full max-w-[340px] sm:max-w-sm">
-          <div data-quickpost-panel className="relative overscroll-contain rounded-3xl border border-white/15 bg-app/70 p-3 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)] backdrop-blur-xl sm:p-6">
+            <div data-quickpost-panel className="relative overscroll-contain rounded-3xl border border-white/15 bg-app/70 p-3 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)] backdrop-blur-xl sm:p-6">
             <form
               action={formAction}
               onSubmit={() => {

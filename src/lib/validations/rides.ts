@@ -168,9 +168,17 @@ export function validateOffer(
   const to_state = (raw.to_state ?? "").trim();
 
   if (!from_city) fieldErrors.from_city = "Enter the origin city.";
+  else if (from_city.length > 100)
+    fieldErrors.from_city = "City name is too long (max 100).";
   if (!from_state) fieldErrors.from_state = "Enter the origin state.";
+  else if (from_state.length > 100)
+    fieldErrors.from_state = "State name is too long (max 100).";
   if (!to_city) fieldErrors.to_city = "Enter the destination city.";
+  else if (to_city.length > 100)
+    fieldErrors.to_city = "City name is too long (max 100).";
   if (!to_state) fieldErrors.to_state = "Enter the destination state.";
+  else if (to_state.length > 100)
+    fieldErrors.to_state = "State name is too long (max 100).";
 
   // Optional captain airport tag. Validated here (friendlier error) AND
   // by the DB check constraint; normalized to uppercase for the RPC.
@@ -180,6 +188,9 @@ export function validateOffer(
   }
 
   const timing = commonTiming(raw, fieldErrors);
+  const description = (raw.description ?? "").trim();
+  if (description.length > 500)
+    fieldErrors.description = "Note is too long (max 500 characters).";
   if (Object.keys(fieldErrors).length > 0 || !timing)
     return { ok: false, fieldErrors };
 
@@ -192,7 +203,7 @@ export function validateOffer(
       to_city,
       to_state,
       to_zip: (raw.to_zip ?? "").trim(),
-      description: (raw.description ?? "").trim(),
+      description,
       timing,
       from_airport: airportRaw || null,
     },
@@ -208,10 +219,17 @@ export function validateGet(
 
   if (from_address.length < 5)
     fieldErrors.from_address = "Enter a full pickup address.";
+  else if (from_address.length > 500)
+    fieldErrors.from_address = "Pickup address is too long (max 500).";
   if (to_address.length < 5)
     fieldErrors.to_address = "Enter a full drop-off address.";
+  else if (to_address.length > 500)
+    fieldErrors.to_address = "Drop-off address is too long (max 500).";
 
   const timing = commonTiming(raw, fieldErrors);
+  const description = (raw.description ?? "").trim();
+  if (description.length > 500)
+    fieldErrors.description = "Note is too long (max 500 characters).";
   if (Object.keys(fieldErrors).length > 0 || !timing)
     return { ok: false, fieldErrors };
 
@@ -220,7 +238,7 @@ export function validateGet(
     data: {
       from_address,
       to_address,
-      description: (raw.description ?? "").trim(),
+      description,
       timing,
     },
   };

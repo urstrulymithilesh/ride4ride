@@ -133,7 +133,11 @@ export function RidesMap({
       if (frameRun.current !== run) return;
       setFramedId(id);
     });
-    map.flyTo({ center: [center.lng, center.lat], zoom: 15 });
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) map.jumpTo({ center: [center.lng, center.lat], zoom: 15 });
+    else map.flyTo({ center: [center.lng, center.lat], zoom: 15 });
   }, []);
 
   const selectPin = useCallback(
@@ -483,7 +487,8 @@ export function RidesMap({
           // Tiles not ready or no such label: keep the centroid.
         }
         const key = `c:${groupKey}`;
-        const label = `${g.n} ride${g.n === 1 ? "" : "s"} near ${g.city}`;
+        const countLabel = g.n > 99 ? "99+" : `${g.n}`;
+        const label = `${countLabel} ride${g.n === 1 ? "" : "s"} near ${g.city}`;
         const button = document.createElement("button");
         button.type = "button";
         button.className = "r4r-pin-marker";
@@ -491,14 +496,18 @@ export function RidesMap({
         button.setAttribute("aria-label", label);
         const pill = document.createElement("span");
         pill.className = "r4r-cluster-label";
-        pill.textContent = `${g.n} ride${g.n === 1 ? "" : "s"}`;
+        pill.textContent = `${countLabel} ride${g.n === 1 ? "" : "s"}`;
         const car = document.createElement("span");
         car.className = "r4r-pin-drop";
         car.setAttribute("aria-hidden", "true");
         car.innerHTML = `<svg width="40" height="29" viewBox="113 26 593 424" fill="none" aria-hidden="true"><path d="${CAR_GLYPH_PATH}" fill="#000000" fill-rule="evenodd"/></svg>`;
         button.append(pill, car);
         button.addEventListener("click", () => {
-          map.flyTo({ center: [lng, lat], zoom: map.getZoom() });
+          const reduced =
+            typeof window !== "undefined" &&
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          if (reduced) map.jumpTo({ center: [lng, lat], zoom: map.getZoom() });
+          else map.flyTo({ center: [lng, lat], zoom: map.getZoom() });
         });
         const marker = new Ctor({
           element: button,

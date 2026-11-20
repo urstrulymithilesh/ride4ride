@@ -33,6 +33,9 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
         label="Display name"
         name="displayName"
         autoComplete="name"
+        autoCapitalize="words"
+        autoCorrect="off"
+        enterKeyHint="next"
         placeholder="Name"
         error={state.fieldErrors?.displayName}
         required
@@ -42,6 +45,9 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
         label="username"
         name="username"
         autoComplete="username"
+        autoCapitalize="none"
+        autoCorrect="off"
+        enterKeyHint="next"
         placeholder="username"
         error={state.fieldErrors?.username}
         required
@@ -52,6 +58,9 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
         name="phone"
         type="tel"
         autoComplete="tel"
+        inputMode="tel"
+        enterKeyHint="next"
+        autoCapitalize="none"
         placeholder="Phone number"
         error={state.fieldErrors?.phone}
         required
@@ -62,6 +71,10 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
         name="email"
         type="email"
         autoComplete="email"
+        inputMode="email"
+        enterKeyHint="next"
+        autoCapitalize="none"
+        autoCorrect="off"
         placeholder="Email (Optional)"
         error={state.fieldErrors?.email}
         hideLabel
@@ -71,6 +84,7 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
         name="password"
         type="password"
         autoComplete="new-password"
+        enterKeyHint="done"
         placeholder="Password"
         error={state.fieldErrors?.password}
         required

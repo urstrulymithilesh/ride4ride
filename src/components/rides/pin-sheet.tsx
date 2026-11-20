@@ -84,15 +84,14 @@ function endLabel(street: string | null, city: string, state: string): string {
 export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
   const [ride, setRide] = useState<PinRide | null>(null);
   const [failed, setFailed] = useState(false);
-  // One-line route fit: start at the design size (15px in a 360 card)
-  // and converge — widen the card first, then shrink the type, stopping
-  // at the screen edge and at 10px respectively.
+  // One-line route fit: widen the card first, then shrink the type,
+  // stopping at the screen edge and at 12px (readability floor).
   const [cardW, setCardW] = useState(360);
   const [fontPx, setFontPx] = useState(15);
   const routeRef = useRef<HTMLParagraphElement | null>(null);
 
   // One-line route fit: widen the card first, then shrink the type,
-  // stopping at the screen edge and at 9px. Driven from the fetch
+  // stopping at the screen edge and at 12px. Driven from the fetch
   // callback (plus rAF rechecks), never from an effect, so each step
   // measures committed DOM. Retries also cover the commit landing after
   // the first frame. All reads come from the DOM (never stale state);
@@ -117,7 +116,7 @@ export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
       setCardW(Math.min(maxW, cardWNow + 12));
     } else {
       const px = parseFloat(getComputedStyle(el).fontSize) || 15;
-      if (px > 9.01) setFontPx(Math.max(9, +(px - 0.5).toFixed(1)));
+      if (px > 12.01) setFontPx(Math.max(12, +(px - 0.5).toFixed(1)));
       else return;
     }
     requestAnimationFrame(fit);
@@ -198,7 +197,8 @@ export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
               <p
                 ref={routeRef}
                 style={{ fontSize: fontPx }}
-                className="mt-[6px] whitespace-nowrap tracking-tight text-white/70"
+                title={`${endLabel(ride.from_street, ride.from_city, ride.from_state)} → ${endLabel(ride.to_street, ride.to_city, ride.to_state)}`}
+                className="mt-[6px] overflow-hidden text-ellipsis whitespace-nowrap tracking-tight text-white/70"
               >
                 {endLabel(ride.from_street, ride.from_city, ride.from_state)}
                 <span aria-hidden="true" className="mx-2">

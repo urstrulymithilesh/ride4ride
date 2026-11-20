@@ -10,6 +10,10 @@ export function TextField({
   error,
   required,
   hideLabel,
+  inputMode,
+  enterKeyHint,
+  autoCapitalize,
+  autoCorrect,
 }: {
   label: string;
   name: string;
@@ -21,6 +25,10 @@ export function TextField({
   error?: string;
   required?: boolean;
   hideLabel?: boolean;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
+  enterKeyHint?: "enter" | "done" | "go" | "next" | "previous" | "search" | "send";
+  autoCapitalize?: string;
+  autoCorrect?: string;
 }) {
   const id = `field-${name}`;
   return (
@@ -39,6 +47,10 @@ export function TextField({
         defaultValue={defaultValue}
         placeholder={placeholder}
         required={required}
+        inputMode={inputMode}
+        enterKeyHint={enterKeyHint}
+        autoCapitalize={autoCapitalize}
+        autoCorrect={autoCorrect}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
         className="input wrap-anywhere"

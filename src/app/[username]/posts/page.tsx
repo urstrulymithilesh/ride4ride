@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
@@ -17,10 +17,12 @@ export default async function ProfilePostsPage({
 }: {
   params: Promise<{ username: string }>;
 }) {
-  await requireUser();
   const { username: raw } = await params;
   const name = (raw ?? "").toLowerCase();
-  if (!USERNAME_RE.test(name) || RESERVED_USERNAMES.has(name)) notFound();
+  // Validate before auth: reserved/dead handles 404 for everyone instead
+  // of bouncing signed-out visitors to login.
+  if (!USERNAME_RE.test(raw ?? "") || RESERVED_USERNAMES.has(name)) notFound();
+  await requireUser();
 
   const supabase = await createClient();
   const { data: profile } = await supabase
@@ -30,6 +32,8 @@ export default async function ProfilePostsPage({
     .maybeSingle<{ id: string; username: string }>();
 
   if (!profile) notFound();
+
+  if (raw !== profile.username) redirect(`/${profile.username}/posts`);
 
   const { data: rides } = await supabase
     .from("rides")

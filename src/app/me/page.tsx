@@ -8,7 +8,7 @@ import { getProfile, getUser } from "@/lib/auth";
  */
 export default async function MePage() {
   const user = await getUser();
-  if (!user) redirect("/sign-in?redirectTo=/me");
+  if (!user) redirect("/login?redirectTo=/me");
   const profile = await getProfile();
   if (!profile) redirect("/");
   redirect(`/${profile.username}`);

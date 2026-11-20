@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser, getProfile } from "@/lib/auth";
 import { PasswordForm, ProfileDetails } from "@/components/profile/profile-details";
+import { DeleteAccountForm } from "@/components/profile/delete-account";
 import { BackButton } from "@/components/ui/back-button";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -45,6 +46,21 @@ export default async function ProfilePage() {
       />
 
       <PasswordForm />
+
+      <section
+        aria-label="Delete account"
+        className="mt-6 rounded-xl border border-danger/40 p-5"
+      >
+        <h2 className="text-[15px] font-semibold text-danger">
+          Delete account
+        </h2>
+        <p className="mt-1 text-sm text-muted">
+          Permanently removes your profile, posts, and chats.
+        </p>
+        <div className="mt-3">
+          <DeleteAccountForm />
+        </div>
+      </section>
 
       <nav aria-label="Settings" className="mt-3 flex flex-col gap-2">
         {profile.is_admin ? (

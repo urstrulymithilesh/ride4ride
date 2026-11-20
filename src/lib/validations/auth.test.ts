@@ -10,8 +10,9 @@ const base = {
   email: "",
   password: "password123",
   displayName: "Alex Rivera",
-  username: "alex_r123",
+  username: "MidnightRamen",
   gender: "male",
+  dob: "1998-04-17",
   ageConfirmed18: true,
   tosAccepted: true,
 };
@@ -64,6 +65,20 @@ describe("validateSignUp", () => {
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.data.gender).toBe("female");
   });
+
+  it("requires an 18+ date of birth", () => {
+    expect(validateSignUp({ ...base, dob: "" }).ok).toBe(false);
+    expect(validateSignUp({ ...base, dob: "not-a-date" }).ok).toBe(false);
+    expect(validateSignUp({ ...base, dob: "2030-01-01" }).ok).toBe(false);
+    // 17 years ago today is still underage.
+    const now = new Date();
+    const underage = `${now.getFullYear() - 17}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const r = validateSignUp({ ...base, dob: underage });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.fieldErrors.dob).toBeTruthy();
+    const ok = validateSignUp(base);
+    expect(ok.ok).toBe(true);
+  });
 });
 
 describe("validateSignIn", () => {
@@ -74,11 +89,11 @@ describe("validateSignIn", () => {
       data: { kind: "phone", value: "+13125550148", password: "x" },
     });
   });
-  it("accepts a username, lowercased", () => {
-    const r = validateSignIn({ identifier: "Alex_R123", password: "x" });
+  it("accepts a username, lowercased for lookup", () => {
+    const r = validateSignIn({ identifier: "MidNightRamen", password: "x" });
     expect(r).toEqual({
       ok: true,
-      data: { kind: "username", value: "alex_r123", password: "x" },
+      data: { kind: "username", value: "midnightramen", password: "x" },
     });
   });
   it("rejects emails, garbage, and empty passwords", () => {
@@ -86,7 +101,7 @@ describe("validateSignIn", () => {
       false,
     );
     expect(validateSignIn({ identifier: "???", password: "x" }).ok).toBe(false);
-    expect(validateSignIn({ identifier: "alex_r123", password: "" }).ok).toBe(
+    expect(validateSignIn({ identifier: "MidnightRamen", password: "" }).ok).toBe(
       false,
     );
   });

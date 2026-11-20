@@ -12,6 +12,7 @@ import {
   sanitizeRedirect,
   type FieldErrors,
 } from "@/lib/validations/auth";
+import { buildFunUsername } from "@/lib/usernames";
 import { getVerificationMode, allowedDomainsHint } from "@/lib/verification";
 
 export interface AuthState {
@@ -41,6 +42,7 @@ export async function signUp(
     displayName: String(formData.get("displayName") ?? ""),
     username: String(formData.get("username") ?? ""),
     gender: String(formData.get("gender") ?? ""),
+    dob: String(formData.get("dob") ?? ""),
     // An unchecked checkbox submits nothing at all, so absence is "no".
     ageConfirmed18: formData.get("ageConfirmed18") === "on",
     tosAccepted: formData.get("tosAccepted") === "on",
@@ -48,17 +50,35 @@ export async function signUp(
   if (!result.ok) return { fieldErrors: result.fieldErrors };
 
   const redirectTo = sanitizeRedirect(String(formData.get("redirectTo") ?? ""));
-  const { phone, email, password, displayName, username, gender } = result.data;
+  const { phone, email, password, displayName, gender, dob } = result.data;
+  let username = result.data.username;
   const supabase = await createClient();
 
-  // Unique-handle pre-check for a friendly field error. The unique index
-  // in 0017 is the real guarantee under concurrency; this just avoids
-  // burning a signup attempt on an obviously-taken name.
-  const { data: available } = await supabase.rpc("is_username_available", {
-    p_username: username,
-  });
-  if (available === false) {
-    return { fieldErrors: { username: "That username is taken." } };
+  // Website-assigned handles: mint a fun letters-only name when the form
+  // didn't supply one. Loop the availability RPC; the unique index is the
+  // final arbiter under concurrency.
+  if (!username) {
+    for (let i = 0; i < 20; i++) {
+      const candidate = buildFunUsername();
+      const { data: free } = await supabase.rpc("is_username_available", {
+        p_username: candidate,
+      });
+      if (free === true) {
+        username = candidate;
+        break;
+      }
+    }
+    if (!username) {
+      return { error: "Couldn't pick a username. Please try again." };
+    }
+  } else {
+    // Legacy explicit handle: friendly pre-check for a taken name.
+    const { data: available } = await supabase.rpc("is_username_available", {
+      p_username: username,
+    });
+    if (available === false) {
+      return { fieldErrors: { username: "That username is taken." } };
+    }
   }
 
   // Email is optional at sign-up, but when given it must be allow-listed.
@@ -93,6 +113,7 @@ export async function signUp(
         display_name: displayName,
         username,
         gender,
+        date_of_birth: dob,
         age_confirmed_18: true,
         tos_version: TOS_VERSION,
       },
@@ -110,7 +131,15 @@ export async function signUp(
     if (/already registered|already exists|duplicate|taken|in use/i.test(error.message)) {
       return { error: "An account with those details already exists." };
     }
-    return { error: error.message };
+    // Flapping Auth (e.g. a 500 with an empty message) must never render
+    // as raw "{}" — fall back to something a human can act on.
+    const raw = error.message?.trim();
+    return {
+      error:
+        raw && raw !== "{}"
+          ? raw
+          : "Couldn't create your account. Please try again.",
+    };
   }
 
   // If confirmation is disabled, a session exists immediately.
@@ -155,7 +184,7 @@ export async function signIn(
       const { data: profile } = await admin
         .from("profiles")
         .select("id")
-        .eq("username", result.data.value)
+        .ilike("username", result.data.value)
         .maybeSingle();
       const { data: userData } = profile
         ? await admin.auth.admin.getUserById(profile.id)

@@ -268,7 +268,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   // Legal pages must stay readable before permission is granted —
   // otherwise a visitor can't review the policy that explains the
   // location request. Everything else is gated.
-  const gateOptional = pathname === "/privacy" || pathname === "/terms";
+  const gateOptional = pathname === "/privacy-terms";
   const gated = !(status === "granted" && coords);
   const showGate = gated && !gateOptional;
 
@@ -413,17 +413,10 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
           </p>
           <div className="mt-3 flex items-center gap-2 text-[11px] text-faint">
             <Link
-              href="/privacy"
+              href="/privacy-terms"
               className="underline decoration-1 underline-offset-4 hover:text-muted"
             >
-              Privacy
-            </Link>
-            <span aria-hidden="true">·</span>
-            <Link
-              href="/terms"
-              className="underline decoration-1 underline-offset-4 hover:text-muted"
-            >
-              Terms
+              Privacy & Terms
             </Link>
           </div>
         </div>

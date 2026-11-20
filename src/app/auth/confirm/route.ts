@@ -31,6 +31,6 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.redirect(
-    new URL("/sign-in?error=confirmation_failed", request.url),
+    new URL("/login?error=confirmation_failed", request.url),
   );
 }

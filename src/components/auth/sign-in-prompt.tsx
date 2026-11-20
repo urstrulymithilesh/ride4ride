@@ -28,10 +28,10 @@ export function SignInPrompt({
         Browsing is open to everyone, but you&apos;ll need an account for this.
       </p>
       <div className="mt-4 flex justify-center gap-2">
-        <Link href={`/sign-in${q}`} className="btn btn-primary flex-1">
+        <Link href={`/login${q}`} className="btn btn-primary flex-1">
           Log in
         </Link>
-        <Link href={`/sign-up${q}`} className="btn btn-secondary flex-1">
+        <Link href={`/signup${q}`} className="btn btn-secondary flex-1">
           Create account
         </Link>
       </div>

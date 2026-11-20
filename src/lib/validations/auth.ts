@@ -62,6 +62,8 @@ export interface SignUpInput {
    */
   ageConfirmed18: boolean;
   tosAccepted: boolean;
+  /** YYYY-MM-DD. Required at signup so every profile has an age. */
+  dob: string;
 }
 
 export interface SignInInput {
@@ -72,7 +74,7 @@ export interface SignInInput {
   password: string;
 }
 
-export const USERNAME_RE = /^[a-z][a-z0-9_]{2,19}$/;
+export const USERNAME_RE = /^[A-Za-z]{3,20}$/;
 
 /**
  * Handles that would collide with app routes or imply official status.
@@ -86,6 +88,9 @@ export const RESERVED_USERNAMES: ReadonlySet<string> = new Set([
   "about",
   "api",
   "auth",
+  "chat",
+  "dev",
+  "developer-info",
   "help",
   "login",
   "logout",
@@ -95,9 +100,13 @@ export const RESERVED_USERNAMES: ReadonlySet<string> = new Set([
   "moderator",
   "needride",
   "need-ride",
+  "notification",
+  "notifications",
   "null",
   "official",
+  "posts",
   "privacy",
+  "privacy-terms",
   "profile",
   "rideavailable",
   "ride-available",
@@ -123,9 +132,26 @@ export function validateUsername(username: string): string | null {
   if (username.length < 3 || username.length > 20)
     return "username must be 3–20 characters.";
   if (!USERNAME_RE.test(username))
-    return "Letters, numbers, and _ only, starting with a letter.";
-  if (RESERVED_USERNAMES.has(username))
+    return "Letters only, no numbers or underscores.";
+  if (RESERVED_USERNAMES.has(username.toLowerCase()))
     return "That name is reserved. Try another.";
+  return null;
+}
+
+/** YYYY-MM-DD date of birth. Required, real, past, and 18+. One rule
+ *  shared by signup and settings so the age gate can't drift. */
+export function validateDateOfBirth(dob: string): string | null {
+  const value = dob.trim();
+  if (!value) return "Enter your date of birth.";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return "That date isn't valid.";
+  const d = new Date(value + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return "That date isn't valid.";
+  const now = new Date();
+  if (d > now) return "Date of birth can't be in the future.";
+  let age = now.getFullYear() - d.getFullYear();
+  const m = now.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+  if (age < 18) return "You must be 18 or older.";
   return null;
 }
 
@@ -138,6 +164,8 @@ export function validateSignUp(raw: {
   gender: string;
   ageConfirmed18: boolean;
   tosAccepted: boolean;
+  /** YYYY-MM-DD from the signup form. Stored on the profile at creation. */
+  dob: string;
 }): { ok: true; data: SignUpInput } | { ok: false; fieldErrors: FieldErrors } {
   const fieldErrors: FieldErrors = {};
   const phone = normalizePhone(raw.phone);
@@ -149,17 +177,23 @@ export function validateSignUp(raw: {
   if (email && !EMAIL_RE.test(email))
     fieldErrors.email = "Enter a valid email address.";
   const displayName = raw.displayName.trim();
-  const username = raw.username.trim().toLowerCase();
+  // Website-assigned handles: callers may pass "" and the server mints one.
+  // Legacy non-empty values are still validated (letters only, any case).
+  const username = raw.username.trim();
   const password = raw.password;
   if (displayName.length < 2)
     fieldErrors.displayName = "Display name must be at least 2 characters.";
   if (displayName.length > 50)
     fieldErrors.displayName = "Display name must be 50 characters or fewer.";
-  const usernameError = validateUsername(username);
-  if (usernameError) fieldErrors.username = usernameError;
+  if (username) {
+    const usernameError = validateUsername(username);
+    if (usernameError) fieldErrors.username = usernameError;
+  }
   const gender = raw.gender.trim().toLowerCase();
   if (gender !== "male" && gender !== "female")
     fieldErrors.gender = "Choose male or female.";
+  const dobError = validateDateOfBirth(raw.dob);
+  if (dobError) fieldErrors.dob = dobError;
   if (password.length < 8)
     fieldErrors.password = "Password must be at least 8 characters.";
   // Both blocking, not advisory, and checked separately so the user is
@@ -181,6 +215,7 @@ export function validateSignUp(raw: {
       displayName,
       username,
       gender: gender as Gender,
+      dob: raw.dob.trim(),
       ageConfirmed18: true,
       tosAccepted: true,
     },

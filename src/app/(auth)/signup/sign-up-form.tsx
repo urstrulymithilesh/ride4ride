@@ -5,6 +5,7 @@ import Link from "next/link";
 import { signUp, type AuthState } from "@/app/(auth)/actions";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { TextField } from "@/components/ui/text-field";
+import { DobPicker } from "./dob-picker";
 
 const initialState: AuthState = {};
 
@@ -19,7 +20,7 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
         className="rounded-xl bg-success-soft p-4 text-sm text-content"
       >
         {state.message}{" "}
-        <Link href="/sign-in" className="font-medium text-success">
+        <Link href="/login" className="font-medium text-success">
           Go to Log in
         </Link>
       </div>
@@ -41,18 +42,7 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
         required
         hideLabel
       />
-      <TextField
-        label="username"
-        name="username"
-        autoComplete="username"
-        autoCapitalize="none"
-        autoCorrect="off"
-        enterKeyHint="next"
-        placeholder="username"
-        error={state.fieldErrors?.username}
-        required
-        hideLabel
-      />
+      <p className="rounded-xl border border-hairline bg-app/60 px-3 py-2 text-xs text-muted">A fun username will be generated for you automatically.</p>
       <TextField
         label="Phone number"
         name="phone"
@@ -84,12 +74,13 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
         name="password"
         type="password"
         autoComplete="new-password"
-        enterKeyHint="done"
+        enterKeyHint="next"
         placeholder="Password"
         error={state.fieldErrors?.password}
         required
         hideLabel
       />
+      <DobPicker error={state.fieldErrors?.dob} />
       {/* Gender picks the default avatar. Required: every profile gets
           a face on day one. */}
       <div>
@@ -120,8 +111,9 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
       {/* Two SEPARATE consents, deliberately not combined. Bundling them
           would mean a user can only ever be shown to have agreed to the
           pair, never to either on its own. Both are recorded on the
-          profile at account creation (migration 0009). Self-declared, not
-          verified: we do not collect date of birth. */}
+          profile at account creation (migration 0009). The date of birth
+          above is collected for the age shown on profiles; the checkbox
+          below is the 18+ attestation. */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1.5">
           <label
@@ -164,11 +156,11 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
             />
             <span>
               I agree to the{" "}
-              <Link href="/terms" className="font-medium text-primary underline">
+              <Link href="/privacy-terms" className="font-medium text-primary underline">
                 terms
               </Link>{" "}
               and{" "}
-              <Link href="/privacy" className="font-medium text-primary underline">
+              <Link href="/privacy-terms" className="font-medium text-primary underline">
                 privacy policy
               </Link>
               .

@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { BackButton } from "@/components/ui/back-button";
 
-export const metadata: Metadata = { title: "Support" };
+export const metadata: Metadata = { title: "Help" };
 
 /**
- * Support: where to go for help. Account and post issues route to the
+ * Help: where to go for help. Account and post issues route to the
  * in-app surfaces (report buttons, profile); everything else goes to
  * email. Deliberately plain — a contact page, not a ticket system.
  */
@@ -14,7 +14,7 @@ export default function SupportPage() {
       <div className="flex items-center gap-3">
         <BackButton fallback="/" />
         <h1 className="flex-1 text-center text-[17px] font-semibold text-content">
-          Support
+          Help
         </h1>
         <span aria-hidden="true" className="block h-11 w-11 shrink-0" />
       </div>
@@ -44,7 +44,8 @@ export default function SupportPage() {
         <section>
           <h2 className="font-semibold text-content">Your account</h2>
           <p className="mt-1">
-            Display name and username are editable from your profile page.
+            Display name is editable from your profile page. Your username
+            is assigned automatically.
           </p>
         </section>
       </div>

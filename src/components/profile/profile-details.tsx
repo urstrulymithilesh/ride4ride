@@ -79,18 +79,15 @@ export function ProfileDetails({
           <Detail label="Username" value={`@${username}`} />
           <Detail label="Name" value={displayName} />
           <Detail label="Date of birth" value={dobDisplay} />
-          <Detail label="Email" value={email} />
+          <Detail label="Email" value={email || "—"} />
           <Detail label="Phone number" value={phone || "—"} />
         </dl>
       ) : (
         <form action={formAction} className="flex flex-col gap-3 pr-10">
-          <TextField
-            label="Username"
-            name="username"
-            defaultValue={username}
-            error={fe?.username}
-            required
-          />
+          <p className="text-xs text-muted">
+            Your username @{username} was assigned automatically. Letters
+            only.
+          </p>
           <TextField
             label="Name"
             name="displayName"
@@ -107,12 +104,11 @@ export function ProfileDetails({
             required
           />
           <TextField
-            label="Email"
+            label="Email (optional)"
             name="email"
             type="email"
             defaultValue={email}
             error={fe?.email}
-            required
           />
           <TextField
             label="Phone number"

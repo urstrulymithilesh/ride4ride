@@ -74,14 +74,14 @@ export async function AppMenu({ triggerTone }: { triggerTone?: string }) {
             {process.env.NODE_ENV !== "production" ? (
               <ChangeLocationButton className={`${item} text-left`} />
             ) : null}
-            <Link href="/privacy" className={item}>
+            <Link href="/privacy-terms" className={item}>
               Privacy & terms
             </Link>
             <Link href="/about" className={item}>
               About
             </Link>
-            <Link href="/support" className={item}>
-              Support
+            <Link href="/help" className={item}>
+              Help
             </Link>
             {user ? (
               <form action={signOut}>
@@ -95,7 +95,7 @@ export async function AppMenu({ triggerTone }: { triggerTone?: string }) {
             ) : (
               <div className="px-5 py-2">
                 <Link
-                  href="/sign-in"
+                  href="/login"
                   className="flex min-h-12 w-full items-center justify-center rounded-xl bg-white text-base font-semibold text-black"
                 >
                   Log in

@@ -35,8 +35,8 @@ export async function requireUser(redirectTo?: string): Promise<User> {
   const user = await getUser();
   if (!user) {
     const target = redirectTo
-      ? `/sign-in?redirectTo=${encodeURIComponent(redirectTo)}`
-      : "/sign-in";
+      ? `/login?redirectTo=${encodeURIComponent(redirectTo)}`
+      : "/login";
     redirect(target);
   }
   return user;

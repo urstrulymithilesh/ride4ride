@@ -24,7 +24,7 @@ import type { Message, RideReveal } from "@/types";
 export async function startConversation(formData: FormData): Promise<void> {
   const user = await getUser();
   const rideId = String(formData.get("rideId") ?? "");
-  if (!user) redirect(`/sign-in?redirectTo=/`);
+  if (!user) redirect(`/login?redirectTo=/`);
   if (!rideId) redirect("/");
 
   const supabase = await createClient();

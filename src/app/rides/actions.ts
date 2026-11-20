@@ -51,7 +51,7 @@ export async function createOfferRide(
   formData: FormData,
 ): Promise<RideFormState> {
   const user = await getUser();
-  if (!user) redirect("/sign-in?redirectTo=/");
+  if (!user) redirect("/login?redirectTo=/");
 
   const result = validateOffer(formToRecord(formData));
   if (!result.ok) return { fieldErrors: result.fieldErrors };
@@ -103,7 +103,7 @@ export async function createGetRide(
   _prev: RideFormState,
   formData: FormData,
 ): Promise<RideFormState> {  const user = await getUser();
-  if (!user) redirect("/sign-in?redirectTo=/");
+  if (!user) redirect("/login?redirectTo=/");
 
   const result = validateGet(formToRecord(formData));
   if (!result.ok) return { fieldErrors: result.fieldErrors };

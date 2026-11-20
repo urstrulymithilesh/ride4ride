@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
@@ -23,18 +23,19 @@ export const metadata: Metadata = { title: "Profile" };
 /**
  * Profile page: ride4ride.com/<username>. No dock here — the back arrow
  * returns to wherever you came from, and the menu rows below replace
- * the dock's destinations (My posts, Notifications, Settings, Support,
- * Log out).
+ * the dock's destinations (My posts, Notifications, Help, Log out).
  */
 export default async function ProfilePage({
   params,
 }: {
   params: Promise<{ username: string }>;
 }) {
-  const viewer = await requireUser();
   const { username: raw } = await params;
   const name = (raw ?? "").toLowerCase();
-  if (!USERNAME_RE.test(name) || RESERVED_USERNAMES.has(name)) notFound();
+  // Validate before auth: reserved/dead handles 404 for everyone instead
+  // of bouncing signed-out visitors to login.
+  if (!USERNAME_RE.test(raw ?? "") || RESERVED_USERNAMES.has(name)) notFound();
+  const viewer = await requireUser();
 
   const supabase = await createClient();
   const { data: profile } = await supabase
@@ -51,6 +52,9 @@ export default async function ProfilePage({
     >();
 
   if (!profile) notFound();
+
+  // Canonical CamelCase URL: /midnightramen -> /MidnightRamen.
+  if (raw !== profile.username) redirect(`/${profile.username}`);
 
   const isOwner = profile.id === viewer.id;
 
@@ -119,7 +123,7 @@ export default async function ProfilePage({
         <div className="min-w-0 flex-1 pt-0.5">
           <p className="wrap-anywhere truncate text-[15px] font-semibold text-content">
             {profile.display_name}
-            {age !== null ? `, ${age}` : ""}
+            {age !== null ? <span className="text-muted">, {age}</span> : ""}
           </p>
           {joined ? (
             <p className="mt-0.5 text-[13px] text-muted">Joined {joined}</p>
@@ -157,12 +161,12 @@ export default async function ProfilePage({
           {isOwner ? "My posts" : "Posts"}
         </Link>
         {isOwner ? (
-          <Link href="/settings" className={row}>
+          <Link href="/notifications" className={row}>
             Notifications
           </Link>
         ) : null}
-        <Link href="/support" className={row}>
-          Support
+        <Link href="/help" className={row}>
+          Help
         </Link>
         {isOwner ? (
           <form action={signOut}>
@@ -183,7 +187,7 @@ export default async function ProfilePage({
           aria-label="Legal"
           className="pointer-events-auto flex items-center justify-center gap-2 text-[11px] text-muted"
         >
-          <Link href="/privacy" className="underline underline-offset-4 hover:text-content">
+          <Link href="/privacy-terms" className="underline underline-offset-4 hover:text-content">
             Privacy & Terms
           </Link>
           <span aria-hidden="true">•</span>
@@ -192,7 +196,7 @@ export default async function ProfilePage({
           </Link>
           <span aria-hidden="true">•</span>
           <Link
-            href="/developer-info"
+            href="/dev"
             className="underline underline-offset-4 hover:text-content"
           >
             Developer info

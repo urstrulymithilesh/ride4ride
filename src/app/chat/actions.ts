@@ -13,11 +13,11 @@ import type { Message, RideReveal } from "@/types";
  * Start (or resume) a 1:1 conversation with a ride's owner, then go to it.
  * Used as a <form action>. Requires sign-in; the RPC rejects self-messaging.
  *
- * One-tap quick message (v3 pilot): when the conversation is brand new, the
- * responder's first message is sent automatically so neither side faces a
- * blank box. Copy flips by post type — on a rider's post the responder is
- * offering to drive; on a captain's post they want a seat. The opener is a
- * plain message like any other (editable/deletable by normal chat rules);
+ * One-tap quick message (v3 pilot): the pin sheet pre-fills a short opener
+ * ("Do you still need ride?" / "Do you still offer a ride?") that the
+ * responder can edit before sending. It arrives as the first message of a
+ * brand-new conversation; on a resume it rides along as ?draft= so nothing
+ * typed is lost. With no usable body, the canned copy goes in instead, and
  * if its insert fails (e.g. a block landed mid-tap) the chat still opens
  * and the user types manually.
  */
@@ -44,7 +44,7 @@ export async function startConversation(formData: FormData): Promise<void> {
   if (error || !data) redirect(`/`);
   const conversationId = data as string;
 
-  // Send the canned opener only into an empty conversation. A double-tap
+  // Send the opener only into an empty conversation. A double-tap
   // can theoretically pass this check twice; the submit button disables
   // while pending, which makes that a deliberate double-click, not drift.
   const { data: existing } = await supabase
@@ -52,11 +52,17 @@ export async function startConversation(formData: FormData): Promise<void> {
     .select("id")
     .eq("conversation_id", conversationId)
     .limit(1);
+  const custom = String(formData.get("body") ?? "").trim();
+  const usableCustom =
+    custom.length > 0 && custom.length <= MAX_MESSAGE_LENGTH
+      ? custom
+      : null;
   if (existing && existing.length === 0 && ride) {
     const opener =
-      ride.type === "get"
+      usableCustom ??
+      (ride.type === "get"
         ? "Hi! I saw your ride request and I can drive this route. Is it still open?"
-        : "Hi! I saw your ride post and I'd love a seat. Is it still available?";
+        : "Hi! I saw your ride post and I'd love a seat. Is it still available?");
     // Swallowed on purpose (see docblock): a failed opener must never
     // block opening the chat.
     await supabase.from("messages").insert({
@@ -66,7 +72,11 @@ export async function startConversation(formData: FormData): Promise<void> {
     });
   }
 
-  redirect(`/chat/${conversationId}`);
+  redirect(
+    usableCustom && existing && existing.length > 0
+      ? `/chat/${conversationId}?draft=${encodeURIComponent(usableCustom)}`
+      : `/chat/${conversationId}`,
+  );
 }
 
 export interface SendResult {

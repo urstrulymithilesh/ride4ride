@@ -397,21 +397,14 @@ export function RidesMap({
         }))
         .sort((a, b) => a.milesAway - b.milesAway);
       const selected = selectedRef.current;
-      for (const { ride } of ordered) {
-        const markerEl = document.createElement("button");
-        markerEl.type = "button";
-        markerEl.className =
-          "r4r-pin-marker r4r-pin-static cursor-pointer border-0 bg-transparent p-0";
-        markerEl.setAttribute(
-          "aria-label",
-          `Ride details: ${ride.miles ?? "ride"} near ${ride.city}`,
-        );
-        // Isolation: while a sheet is up every other pin hides. Applied
-        // here too (not just the selection effect) so data refreshes
-        // that rebuild markers can't flash the hidden ones back.
-        if (selected && selected !== ride.id) {
-          markerEl.style.display = "none";
-        }
+      const hidden = (id: string) =>
+        selected && selected !== id ? "none" : "";
+      const onTap = (ride: (typeof ordered)[number]["ride"]) => (e: Event) => {
+        // Don't let this become a map-tap deselect below.
+        e.stopPropagation();
+        selectPin(ride);
+      };
+      const pillFor = (ride: (typeof ordered)[number]["ride"]) => {
         const pill = document.createElement("span");
         pill.className = "r4r-pin-label";
         // Distance reads bright; the timing half ("• Now") is dimmed.
@@ -426,22 +419,53 @@ export function RidesMap({
         } else {
           pill.textContent = ride.miles ?? "ride";
         }
-        // Hailing-person glyph under the pill, marking the pickup point.
+        return pill;
+      };
+      // Two layers: every glyph first, every pill after. A pill can never
+      // slide under a neighboring glyph — overlap resolves by layering,
+      // never by hiding anything.
+      for (const { ride } of ordered) {
+        const markerEl = document.createElement("button");
+        markerEl.type = "button";
+        markerEl.tabIndex = -1;
+        markerEl.setAttribute("aria-hidden", "true");
+        markerEl.className =
+          "r4r-pin-marker r4r-pin-static cursor-pointer border-0 bg-transparent p-0";
+        markerEl.style.display = hidden(ride.id);
         const drop = document.createElement("span");
         drop.className = "r4r-pin-drop";
         drop.setAttribute("aria-hidden", "true");
         drop.innerHTML =
           '<svg width="16" height="21" viewBox="45 20 137 181" fill="none" aria-hidden="true"><path fill="#000000" fill-rule="evenodd" d="M72.08 196.42 C74.45 193.90 74.51 193.40 74.83 174.17 C75.11 157.14 74.92 154.07 73.45 151.30 C70.81 146.35 63.36 144.66 54.75 147.05 C48.56 148.77 48.00 150.94 48.00 173.37 L48.00 192.85L50.59 195.92 C53.09 198.90 53.44 199.00 61.41 199.00 C68.97 199.00 69.85 198.79 72.08 196.42 Z M105.46 198.38 C109.40 196.87 110.00 193.05 110.00 169.55 L110.00 147.00L118.43 147.00 L126.87 147.00L127.18 170.59 L127.50 194.18L130.31 196.59 C134.09 199.84 139.27 199.82 142.55 196.55 L145.00 194.09L145.03 136.80 L145.05 79.50L151.63 76.56 C164.19 70.95 174.39 57.64 178.48 41.54 C180.78 32.53 180.49 29.33 177.08 25.92 C171.50 20.35 163.86 23.34 162.50 31.64 C162.15 33.76 160.96 38.60 159.86 42.39 C158.20 48.10 156.97 50.16 152.60 54.53 C143.58 63.55 137.86 65.73 119.94 66.99 C104.13 68.10 99.67 69.17 88.50 74.54 C70.54 83.18 61.06 95.50 58.06 114.08 C56.43 124.24 60.53 130.14 68.07 128.48 C72.24 127.57 74.09 124.76 75.54 117.13 C77.04 109.25 79.02 104.80 82.86 100.66 C85.21 98.13 89.96 95.00 91.45 95.00 C91.75 95.00 92.00 117.02 92.00 143.92 L92.00 192.85L94.59 195.92 C97.18 199.01 101.36 199.95 105.46 198.38 Z M127.48 55.71 C142.74 47.07 136.06 22.94 118.43 23.02 C107.56 23.06 98.80 34.72 101.90 45.05 C105.26 56.26 117.50 61.37 127.48 55.71 Z"/></svg>';
-        markerEl.append(pill, drop);
-        markerEl.addEventListener("click", (e) => {
-          // Don't let this become a map-tap deselect below.
-          e.stopPropagation();
-          selectPin(ride);
-        });
+        markerEl.append(drop);
+        markerEl.addEventListener("click", onTap(ride));
         const marker = new Ctor({ element: markerEl, anchor: "bottom" })
           .setLngLat([ride.lng, ride.lat])
           .addTo(map);
-        markersRef.current.set(`p:${ride.id}`, marker);
+        markersRef.current.set(`p:${ride.id}:drop`, marker);
+      }
+      for (const { ride } of ordered) {
+        const markerEl = document.createElement("button");
+        markerEl.type = "button";
+        markerEl.className =
+          "r4r-pin-marker r4r-pin-static cursor-pointer border-0 bg-transparent p-0";
+        markerEl.setAttribute(
+          "aria-label",
+          `Ride details: ${ride.miles ?? "ride"} near ${ride.city}`,
+        );
+        markerEl.style.display = hidden(ride.id);
+        markerEl.append(pillFor(ride));
+        markerEl.addEventListener("click", onTap(ride));
+        // Same point as the glyph, lifted one glyph-height + the 1px gap
+        // so the pill sits exactly where the stacked layout put it.
+        const marker = new Ctor({
+          element: markerEl,
+          anchor: "bottom",
+          offset: [0, -22],
+        })
+          .setLngLat([ride.lng, ride.lat])
+          .addTo(map);
+        markersRef.current.set(`p:${ride.id}:pill`, marker);
       }
     };
 
@@ -591,7 +615,7 @@ export function RidesMap({
     for (const [key, m] of markersRef.current) {
       if (!key.startsWith("p:")) continue;
       m.getElement().style.display =
-        !selectedId || key === `p:${selectedId}` ? "" : "none";
+        !selectedId || key.startsWith(`p:${selectedId}:`) ? "" : "none";
     }
   }, [selectedId]);
 

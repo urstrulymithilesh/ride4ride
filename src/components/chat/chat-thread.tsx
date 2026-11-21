@@ -16,14 +16,17 @@ export function ChatThread({
   conversationId,
   currentUserId,
   initialMessages,
+  initialDraft = "",
 }: {
   conversationId: string;
   currentUserId: string;
   initialMessages: Message[];
+  /** Prefill from the pin sheet (?draft=) so a typed message survives. */
+  initialDraft?: string;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initialDraft);
   const [file, setFile] = useState<File | null>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);

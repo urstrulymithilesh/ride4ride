@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { startConversation } from "@/app/chat/actions";
-import { ChatIcon, PersonGlyph } from "@/components/places/search-icons";
+import { ChatIcon } from "@/components/places/search-icons";
 import { abbreviateStreet } from "@/lib/utils/format";
 import {
   addDays,
@@ -74,6 +74,13 @@ function endLabel(street: string | null, city: string, state: string): string {
     : `${city}, ${state}`;
 }
 
+/** Prefilled composer copy, flipped by post type. */
+function openerFor(type: string): string {
+  return type === "get"
+    ? "Do you still need ride?"
+    : "Do you still offer a ride?";
+}
+
 /**
  * Pin sheet: 360-wide glass card (same fill/radius/opacity as the dock)
  * that pops right below the framed pin — the pin always lands at screen
@@ -84,10 +91,11 @@ function endLabel(street: string | null, city: string, state: string): string {
 export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
   const [ride, setRide] = useState<PinRide | null>(null);
   const [failed, setFailed] = useState(false);
+  const [sent, setSent] = useState(false);
   // One-line route fit: widen the card first, then shrink the type,
   // stopping at the screen edge and at 12px (readability floor).
   const [cardW, setCardW] = useState(360);
-  const [fontPx, setFontPx] = useState(15);
+  const [fontPx, setFontPx] = useState(12);
   const routeRef = useRef<HTMLParagraphElement | null>(null);
 
   // One-line route fit: widen the card first, then shrink the type,
@@ -115,7 +123,7 @@ export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
     if (cardWNow < maxW - 1) {
       setCardW(Math.min(maxW, cardWNow + 12));
     } else {
-      const px = parseFloat(getComputedStyle(el).fontSize) || 15;
+      const px = parseFloat(getComputedStyle(el).fontSize) || 12;
       if (px > 12.01) setFontPx(Math.max(12, +(px - 0.5).toFixed(1)));
       else return;
     }
@@ -131,7 +139,8 @@ export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
         if (data?.ride) {
           setRide(data.ride as PinRide);
           setCardW(360);
-          setFontPx(15);
+          setFontPx(12);
+          setSent(false);
           fitRoute.current = 0;
           requestAnimationFrame(fit);
         } else setFailed(true);
@@ -147,32 +156,51 @@ export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
   return (
     <div className="pointer-events-none fixed inset-x-0 top-[136px] z-[var(--z-chrome)] mx-auto flex w-full max-w-[480px] justify-center px-3">
       <div
+        style={{ width: cardW }}
+        className="flex max-w-[calc(100vw-24px)] flex-col gap-[2px]"
+      >
+      <div
         role="dialog"
         aria-label={ride ? "Ride details" : "Loading ride"}
         data-sheet-card
-        style={{ width: cardW }}
-        className="glass-dark pointer-events-auto relative max-h-[240px] max-w-[calc(100vw-24px)] overflow-y-auto rounded-[10px] px-3 pt-[18px] pb-[4px] opacity-90"
+        className="glass-dark pointer-events-auto max-h-[240px] w-full overflow-y-auto rounded-[10px] px-3 pt-1 pb-[12px] opacity-90"
       >
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close details"
-          className="absolute top-2 right-2 flex h-[42px] w-[42px] items-center justify-center rounded-full text-white/60 hover:text-white"
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            aria-hidden="true"
+        <div className="flex items-center gap-2">
+          <p className="min-w-0 flex-1 text-[15px] font-semibold text-content">
+            {ride ? (
+              <>
+                <span
+                  className={
+                    ride.type === "get" ? "text-[#34c759]" : "text-content"
+                  }
+                >
+                  {ride.type === "get" ? "Need Ride" : "Ride Available"}
+                </span>{" "}
+                · {whenLine(ride)}
+              </>
+            ) : null}
+          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close details"
+            className="flex h-9 w-9 shrink-0 -mr-2 items-center justify-center rounded-full text-white/60 hover:text-white"
           >
-            <path d="M6 6l12 12" />
-            <path d="M18 6L6 18" />
-          </svg>
-        </button>
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
+              <path d="M6 6l12 12" />
+              <path d="M18 6L6 18" />
+            </svg>
+          </button>
+        </div>
         {!ride && !failed ? (
           <p className="mt-8 text-center text-xs text-faint">Loading…</p>
         ) : null}
@@ -183,22 +211,12 @@ export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
         ) : null}
         {ride ? (
           <>
-            <div className="pr-7">
-              <p className="text-[13px] font-bold text-content">
-                <span
-                  className={
-                    ride.type === "get" ? "text-[#34c759]" : "text-content"
-                  }
-                >
-                  {ride.type === "get" ? "Need Ride" : "Ride Available"}
-                </span>{" "}
-                · {whenLine(ride)}
-              </p>
+            <div>
               <p
                 ref={routeRef}
                 style={{ fontSize: fontPx }}
                 title={`${endLabel(ride.from_street, ride.from_city, ride.from_state)} → ${endLabel(ride.to_street, ride.to_city, ride.to_state)}`}
-                className="mt-[6px] overflow-hidden text-ellipsis whitespace-nowrap tracking-tight text-white/70"
+                className="overflow-hidden text-ellipsis whitespace-nowrap tracking-tight text-white/70"
               >
                 {endLabel(ride.from_street, ride.from_city, ride.from_state)}
                 <span aria-hidden="true" className="mx-2">
@@ -207,36 +225,44 @@ export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
                 {endLabel(ride.to_street, ride.to_city, ride.to_state)}
               </p>
             </div>
-            {ride.description || ride.username ? (
-              <>
-                <div
-                  aria-hidden="true"
-                  className="-mx-3 mt-2 border-t border-white opacity-50"
-                />
-                <div className="-mx-3 flex items-center justify-center gap-3 px-3 pt-2 text-[13px] text-white">
-                {ride.username ? (
-                  <span className="flex items-center gap-1.5">
-                    <PersonGlyph height={11} />
-                    <span className="wrap-anywhere font-semibold">
-                      {ride.username}
-                    </span>
-                  </span>
-                ) : null}
-                <form action={startConversation} className="shrink-0">
-                  <input type="hidden" name="rideId" value={ride.id} />
-                  <button
-                    type="submit"
-                    aria-label="Message about this ride"
-                    className="flex h-9 w-9 items-center justify-center rounded-full text-white hover:text-white"
-                  >
-                    <ChatIcon size={20} />
-                  </button>
-                </form>
-                </div>
-              </>
-            ) : null}
           </>
         ) : null}
+      </div>
+      {ride ? (
+        sent ? (
+          <div
+            role="status"
+            className="glass-dark pointer-events-auto flex min-h-6 items-center justify-center rounded-[10px] p-2 opacity-90"
+          >
+            <p className="text-[12px] text-white">Message sent</p>
+          </div>
+        ) : (
+        <form
+          action={startConversation}
+          onSubmit={() => setSent(true)}
+          className="glass-dark pointer-events-auto flex items-center gap-2 rounded-[10px] p-2 opacity-90"
+        >
+          <input type="hidden" name="rideId" value={ride.id} />
+          <input type="hidden" name="body" value={openerFor(ride.type)} />
+          <span aria-hidden="true" className="shrink-0 pl-1 text-white">
+            <ChatIcon size={20} />
+          </span>
+          <p
+            aria-label="Message"
+            className="flex min-h-6 min-w-0 flex-1 items-center overflow-hidden rounded-lg border border-white/20 text-ellipsis whitespace-nowrap bg-transparent px-3 text-white"
+            style={{ fontSize: 12 }}
+          >
+            {openerFor(ride.type)}
+          </p>
+          <button
+            type="submit"
+            className="flex min-h-6 shrink-0 items-center rounded-lg bg-white px-4 text-sm font-semibold text-black"
+          >
+            Send
+          </button>
+        </form>
+        )
+      ) : null}
       </div>
     </div>
   );

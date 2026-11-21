@@ -24,10 +24,13 @@ export const metadata: Metadata = { title: "Conversation" };
 
 export default async function ConversationPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ draft?: string }>;
 }) {
   const { id } = await params;
+  const { draft } = await searchParams;
   const user = await requireUser(`/chat/${id}`);
   const supabase = await createClient();
 
@@ -214,6 +217,7 @@ export default async function ConversationPage({
         conversationId={id}
         currentUserId={user.id}
         initialMessages={messages ?? []}
+        initialDraft={typeof draft === "string" ? draft.slice(0, 1000) : ""}
       />
     </main>
   );

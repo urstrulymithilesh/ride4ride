@@ -125,6 +125,39 @@ describe("startConversation opener", () => {
     expect(state.inserted).toHaveLength(0);
   });
 
+  it("sends the sheet's custom opener on a new conversation", async () => {
+    const fd = form();
+    fd.set("body", "Do you still need ride?");
+    const to = await redirectOf(() => startConversation(fd));
+    expect(to).toBe("/chat/conv-1");
+    expect(state.inserted).toHaveLength(1);
+    expect(state.inserted[0]).toMatchObject({
+      body: "Do you still need ride?",
+    });
+  });
+
+  it("falls back to canned copy when the custom body is too long", async () => {
+    state.rideType = "get";
+    const fd = form();
+    fd.set("body", "x".repeat(5000));
+    await redirectOf(() => startConversation(fd));
+    expect(state.inserted).toHaveLength(1);
+    expect(state.inserted[0]).toMatchObject({
+      body: expect.stringContaining("drive this route"),
+    });
+  });
+
+  it("carries a typed message as draft on resume", async () => {
+    state.existing = [{ id: "m1" }];
+    const fd = form();
+    fd.set("body", "Do you still need ride?");
+    const to = await redirectOf(() => startConversation(fd));
+    expect(to).toBe(
+      "/chat/conv-1?draft=" + encodeURIComponent("Do you still need ride?"),
+    );
+    expect(state.inserted).toHaveLength(0);
+  });
+
   it("still opens the chat when the opener insert fails", async () => {
     state.failInsert = true;
     const to = await redirectOf(() => startConversation(form()));

@@ -86,22 +86,18 @@ describe("validateSignIn", () => {
     const r = validateSignIn({ identifier: "(312) 555-0148", password: "x" });
     expect(r).toEqual({
       ok: true,
-      data: { kind: "phone", value: "+13125550148", password: "x" },
+      data: { phone: "+13125550148", password: "x" },
     });
   });
-  it("accepts a username, lowercased for lookup", () => {
-    const r = validateSignIn({ identifier: "MidNightRamen", password: "x" });
-    expect(r).toEqual({
-      ok: true,
-      data: { kind: "username", value: "midnightramen", password: "x" },
-    });
-  });
-  it("rejects emails, garbage, and empty passwords", () => {
+  it("rejects usernames, emails, garbage, and empty passwords", () => {
+    expect(validateSignIn({ identifier: "MidNightRamen", password: "x" }).ok).toBe(
+      false,
+    );
     expect(validateSignIn({ identifier: "you@gmail.com", password: "x" }).ok).toBe(
       false,
     );
     expect(validateSignIn({ identifier: "???", password: "x" }).ok).toBe(false);
-    expect(validateSignIn({ identifier: "MidnightRamen", password: "" }).ok).toBe(
+    expect(validateSignIn({ identifier: "(312) 555-0148", password: "" }).ok).toBe(
       false,
     );
   });

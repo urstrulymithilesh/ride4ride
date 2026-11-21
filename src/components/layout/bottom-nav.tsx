@@ -278,7 +278,7 @@ function FeedDock() {
               // Absolute against the nav: bottom edge sits exactly on the
               // dock's bottom edge, top straddles above it. The empty
               // span reserves the middle slot's width.
-              className="r4r-plus-pulse absolute bottom-[2px] left-1/2 flex h-[72px] w-[72px] -translate-x-1/2 items-center justify-center rounded-full bg-primary text-black shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45)]"
+              className="r4r-plus-pulse absolute bottom-[2px] left-1/2 flex h-[72px] w-[72px] -translate-x-1/2 items-center justify-center rounded-full bg-primary text-black shadow-[0_8px_24px_-6px_rgba(0,0,0,0.45)] transition-transform duration-150 active:scale-95"
             >
               <span
                 aria-hidden="true"

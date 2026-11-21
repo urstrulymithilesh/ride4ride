@@ -38,7 +38,7 @@ function PostButton({ skippable }: { skippable: boolean }) {
     <button
       type="submit"
       disabled={pending}
-      className="min-h-11 w-full rounded-xl bg-white text-[15px] font-semibold text-black hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:text-base"
+      className="min-h-11 w-full rounded-xl bg-white text-[15px] font-semibold text-black transition-[transform,opacity] duration-150 hover:opacity-90 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:text-base"
     >
       {pending ? "Posting…" : skippable ? "Skip & post" : "Post"}
     </button>
@@ -108,7 +108,7 @@ function LoopColumn({
                 role="option"
                 aria-selected={o === value}
                 onClick={() => onPick(o)}
-                className={`min-h-10 shrink-0 rounded-lg text-sm ${
+                className={`min-h-10 shrink-0 rounded-lg text-sm transition-[transform,background-color,color] duration-150 active:scale-[0.97] ${
                   o === value
                     ? "bg-white font-semibold text-black"
                     : "text-muted hover:bg-white/10 hover:text-content"
@@ -130,11 +130,244 @@ function BackArrow({ onBack }: { onBack: () => void }) {
       type="button"
       onClick={onBack}
       aria-label="Back"
-      className="inline-flex min-h-14 min-w-14 items-center text-5xl text-muted transition-colors hover:text-content active:text-white"
+      className="inline-flex min-h-11 min-w-11 items-center text-2xl text-muted transition-[transform,color] duration-150 hover:text-content active:scale-95 active:text-white"
     >
       <span aria-hidden="true" className="leading-none">←</span>
     </button>
   );
+}
+
+/** Full USPS street-suffix map (lowercase key → postal abbreviation). */
+const STREET_SUFFIX_ABBR: Record<string, string> = {
+  alley: "Aly",
+  annex: "Anx",
+  arcade: "Arc",
+  avenue: "Ave",
+  bayou: "Byu",
+  beach: "Bch",
+  bend: "Bnd",
+  bluff: "Blf",
+  bluffs: "Blfs",
+  bottom: "Btm",
+  boulevard: "Blvd",
+  branch: "Br",
+  bridge: "Brg",
+  brook: "Brk",
+  brooks: "Brks",
+  burg: "Bg",
+  burgs: "Bgs",
+  bypass: "Byp",
+  camp: "Cp",
+  canyon: "Cyn",
+  cape: "Cpe",
+  causeway: "Cswy",
+  center: "Ctr",
+  centers: "Ctrs",
+  circle: "Cir",
+  circles: "Cirs",
+  cliff: "Clf",
+  cliffs: "Clfs",
+  club: "Clb",
+  common: "Cmn",
+  commons: "Cmns",
+  corner: "Cor",
+  corners: "Cors",
+  course: "Crse",
+  court: "Ct",
+  courts: "Cts",
+  cove: "Cv",
+  coves: "Cvs",
+  creek: "Crk",
+  crescent: "Cres",
+  crest: "Crst",
+  crossing: "Xing",
+  crossroad: "Xrd",
+  crossroads: "Xrds",
+  curve: "Curv",
+  dale: "Dl",
+  dam: "Dm",
+  divide: "Dv",
+  drive: "Dr",
+  drives: "Drs",
+  estate: "Est",
+  estates: "Ests",
+  expressway: "Expy",
+  extension: "Ext",
+  extensions: "Exts",
+  fall: "Fall",
+  falls: "Fls",
+  ferry: "Fry",
+  field: "Fld",
+  fields: "Flds",
+  flat: "Flt",
+  flats: "Flts",
+  ford: "Frd",
+  fords: "Frds",
+  forest: "Frst",
+  forge: "Frg",
+  forges: "Frgs",
+  fork: "Frk",
+  forks: "Frks",
+  fort: "Ft",
+  freeway: "Fwy",
+  garden: "Gdn",
+  gardens: "Gdns",
+  gateway: "Gtwy",
+  glen: "Gln",
+  glens: "Glns",
+  green: "Grn",
+  greens: "Grns",
+  grove: "Grv",
+  groves: "Grvs",
+  harbor: "Hbr",
+  harbors: "Hbrs",
+  haven: "Hvn",
+  heights: "Hts",
+  highway: "Hwy",
+  hill: "Hl",
+  hills: "Hls",
+  hollow: "Holw",
+  inlet: "Inlt",
+  island: "Is",
+  islands: "Iss",
+  isle: "Isle",
+  junction: "Jct",
+  junctions: "Jcts",
+  key: "Ky",
+  keys: "Kys",
+  knoll: "Knl",
+  knolls: "Knls",
+  lake: "Lk",
+  lakes: "Lks",
+  land: "Land",
+  lane: "Ln",
+  light: "Lgt",
+  lights: "Lgts",
+  loaf: "Lf",
+  lock: "Lck",
+  locks: "Lcks",
+  lodge: "Ldg",
+  loop: "Loop",
+  mall: "Mall",
+  manor: "Mnr",
+  manors: "Mnrs",
+  meadow: "Mdw",
+  meadows: "Mdws",
+  mews: "Mews",
+  mill: "Ml",
+  mills: "Mls",
+  mission: "Msn",
+  motorway: "Mtwy",
+  mount: "Mt",
+  mountain: "Mtn",
+  mountains: "Mtns",
+  neck: "Nck",
+  orchard: "Orch",
+  oval: "Ovl",
+  overpass: "Opas",
+  park: "Park",
+  parks: "Park",
+  parkway: "Pkwy",
+  parkways: "Pkwy",
+  pass: "Pass",
+  passage: "Psge",
+  path: "Path",
+  pike: "Pike",
+  pine: "Pne",
+  pines: "Pnes",
+  place: "Pl",
+  plain: "Pln",
+  plains: "Plns",
+  plaza: "Plz",
+  point: "Pt",
+  points: "Pts",
+  port: "Prt",
+  ports: "Prts",
+  prairie: "Pr",
+  radial: "Radl",
+  ramp: "Ramp",
+  ranch: "Rnch",
+  rapid: "Rpds",
+  rapids: "Rpds",
+  rest: "Rst",
+  ridge: "Rdg",
+  ridges: "Rdgs",
+  river: "Riv",
+  road: "Rd",
+  roads: "Rds",
+  route: "Rte",
+  row: "Row",
+  rue: "Rue",
+  run: "Run",
+  shoal: "Shl",
+  shoals: "Shls",
+  shore: "Shr",
+  shores: "Shrs",
+  skyway: "Skwy",
+  spring: "Spg",
+  springs: "Spgs",
+  spur: "Spur",
+  spurs: "Spur",
+  square: "Sq",
+  squares: "Sqs",
+  stravenue: "Stra",
+  stream: "Strm",
+  street: "St",
+  streets: "Sts",
+  summit: "Smt",
+  terrace: "Ter",
+  throughway: "Trwy",
+  trace: "Trce",
+  track: "Trak",
+  trafficway: "Trfy",
+  trail: "Trl",
+  trailer: "Trlr",
+  tunnel: "Tunl",
+  turnpike: "Tpke",
+  underpass: "Upas",
+  union: "Un",
+  unions: "Uns",
+  valley: "Vly",
+  valleys: "Vlys",
+  viaduct: "Via",
+  view: "Vw",
+  views: "Vws",
+  village: "Vlg",
+  villages: "Vlgs",
+  ville: "Vl",
+  vista: "Vis",
+  walk: "Walk",
+  walks: "Walk",
+  wall: "Wall",
+  way: "Way",
+  ways: "Ways",
+  well: "Wl",
+  wells: "Wls",
+};
+
+// Longest-first so plurals match before singulars ("streets" → "Sts",
+// not "street" → "St" leaving a stray "s").
+const STREET_SUFFIX_RE = new RegExp(
+  `\\b(${Object.keys(STREET_SUFFIX_ABBR).sort((a, b) => b.length - a.length).join("|")})\\b`,
+  "gi",
+);
+
+/** Shorten every whole-word street suffix in one pass (USPS postal set). */
+function abbrStreet(street: string): string {
+  return street.replace(
+    STREET_SUFFIX_RE,
+    (m) => STREET_SUFFIX_ABBR[m.toLowerCase()] ?? m,
+  );
+}
+
+function shortAddress(addr: string): string {
+  const parts = addr
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (parts.length === 0) return "";
+  if (parts.length === 1) return abbrStreet(parts[0]);
+  return `${abbrStreet(parts[0])}, ${parts[1]}`;
 }
 
 /**
@@ -209,7 +442,17 @@ export function QuickPost({
   );
   const [clockOpen, setClockOpen] = useState(false);
   const clockBoxRef = useRef<HTMLDivElement>(null);
+  // Note box auto-grows with its content — no internal scrolling.
+  const noteRef = useRef<HTMLTextAreaElement | null>(null);
+  const autosizeNote = () => {
+    const el = noteRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  };
   useEffect(() => {
+    if (step === 4) autosizeNote();
+  }, [step]);  useEffect(() => {
     if (!clockOpen) return;
     const onDown = (e: PointerEvent) => {
       if (!clockBoxRef.current?.contains(e.target as Node))
@@ -297,11 +540,11 @@ export function QuickPost({
       : "City, University or Airport";
   const optPlaceholder =
     postMode === "need"
-      ? "Write something..\n'I have luggage' or\n'Need ride for 2 people' or\n'Can split gas money' or\n'I will pay $10'"
-      : "Write something..\n'Space available for up to 3 people' or\n'Split gas money'";
+      ? "Write something..\n'I have luggage' or 'Need 2 seats'"
+      : "Write something..\n'Space for 3' or 'Leaving on time'";
 
   const pill = (active: boolean) =>
-    `min-h-10 flex-1 rounded-xl border px-2 text-[13px] font-medium transition-colors sm:min-h-11 sm:px-3 sm:text-sm ${
+    `min-h-10 flex-1 rounded-xl border px-2 text-[13px] font-medium transition-[transform,background-color,border-color,color] duration-150 active:scale-[0.97] sm:min-h-11 sm:px-3 sm:text-sm ${
       active
         ? "border-white bg-white text-black"
         : "border-white/20 text-muted hover:border-white/40 hover:text-content active:text-white"
@@ -325,7 +568,7 @@ export function QuickPost({
       <div className="pointer-events-auto absolute inset-0 overflow-y-auto px-4 py-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-6">
         <div className="flex min-h-full">
           <div className="m-auto w-full max-w-[340px] sm:max-w-sm">
-            <div data-quickpost-panel className="relative overscroll-contain rounded-3xl border border-white/15 bg-app/70 p-3 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)] backdrop-blur-xl sm:p-6">
+            <div data-quickpost-panel className="animate-panel-in relative overscroll-contain rounded-3xl border border-white/15 bg-app/70 p-3 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)] backdrop-blur-xl sm:p-6">
             <form
               action={formAction}
               onSubmit={() => {
@@ -381,7 +624,7 @@ export function QuickPost({
 
               {step === 1 ? (
                 <>
-                  <fieldset className="rounded-2xl border border-white/15 px-3 pb-1 sm:pb-3">
+                  <fieldset className="rounded-2xl border border-white/15 px-3 pb-0.5 sm:pb-1.5">
                     <legend className="px-1 text-[11px] text-muted sm:text-xs">{postMode === "give" ? "From" : "Pick up"}</legend>
                     {postMode === "give" ? (
                       <PlaceAutocomplete
@@ -394,8 +637,7 @@ export function QuickPost({
                         ariaLabel="Pickup place"
                         kind="all"
                         variant="default"
-                        surface="soft"
-                        inputClassName="input min-h-[22px] border-0 bg-transparent px-4 text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:min-h-11 sm:text-sm sm:placeholder:text-xs"
+                        inputClassName="input min-h-[22px] border-0 bg-transparent px-4 text-center text-base placeholder:truncate placeholder:text-[11px] sm:placeholder:text-xs"
                       />
                     ) : (
                       <PlaceAutocomplete
@@ -408,12 +650,11 @@ export function QuickPost({
                         ariaLabel="Pickup address"
                         source="address"
                         nearViewer
-                        surface="soft"
-                        inputClassName="input min-h-[22px] border-0 bg-transparent px-4 text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:min-h-11 sm:text-sm sm:placeholder:text-xs"
+                        inputClassName="input min-h-[22px] border-0 bg-transparent px-4 text-center text-base placeholder:truncate placeholder:text-[11px] sm:placeholder:text-xs"
                       />
                     )}
                   </fieldset>
-                  <fieldset className="rounded-2xl border border-white/15 px-3 pb-1 sm:pb-3">
+                  <fieldset className="rounded-2xl border border-white/15 px-3 pb-0.5 sm:pb-1.5">
                     <legend className="px-1 text-[11px] text-muted sm:text-xs">{postMode === "give" ? "To" : "Drop off"}</legend>
                     {postMode === "give" ? (
                       <PlaceAutocomplete
@@ -423,11 +664,10 @@ export function QuickPost({
                         required
                         minLength={5}
                         placeholder={addrPlaceholder}
-                        aria-label="Drop-off place"
+                        ariaLabel="Drop-off place"
                         kind="all"
                         variant="default"
-                        surface="soft"
-                        inputClassName="input min-h-[22px] border-0 bg-transparent px-4 text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:min-h-11 sm:text-sm sm:placeholder:text-xs"
+                        inputClassName="input min-h-[22px] border-0 bg-transparent px-4 text-center text-base placeholder:truncate placeholder:text-[11px] sm:placeholder:text-xs"
                       />
                     ) : (
                       <PlaceAutocomplete
@@ -439,8 +679,7 @@ export function QuickPost({
                         placeholder={addrPlaceholder}
                         ariaLabel="Drop-off address"
                         source="address"
-                        surface="soft"
-                        inputClassName="input min-h-[22px] border-0 bg-transparent px-4 text-center text-[13px] placeholder:truncate placeholder:text-[11px] sm:min-h-11 sm:text-sm sm:placeholder:text-xs"
+                        inputClassName="input min-h-[22px] border-0 bg-transparent px-4 text-center text-base placeholder:truncate placeholder:text-[11px] sm:placeholder:text-xs"
                       />
                     )}
                   </fieldset>
@@ -453,7 +692,7 @@ export function QuickPost({
                     type="button"
                     onClick={() => placesReady && setStep(2)}
                     disabled={!placesReady}
-                    className="min-h-11 w-full rounded-xl text-sm text-muted hover:text-content disabled:cursor-not-allowed disabled:opacity-40"
+                    className="min-h-11 w-full rounded-xl text-sm text-muted transition-[transform,color,opacity] duration-150 hover:text-content active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Continue →
                   </button>
@@ -508,7 +747,7 @@ export function QuickPost({
                         type="button"
                         onClick={() => customDate && setStep(3)}
                         disabled={!customDate}
-                        className="min-h-11 w-full rounded-xl text-sm text-muted hover:text-content disabled:cursor-not-allowed disabled:opacity-40"
+                        className="min-h-11 w-full rounded-xl text-sm text-muted transition-[transform,color,opacity] duration-150 hover:text-content active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         Continue →
                       </button>
@@ -563,7 +802,7 @@ export function QuickPost({
                       </button>
                     </div>
                     {timing === "at" && clockOpen ? (
-                      <div className="thin-scrollbar absolute right-0 top-full z-50 mt-1 flex max-h-60 w-3/4 gap-2 overflow-hidden overscroll-contain rounded-xl border border-white/25 bg-app/60 p-3 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-xl backdrop-saturate-150">
+                      <div className="animate-popover-in thin-scrollbar absolute right-0 top-full z-50 mt-1 flex max-h-60 w-3/4 gap-2 overflow-hidden overscroll-contain rounded-xl border border-white/25 bg-app/60 p-3 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-xl backdrop-saturate-150">
                         {(
                           [
                             ["Hour", HOURS, hour, setHour],
@@ -594,7 +833,7 @@ export function QuickPost({
                                   setClockOpen(false);
                                   setStep(4);
                                 }}
-                                className={`min-h-10 shrink-0 rounded-lg text-sm ${
+                                className={`min-h-10 shrink-0 rounded-lg text-sm transition-[transform,background-color,color] duration-150 active:scale-[0.97] ${
                                   o === ampm
                                     ? "bg-white font-semibold text-black"
                                     : "text-muted hover:bg-white/10 hover:text-content"
@@ -615,11 +854,13 @@ export function QuickPost({
               {step === 4 ? (
                 <>
                   {/* Confirm summary: what is being posted, in one glance. */}
-                  <div className="rounded-2xl border border-white/15 px-3 py-2 text-center text-[13px] text-white/80">
-                    <p className="wrap-anywhere">
-                      {fromValue || "…"} → {toValue || "…"}
-                    </p>
-                    <p className="mt-0.5 text-muted">
+                  <div
+                    title={`${fromValue} → ${toValue}`}
+                    className="rounded-2xl border border-white/15 px-3 py-2 text-center text-[13px] text-white/80"
+                  >
+                    <p className="text-muted">
+                      {postMode === "give" ? "Ride Available" : "Need Ride"}{" "}
+                      ·{" "}
                       {dateOption === "today"
                         ? "Today"
                         : dateOption === "tomorrow"
@@ -630,17 +871,28 @@ export function QuickPost({
                         ? displayTime
                         : (timing ?? "Anytime")}
                     </p>
+                    <p className="wrap-anywhere mt-0.5">
+                      {shortAddress(fromValue) || "…"} →{" "}
+                      {shortAddress(toValue) || "…"}
+                    </p>
                   </div>
                   <fieldset className="rounded-2xl border border-white/15 px-3 pb-0.5 sm:pb-3">
                     <legend className="px-1 text-[11px] text-muted sm:text-xs">Note (optional)</legend>
                     <textarea
                       name="description"
-                      rows={postMode === "need" ? 5 : 3}
+                      ref={noteRef}
+                      rows={postMode === "need" ? 2 : 1}
                       value={noteValue}
-                      onChange={(e) => setNoteValue(e.target.value)}
+                      onChange={(e) => {
+                        setNoteValue(e.target.value);
+                        const el = e.target;
+                        el.style.height = "auto";
+                        el.style.height = `${el.scrollHeight}px`;
+                      }}
                       placeholder={optPlaceholder}
                       aria-label="Optional details"
-                      className="input resize-none border-0 bg-transparent py-1 text-center text-[11px] leading-relaxed placeholder:text-[11px] sm:py-2 sm:text-xs sm:placeholder:text-xs"
+                      enterKeyHint="done"
+                      className="input no-scrollbar resize-none overflow-hidden border-0 bg-transparent py-1 text-left text-base leading-relaxed placeholder:text-left placeholder:text-[11px] sm:py-2 sm:placeholder:text-xs"
                     />
                   </fieldset>
 

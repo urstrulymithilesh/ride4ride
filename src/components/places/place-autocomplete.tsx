@@ -239,6 +239,9 @@ export function PlaceAutocomplete({
     // off the BAR: full bar width, 2px below its bottom edge (the mt
     // class is the gap). Without the marker it anchors to the wrapper
     // (field width), which is the behavior every other surface uses.
+    // Top always anchors to that same row/bar bottom edge — never the
+    // input — so input height and field padding can't open or close a
+    // gap between the box and the list.
     const below = box.closest("[data-dropdown-below]");
     const place = () => {
       const r = row.getBoundingClientRect();
@@ -247,9 +250,7 @@ export function PlaceAutocomplete({
       const a = barRect ?? r;
       dd.style.left = `${a.left - b.left}px`;
       dd.style.width = `${a.width}px`;
-      if (barRect) {
-        dd.style.top = `${barRect.bottom - b.top}px`;
-      }
+      dd.style.top = `${a.bottom - b.top}px`;
     };
     place();
     window.addEventListener("resize", place);

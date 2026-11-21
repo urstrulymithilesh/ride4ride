@@ -4,7 +4,6 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
 import {
   TOS_VERSION,
   validateSignUp,
@@ -172,39 +171,15 @@ export async function signIn(
   const redirectTo = sanitizeRedirect(String(formData.get("redirectTo") ?? ""));
   const supabase = await createClient();
 
-  // Username has no direct Supabase credential: resolve it to the
-  // account's phone (preferred) or email via the service role, then
-  // sign in normally. Every failure collapses to the same generic
-  // message so login never reveals whether a handle exists.
-  let login: { phone: string } | { email: string } | null =
-    result.data.kind === "phone" ? { phone: result.data.value } : null;
-  if (!login) {
-    try {
-      const admin = createAdminClient();
-      const { data: profile } = await admin
-        .from("profiles")
-        .select("id")
-        .ilike("username", result.data.value)
-        .maybeSingle();
-      const { data: userData } = profile
-        ? await admin.auth.admin.getUserById(profile.id)
-        : { data: { user: null } };
-      const user = userData.user;
-      if (user?.phone) login = { phone: user.phone };
-      else if (user?.email) login = { email: user.email };
-    } catch {
-      login = null;
-    }
-  }
-  const { error } = login
-    ? await supabase.auth.signInWithPassword({
-        ...login,
-        password: result.data.password,
-      })
-    : { error: new Error("invalid credentials") };
+  // Phone + password only, for now: the credential goes straight to
+  // Supabase, no username resolution. Every failure collapses to the same
+  // generic message to avoid leaking which part was wrong.
+  const { error } = await supabase.auth.signInWithPassword({
+    phone: result.data.phone,
+    password: result.data.password,
+  });
   if (error) {
-    // Keep the message generic to avoid leaking which part was wrong.
-    return { error: "Invalid username, phone number, or password." };
+    return { error: "Invalid phone number or password." };
   }
 
   revalidatePath("/", "layout");

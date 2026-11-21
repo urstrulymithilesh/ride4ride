@@ -67,10 +67,8 @@ export interface SignUpInput {
 }
 
 export interface SignInInput {
-  /** "phone" for a number (E.164 value), "username" for a handle. */
-  kind: "phone" | "username";
-  /** E.164 phone, or lowercased username. */
-  value: string;
+  /** E.164 phone. Phone + password is the only sign-in method for now. */
+  phone: string;
   password: string;
 }
 
@@ -229,32 +227,18 @@ export function validateSignIn(raw: {
   const fieldErrors: FieldErrors = {};
   const identifier = raw.identifier.trim();
 
-  // Email is not a sign-in method: username or phone only.
-  let kind: "phone" | "username" | null = null;
-  let value = "";
-  if (identifier.includes("@")) {
-    fieldErrors.identifier = "Sign in with your username or phone number.";
-  } else {
-    const phone = normalizePhone(identifier);
-    if (phone) {
-      kind = "phone";
-      value = phone;
-    } else {
-      const username = identifier.toLowerCase();
-      const usernameError = validateUsername(username);
-      if (usernameError)
-        fieldErrors.identifier = "Sign in with your username or phone number.";
-      else {
-        kind = "username";
-        value = username;
-      }
-    }
+  // Phone + password only, for now. Usernames stay display-only handles.
+  const phone = normalizePhone(identifier);
+  if (!phone) {
+    fieldErrors.identifier = identifier.includes("@")
+      ? "Sign in with your phone number, not your email."
+      : "Enter the phone number you signed up with.";
   }
   if (!raw.password) fieldErrors.password = "Enter your password.";
 
-  if (Object.keys(fieldErrors).length > 0 || !kind)
+  if (Object.keys(fieldErrors).length > 0 || !phone)
     return { ok: false, fieldErrors };
-  return { ok: true, data: { kind, value, password: raw.password } };
+  return { ok: true, data: { phone, password: raw.password } };
 }
 
 /**

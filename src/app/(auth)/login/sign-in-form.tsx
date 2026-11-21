@@ -21,10 +21,12 @@ export function SignInForm({
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="redirectTo" value={redirectTo} />
       <TextField
-        label="username or phone number"
+        label="Phone number"
         name="identifier"
-        autoComplete="username"
-        placeholder="username or phone number"
+        type="tel"
+        autoComplete="tel"
+        inputMode="tel"
+        placeholder="Phone number"
         error={state.fieldErrors?.identifier}
         required
         hideLabel

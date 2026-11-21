@@ -282,6 +282,15 @@ select {
     @apply py-2;
   }
 
+  /* Hide scrollbars while keeping scrollability (e.g. short textareas
+     where a scrollbar track is pure chrome noise). */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
   .chip {
     @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
   }
@@ -459,15 +468,36 @@ select {
 }
 
 /* Quick-post modal enter: fade + rise, exit is instant (unmount).
-   Keep under 300ms, ease-out. */
-[data-quickpost-panel] {
-  transition:
-    transform 200ms var(--ease-out),
-    opacity 200ms var(--ease-out);
+   Keep under 300ms, ease-out. Keyframes (not @starting-style) so the
+   portal mount animates on first paint. Reduced-motion kill-switch above
+   neutralizes both. */
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
-[data-quickpost-panel][data-starting-style] {
-  opacity: 0;
-  transform: translateY(8px) scale(0.97);
+.animate-panel-in {
+  animation: panel-in 200ms var(--ease-out);
+  transform-origin: center;
+}
+@keyframes popover-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+.animate-popover-in {
+  animation: popover-in 150ms var(--ease-out);
+  transform-origin: top right;
 }
 
 /* Feed search fields: magnifier folded into the input background so the

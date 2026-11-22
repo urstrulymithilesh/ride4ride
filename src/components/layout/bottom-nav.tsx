@@ -167,12 +167,15 @@ function FeedDock() {
   }, []);
 
   // The tab IS the route: hail lives at /, cars at /rides. Filters carry
-  // over; the dead ?type= scheme is stripped, never written.
+  // over; the dead ?type= scheme is stripped, never written. Tabs only
+  // light up on the feeds — everywhere else (profile, chat) nothing is
+  // current, so hail doesn't falsely highlight.
   const isOffer = pathname === "/rides";
+  const isFeed = pathname === "/" || pathname === "/rides";
   // On the messages page neither ride tab is active — chats is.
   const isMessages = pathname === "/chat";
   const tab = (value: "get" | "offer", label: React.ReactNode, name: string) => {
-    const isActive = !isMessages && (value === "offer") === isOffer;
+    const isActive = isFeed && !isMessages && (value === "offer") === isOffer;
     const params = new URLSearchParams(sp.toString());
     // Auth-flow and legacy params must not leak into feed links when the
     // dock renders off-feed (sign-in carries ?redirectTo=).

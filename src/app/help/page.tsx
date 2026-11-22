@@ -44,8 +44,7 @@ export default function SupportPage() {
         <section>
           <h2 className="font-semibold text-content">Your account</h2>
           <p className="mt-1">
-            Display name is editable from your profile page. Your username
-            is assigned automatically.
+            Display name is editable from your account page.
           </p>
         </section>
       </div>

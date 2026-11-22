@@ -42,7 +42,7 @@ export function SignUpForm({ redirectTo }: { redirectTo: string }) {
         required
         hideLabel
       />
-      <p className="rounded-xl border border-hairline bg-app/60 px-3 py-2 text-xs text-muted">A fun username will be generated for you automatically.</p>
+      <p className="rounded-xl border border-hairline bg-app/60 px-3 py-2 text-xs text-muted">Your public name on posts and in chats.</p>
       <TextField
         label="Phone number"
         name="phone"

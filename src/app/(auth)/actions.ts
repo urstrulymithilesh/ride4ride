@@ -11,7 +11,6 @@ import {
   sanitizeRedirect,
   type FieldErrors,
 } from "@/lib/validations/auth";
-import { buildFunUsername } from "@/lib/usernames";
 import { getVerificationMode, allowedDomainsHint } from "@/lib/verification";
 
 export interface AuthState {
@@ -39,7 +38,6 @@ export async function signUp(
     email: String(formData.get("email") ?? ""),
     password: String(formData.get("password") ?? ""),
     displayName: String(formData.get("displayName") ?? ""),
-    username: String(formData.get("username") ?? ""),
     gender: String(formData.get("gender") ?? ""),
     dob: String(formData.get("dob") ?? ""),
     // An unchecked checkbox submits nothing at all, so absence is "no".
@@ -50,35 +48,7 @@ export async function signUp(
 
   const redirectTo = sanitizeRedirect(String(formData.get("redirectTo") ?? ""));
   const { phone, email, password, displayName, gender, dob } = result.data;
-  let username = result.data.username;
   const supabase = await createClient();
-
-  // Website-assigned handles: mint a fun letters-only name when the form
-  // didn't supply one. Loop the availability RPC; the unique index is the
-  // final arbiter under concurrency.
-  if (!username) {
-    for (let i = 0; i < 20; i++) {
-      const candidate = buildFunUsername();
-      const { data: free } = await supabase.rpc("is_username_available", {
-        p_username: candidate,
-      });
-      if (free === true) {
-        username = candidate;
-        break;
-      }
-    }
-    if (!username) {
-      return { error: "Couldn't pick a username. Please try again." };
-    }
-  } else {
-    // Legacy explicit handle: friendly pre-check for a taken name.
-    const { data: available } = await supabase.rpc("is_username_available", {
-      p_username: username,
-    });
-    if (available === false) {
-      return { fieldErrors: { username: "That username is taken." } };
-    }
-  }
 
   // Email is optional at sign-up, but when given it must be allow-listed.
   // In "restrict" mode, only allow-listed email domains may be attached.
@@ -110,7 +80,6 @@ export async function signUp(
       // without its acceptance record.
       data: {
         display_name: displayName,
-        username,
         gender,
         date_of_birth: dob,
         age_confirmed_18: true,
@@ -121,11 +90,6 @@ export async function signUp(
   });
 
   if (error) {
-    // Concurrent signup with the same handle hits the 0017 unique index.
-    // Map it to the field so the user can pick another name.
-    if (/username|duplicate|already exists/i.test(error.message)) {
-      return { fieldErrors: { username: "That username is taken." } };
-    }
     // A taken phone number (or email) must not say which one exists.
     if (/already registered|already exists|duplicate|taken|in use/i.test(error.message)) {
       return { error: "An account with those details already exists." };
@@ -171,9 +135,8 @@ export async function signIn(
   const redirectTo = sanitizeRedirect(String(formData.get("redirectTo") ?? ""));
   const supabase = await createClient();
 
-  // Phone + password only, for now: the credential goes straight to
-  // Supabase, no username resolution. Every failure collapses to the same
-  // generic message to avoid leaking which part was wrong.
+  // Sign-in is phone + password only. Every failure collapses to the
+  // same generic message to avoid leaking which part was wrong.
   const { error } = await supabase.auth.signInWithPassword({
     phone: result.data.phone,
     password: result.data.password,

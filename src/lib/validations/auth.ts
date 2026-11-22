@@ -50,7 +50,6 @@ export interface SignUpInput {
   email: string | null;
   password: string;
   displayName: string;
-  username: string;
   gender: Gender;
   /**
    * Deliberately two separate consents, not one combined checkbox.
@@ -70,70 +69,6 @@ export interface SignInInput {
   /** E.164 phone. Phone + password is the only sign-in method for now. */
   phone: string;
   password: string;
-}
-
-export const USERNAME_RE = /^[A-Za-z]{3,20}$/;
-
-/**
- * Handles that would collide with app routes or imply official status.
- * A claimed "admin" or "rides" could never be visited (static routes win),
- * so reject them at signup instead of minting dead pages. Keep in sync
- * with the guard in src/app/[username]/page.tsx.
- */
-export const RESERVED_USERNAMES: ReadonlySet<string> = new Set([
-  "admin",
-  "administrator",
-  "about",
-  "api",
-  "auth",
-  "chat",
-  "dev",
-  "developer-info",
-  "help",
-  "login",
-  "logout",
-  "messages",
-  "me",
-  "mod",
-  "moderator",
-  "needride",
-  "need-ride",
-  "notification",
-  "notifications",
-  "null",
-  "official",
-  "posts",
-  "privacy",
-  "privacy-terms",
-  "profile",
-  "rideavailable",
-  "ride-available",
-  "ride4ride",
-  "rides",
-  "root",
-  "settings",
-  "sign-in",
-  "signin",
-  "sign-up",
-  "signup",
-  "static",
-  "support",
-  "system",
-  "team",
-  "terms",
-  "undefined",
-]);
-
-/** Single place for the handle rules (DB check + signup form share these). */
-export function validateUsername(username: string): string | null {
-  if (!username) return "Choose a username.";
-  if (username.length < 3 || username.length > 20)
-    return "username must be 3–20 characters.";
-  if (!USERNAME_RE.test(username))
-    return "Letters only, no numbers or underscores.";
-  if (RESERVED_USERNAMES.has(username.toLowerCase()))
-    return "That name is reserved. Try another.";
-  return null;
 }
 
 /** YYYY-MM-DD date of birth. Required, real, past, and 18+. One rule
@@ -158,7 +93,6 @@ export function validateSignUp(raw: {
   email: string;
   password: string;
   displayName: string;
-  username: string;
   gender: string;
   ageConfirmed18: boolean;
   tosAccepted: boolean;
@@ -175,18 +109,11 @@ export function validateSignUp(raw: {
   if (email && !EMAIL_RE.test(email))
     fieldErrors.email = "Enter a valid email address.";
   const displayName = raw.displayName.trim();
-  // Website-assigned handles: callers may pass "" and the server mints one.
-  // Legacy non-empty values are still validated (letters only, any case).
-  const username = raw.username.trim();
   const password = raw.password;
   if (displayName.length < 2)
     fieldErrors.displayName = "Display name must be at least 2 characters.";
   if (displayName.length > 50)
     fieldErrors.displayName = "Display name must be 50 characters or fewer.";
-  if (username) {
-    const usernameError = validateUsername(username);
-    if (usernameError) fieldErrors.username = usernameError;
-  }
   const gender = raw.gender.trim().toLowerCase();
   if (gender !== "male" && gender !== "female")
     fieldErrors.gender = "Choose male or female.";
@@ -211,7 +138,6 @@ export function validateSignUp(raw: {
       email,
       password,
       displayName,
-      username,
       gender: gender as Gender,
       dob: raw.dob.trim(),
       ageConfirmed18: true,
@@ -227,7 +153,7 @@ export function validateSignIn(raw: {
   const fieldErrors: FieldErrors = {};
   const identifier = raw.identifier.trim();
 
-  // Phone + password only, for now. Usernames stay display-only handles.
+  // Phone + password only, for now. No usernames anywhere.
   const phone = normalizePhone(identifier);
   if (!phone) {
     fieldErrors.identifier = identifier.includes("@")

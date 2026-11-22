@@ -46,9 +46,7 @@ function validateEmailAddress(email: string): string | null {
 
 /**
  * Update the caller's own profile. Writable: display_name,
- * date_of_birth, phone (grants in 0017 + 0020); username is
- * website-assigned and never edited here. Email goes through the
- * auth API (confirmation sent to the new address). Everything else stays
+ * date_of_birth, phone (grants in 0017 + 0020). Everything else stays
  * locked down, so a client update cannot touch it even if attempted.
  */
 export async function updateProfile(

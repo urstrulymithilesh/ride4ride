@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { RESERVED_USERNAMES } from "@/lib/validations/auth";
 import { QuickPost, POST_DRAFT_KEY } from "@/components/rides/quick-post";
 import type { PostDraft } from "@/components/rides/quick-post";
 import { ProfileLink } from "@/components/layout/profile-link";
@@ -52,21 +51,17 @@ function PlusIcon() {
 }
 
 /**
- * Profile routes (any non-reserved single-segment handle), matched
- * case-insensitively like the profile page itself. Shared by the dock
- * visibility gate and the profile slot's active state.
+ * Dock visibility gate + profile-slot active state. One place: feeds,
+ * chat list, account.
  */
 function isProfilePath(pathname: string): boolean {
-  const m = /^\/([^/]+)$/.exec(pathname);
-  if (!m) return false;
-  const name = m[1].toLowerCase();
-  return /^[a-z][a-z0-9_]{2,19}$/.test(name) && !RESERVED_USERNAMES.has(name);
+  return pathname === "/account";
 }
 
 /**
- * Feed-only dock: one glass bar with hail | car | + | chats | profile.
- * The + straddles the top edge. The profile slot links to your own
- * profile page. Tabs preserve every other search param (mirroring the
+ * Dock: one glass bar with hail | car | + | chats | profile.
+ * The + straddles the top edge. The profile slot links to /account.
+ * Tabs preserve every other search param (mirroring the
  * page's hrefWith defaults), so switching type never clears filters.
  */
 function FeedDock() {

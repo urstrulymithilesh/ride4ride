@@ -24,7 +24,6 @@ interface PinRide {
   ride_time: string | null;
   distance_meters: number | null;
   description: string | null;
-  username: string | null;
 }
 
 /** Dotted 12h clock ("7.00 pm"), matching the pin pills. */

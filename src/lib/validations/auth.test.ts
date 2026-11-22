@@ -10,7 +10,6 @@ const base = {
   email: "",
   password: "password123",
   displayName: "Alex Rivera",
-  username: "MidnightRamen",
   gender: "male",
   dob: "1998-04-17",
   ageConfirmed18: true,
@@ -89,7 +88,7 @@ describe("validateSignIn", () => {
       data: { phone: "+13125550148", password: "x" },
     });
   });
-  it("rejects usernames, emails, garbage, and empty passwords", () => {
+  it("rejects emails, garbage, and empty passwords", () => {
     expect(validateSignIn({ identifier: "MidNightRamen", password: "x" }).ok).toBe(
       false,
     );

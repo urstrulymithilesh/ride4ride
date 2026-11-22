@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { FitHeadline } from "@/components/rides/fit-headline";
 import { abbreviateStreet, formatClockDots, formatMiles, formatPlace, formatPostedAt } from "@/lib/utils/format";
 
@@ -7,7 +6,7 @@ import { abbreviateStreet, formatClockDots, formatMiles, formatPlace, formatPost
  * coordinate fields — those live in the row-protected `ride_locations` table
  * and are never part of a public query, with one deliberate exception:
  * `pin_lat` / `pin_lng`, a pre-jittered near-pickup pin computed at post
- * time, never the exact point. `username` is attached by the page
+ * time, never the exact point. `displayName` is attached by the page
  * and is null for signed-out viewers (poster identity is full-details
  * material, same rule as the detail page).
  */
@@ -30,7 +29,7 @@ export interface RideCardData {
   pin_lat: number | null; // public near-pickup pin, never exact; 'get' only
   pin_lng: number | null; // public near-pickup pin, never exact; 'get' only
   description: string | null;
-  username: string | null;
+  displayName: string | null;
 }
 
 export function RideCard({
@@ -70,13 +69,7 @@ export function RideCard({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-[13px] font-semibold leading-[20px] text-white">
-            {ride.username ? (
-              <Link href={`/${ride.username}`} className="hover:underline">
-                @{ride.username}
-              </Link>
-            ) : (
-              "New post"
-            )}
+            {ride.displayName ? ride.displayName : "New post"}
           </p>
           <p className="mt-0.5 text-[9px] leading-[12px] text-muted">
             {formatPostedAt(ride.created_at)}
@@ -103,7 +96,7 @@ export function RideCard({
           </p>
         </div>
       </div>
-      {/* Note box: free text, so same gate as handles — signed-in only.
+      {/* Note box: free text, so same gate as names — signed-in only.
           Signed-out viewers get no box rather than a wrong one. */}
       {signedIn && ride.description?.trim() ? (
         <p

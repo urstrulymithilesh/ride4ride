@@ -7,8 +7,8 @@ import { ChangeLocationButton } from "@/components/location/change-location";
 
 /**
  * Floating hamburger (top-left everywhere). Signed-in menu lists identity
- * first (@handle, member-since, active post count), then settings / legal /
- * about / support, with log out last.
+ * first (display name, member-since, active post count), then settings /
+ * legal / about / support, with log out last.
  */
 export async function AppMenu({ triggerTone }: { triggerTone?: string }) {
   const [user, profile] = await Promise.all([getUser(), getProfile()]);
@@ -50,8 +50,8 @@ export async function AppMenu({ triggerTone }: { triggerTone?: string }) {
           {user && profile ? (
             <div className="px-5 py-4">
               <p className="wrap-anywhere truncate text-base font-semibold text-content">
-                <Link href={`/${profile.username}`} className="hover:underline">
-                  @{profile.username}
+                <Link href="/account" className="hover:underline">
+                  {profile.display_name}
                 </Link>
               </p>
               {joined ? (

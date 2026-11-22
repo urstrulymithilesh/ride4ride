@@ -31,17 +31,9 @@ export async function GET(
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
-  // Owner handle for the card's identity row. Profiles are
-  // world-readable; a missing handle degrades to no row, not an error.
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("username")
-    .eq("id", ride.owner_id)
-    .maybeSingle<{ username: string | null }>();
-
+  // Owner identity is intentionally NOT attached: the sheet shows no
+  // identity row, so nothing needs to leave the database for one.
   const { owner_id: _owner, ...rest } = ride;
   void _owner;
-  return NextResponse.json({
-    ride: { ...rest, username: profile?.username ?? null },
-  });
+  return NextResponse.json({ ride: rest });
 }

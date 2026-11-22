@@ -7,9 +7,8 @@ import { RideCard, type RideCardData } from "@/components/rides/ride-card";
 export const metadata: Metadata = { title: "My posts" };
 
 /**
- * Your own active posts at ride4ride.com/posts. Same list the profile's
- * "My posts" row shows, without needing the username in the URL.
- * No dock here — back goes home.
+ * Your own active posts at ride4ride.com/posts. Same list the account's
+ * "My posts" row shows. No dock here — back goes home.
  */
 export default async function MyPostsPage() {
   const user = await requireUser("/posts");
@@ -17,9 +16,9 @@ export default async function MyPostsPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("username")
+    .select("display_name")
     .eq("id", user.id)
-    .maybeSingle<{ username: string }>();
+    .maybeSingle<{ display_name: string }>();
 
   const { data: rides } = await supabase
     .from("rides")
@@ -35,7 +34,7 @@ export default async function MyPostsPage() {
 
   const list = (rides ?? []).map((r) => ({
     ...r,
-    username: profile?.username ?? "",
+    displayName: profile?.display_name ?? "",
   }));
 
   return (

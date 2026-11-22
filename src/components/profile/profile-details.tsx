@@ -44,14 +44,12 @@ function Detail({ label, value }: { label: string; value: string }) {
  * edit section.
  */
 export function ProfileDetails({
-  username,
   displayName,
   dob,
   dobDisplay,
   email,
   phone,
 }: {
-  username: string;
   displayName: string;
   dob: string;
   dobDisplay: string;
@@ -76,7 +74,6 @@ export function ProfileDetails({
 
       {!editing ? (
         <dl className="grid grid-cols-2 gap-3 pr-10 text-sm">
-          <Detail label="Username" value={`@${username}`} />
           <Detail label="Name" value={displayName} />
           <Detail label="Date of birth" value={dobDisplay} />
           <Detail label="Email" value={email || "—"} />
@@ -84,10 +81,6 @@ export function ProfileDetails({
         </dl>
       ) : (
         <form action={formAction} className="flex flex-col gap-3 pr-10">
-          <p className="text-xs text-muted">
-            Your username @{username} was assigned automatically. Letters
-            only.
-          </p>
           <TextField
             label="Name"
             name="displayName"

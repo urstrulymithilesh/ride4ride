@@ -9,11 +9,11 @@
 
 export type VerificationStatus = "unverified" | "pending" | "verified";
 
-/** Public-facing user profile, 1:1 with a Supabase auth user. */
+/** Public-facing user profile, 1:1 with a Supabase auth user. No handle:
+ *  profiles are addressed by id, and the signed-in user lives at /account. */
 export interface Profile {
   id: string;
   display_name: string;
-  username: string;
   date_of_birth: string | null; // YYYY-MM-DD
   phone: string | null;
   /** Signup-declared gender; picks the default avatar. Null pre-0029. */

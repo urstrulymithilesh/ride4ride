@@ -33,11 +33,10 @@ export default async function ProfilePage() {
         <span aria-hidden="true" className="block h-11 w-11 shrink-0" />
       </div>
       <p className="mt-1 text-sm text-muted">
-        Logged in as @{profile.username}.
+        Logged in as {profile.display_name}.
       </p>
 
       <ProfileDetails
-        username={profile.username}
         displayName={profile.display_name}
         dob={profile.date_of_birth ?? ""}
         dobDisplay={formatDob(profile.date_of_birth)}

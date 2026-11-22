@@ -16,7 +16,7 @@ values
    crypt('ci-only-not-a-real-password', gen_salt('bf')), now(),
    now() - interval '2 minutes', now() - interval '2 minutes',
    '{"provider":"email","providers":["email"]}'::jsonb,
-   '{"display_name":"Proof Owner","username":"proof_owner"}'::jsonb),
+   '{"display_name":"Proof Owner"}'::jsonb),
 
   ('00000000-0000-0000-0000-000000000000',
    '00000000-0000-0000-0000-00000000000b',
@@ -24,7 +24,7 @@ values
    crypt('ci-only-not-a-real-password', gen_salt('bf')), now(),
    now() - interval '1 minute', now() - interval '1 minute',
    '{"provider":"email","providers":["email"]}'::jsonb,
-   '{"display_name":"Proof Viewer","username":"proof_viewer"}'::jsonb)
+   '{"display_name":"Proof Viewer"}'::jsonb)
 on conflict (id) do nothing;
 
 do $$
@@ -39,3 +39,4 @@ begin
 end$$;
 
 select 'seed ok: 2 deterministic test users' as status;
+

@@ -88,7 +88,7 @@ function openerFor(type: string): string {
  * (kind · day · time), street-level route, owner row with the dock's
  * chat glyph as a shortcut into the 1:1 conversation.
  */
-export function PinSheet({ id, onClose: _onClose }: { id: string; onClose: () => void }) {
+export function PinSheet({ id }: { id: string }) {
   const [ride, setRide] = useState<PinRide | null>(null);
   const [failed, setFailed] = useState(false);
   const [sent, setSent] = useState(false);

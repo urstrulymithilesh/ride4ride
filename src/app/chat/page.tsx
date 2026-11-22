@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { BackButton } from "@/components/ui/back-button";
 import { formatPlace } from "@/lib/utils/format";
 import type { Conversation } from "@/types";
 
@@ -63,13 +62,10 @@ export default async function MessagesPage() {
 
   return (
     <main className="w-full flex-1 px-5 py-4">
-      <div className="flex items-center gap-3">
-        <BackButton fallback="/" />
-        <h1 className="flex-1 text-center text-[17px] font-semibold text-content">
+      <div className="flex items-center pl-2">
+        <h1 className="flex-1 text-left text-[17px] font-semibold text-content">
           Chats
         </h1>
-        {/* Spacer balances the back arrow so the title stays centered. */}
-        <span aria-hidden="true" className="block h-11 w-11 shrink-0" />
       </div>
 
       {convosError ? (
@@ -94,7 +90,7 @@ export default async function MessagesPage() {
           </Link>
         </div>
       ) : convos.length === 0 ? (
-        <div className="card border border-dashed border-hairline bg-transparent p-8 text-center">
+        <div className="card mt-16 border border-dashed border-hairline bg-transparent p-8 text-center">
           <p className="text-sm text-muted">No conversations yet.</p>
           <Link
             href="/"

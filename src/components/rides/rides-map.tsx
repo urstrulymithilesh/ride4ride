@@ -660,7 +660,6 @@ export function RidesMap({
         <PinSheet
           key={framedId}
           id={framedId}
-          onClose={clearSelection}
         />
       ) : null}
     </div>

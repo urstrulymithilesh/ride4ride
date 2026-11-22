@@ -326,11 +326,14 @@ function BottomNavInner() {
   // The dock lives on the two feed routes, the chat list, and profiles.
   // Everything else — settings, legal, auth, threads — keeps its own
   // chrome (usually a top-left back button) instead.
+  // Handles are matched case-insensitively, exactly like the profile
+  // page itself (which lowercases before validating). Otherwise
+  // mixed-case handles would lose the dock.
   const isProfile = (() => {
     const m = /^\/([^/]+)$/.exec(pathname);
     if (!m) return false;
     const name = m[1].toLowerCase();
-    return /^[a-z][a-z0-9_]{2,19}$/.test(m[1]) && !RESERVED_USERNAMES.has(name);
+    return /^[a-z][a-z0-9_]{2,19}$/.test(name) && !RESERVED_USERNAMES.has(name);
   })();
   if (
     pathname !== "/" &&

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { startConversation } from "@/app/chat/actions";
 import { ChatIcon } from "@/components/places/search-icons";
 import { abbreviateStreet } from "@/lib/utils/format";
@@ -88,47 +88,11 @@ function openerFor(type: string): string {
  * (kind · day · time), street-level route, owner row with the dock's
  * chat glyph as a shortcut into the 1:1 conversation.
  */
-export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
+export function PinSheet({ id, onClose: _onClose }: { id: string; onClose: () => void }) {
   const [ride, setRide] = useState<PinRide | null>(null);
   const [failed, setFailed] = useState(false);
   const [sent, setSent] = useState(false);
-  // One-line route fit: widen the card first, then shrink the type,
-  // stopping at the screen edge and at 12px (readability floor).
-  const [cardW, setCardW] = useState(360);
-  const [fontPx, setFontPx] = useState(12);
-  const routeRef = useRef<HTMLParagraphElement | null>(null);
-
-  // One-line route fit: widen the card first, then shrink the type,
-  // stopping at the screen edge and at 12px. Driven from the fetch
-  // callback (plus rAF rechecks), never from an effect, so each step
-  // measures committed DOM. Retries also cover the commit landing after
-  // the first frame. All reads come from the DOM (never stale state);
-  // every step strictly progresses, so the loop always ends.
-  // useCallback (stable, ref/state-setter only) so the fetch effect can
-  // depend on it without refetching.
-  const fitRoute = useRef(0);
-  const fit = useCallback(function fit(): void {
-    const el = routeRef.current;
-    // The fetch callback fires before React commits the new route text;
-    // poll (bounded) instead of assuming the DOM is ready, and the same
-    // retries cover a slow first paint.
-    if (!el) {
-      if (fitRoute.current++ < 120) requestAnimationFrame(fit);
-      return;
-    }
-    if (el.scrollWidth <= el.clientWidth + 1) return;
-    const card = el.closest("[data-sheet-card]");
-    const cardWNow = card instanceof HTMLElement ? card.clientWidth : 360;
-    const maxW = Math.min(480, window.innerWidth) - 24;
-    if (cardWNow < maxW - 1) {
-      setCardW(Math.min(maxW, cardWNow + 12));
-    } else {
-      const px = parseFloat(getComputedStyle(el).fontSize) || 12;
-      if (px > 12.01) setFontPx(Math.max(12, +(px - 0.5).toFixed(1)));
-      else return;
-    }
-    requestAnimationFrame(fit);
-  }, []);
+  const [cardW] = useState(360);
 
   useEffect(() => {
     let live = true;
@@ -138,11 +102,7 @@ export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
         if (!live) return;
         if (data?.ride) {
           setRide(data.ride as PinRide);
-          setCardW(360);
-          setFontPx(12);
           setSent(false);
-          fitRoute.current = 0;
-          requestAnimationFrame(fit);
         } else setFailed(true);
       })
       .catch(() => {
@@ -151,7 +111,7 @@ export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
     return () => {
       live = false;
     };
-  }, [id, fitRoute, fit]);
+  }, [id]);
 
   return (
     <div className="pointer-events-none fixed inset-x-0 top-[136px] z-[var(--z-chrome)] mx-auto flex w-full max-w-[480px] justify-center px-3">
@@ -163,7 +123,7 @@ export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
         role="dialog"
         aria-label={ride ? "Ride details" : "Loading ride"}
         data-sheet-card
-        className="glass-dark pointer-events-auto max-h-[240px] w-full overflow-y-auto rounded-[10px] px-3 pt-1 pb-[12px] opacity-90"
+        className="glass-dark pointer-events-auto max-h-[240px] w-full overflow-y-auto rounded-[10px] px-3 pt-3 pb-[12px] opacity-90"
       >
         <div className="flex items-center gap-2">
           <p className="min-w-0 flex-1 text-[15px] font-semibold text-content">
@@ -180,26 +140,6 @@ export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
               </>
             ) : null}
           </p>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close details"
-            className="flex h-9 w-9 shrink-0 -mr-2 items-center justify-center rounded-full text-white/60 hover:text-white"
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              aria-hidden="true"
-            >
-              <path d="M6 6l12 12" />
-              <path d="M18 6L6 18" />
-            </svg>
-          </button>
         </div>
         {!ride && !failed ? (
           <p className="mt-8 text-center text-xs text-faint">Loading…</p>
@@ -211,19 +151,18 @@ export function PinSheet({ id, onClose }: { id: string; onClose: () => void }) {
         ) : null}
         {ride ? (
           <>
-            <div>
-              <p
-                ref={routeRef}
-                style={{ fontSize: fontPx }}
-                title={`${endLabel(ride.from_street, ride.from_city, ride.from_state)} → ${endLabel(ride.to_street, ride.to_city, ride.to_state)}`}
-                className="overflow-hidden text-ellipsis whitespace-nowrap tracking-tight text-white/70"
-              >
+            <div
+              title={`${endLabel(ride.from_street, ride.from_city, ride.from_state)} → ${endLabel(ride.to_street, ride.to_city, ride.to_state)}`}
+              className="grid grid-cols-[auto_1fr] gap-x-2 text-[12px] text-muted"
+            >
+              <span className="text-right">Pick Up :</span>
+              <span className="wrap-anywhere">
                 {endLabel(ride.from_street, ride.from_city, ride.from_state)}
-                <span aria-hidden="true" className="mx-2">
-                  →
-                </span>
+              </span>
+              <span className="text-right">Drop Off :</span>
+              <span className="wrap-anywhere">
                 {endLabel(ride.to_street, ride.to_city, ride.to_state)}
-              </p>
+              </span>
             </div>
           </>
         ) : null}

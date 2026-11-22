@@ -130,7 +130,7 @@ function BackArrow({ onBack }: { onBack: () => void }) {
       type="button"
       onClick={onBack}
       aria-label="Back"
-      className="inline-flex min-h-11 min-w-11 items-center text-2xl text-muted transition-[transform,color] duration-150 hover:text-content active:scale-95 active:text-white"
+      className="inline-flex min-h-11 min-w-11 items-center text-5xl text-muted transition-[transform,color] duration-150 hover:text-content active:scale-95 active:text-white"
     >
       <span aria-hidden="true" className="leading-none">←</span>
     </button>
@@ -568,7 +568,7 @@ export function QuickPost({
       <div className="pointer-events-auto absolute inset-0 overflow-y-auto px-4 py-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-6">
         <div className="flex min-h-full">
           <div className="m-auto w-full max-w-[340px] sm:max-w-sm">
-            <div data-quickpost-panel className="animate-panel-in relative overscroll-contain rounded-3xl border border-white/15 bg-app/70 p-3 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)] backdrop-blur-xl sm:p-6">
+            <div data-quickpost-panel className="animate-panel-in glass-dark relative overscroll-contain rounded-3xl border border-white/15 p-3 opacity-90 sm:p-6">
             <form
               action={formAction}
               onSubmit={() => {
@@ -577,12 +577,14 @@ export function QuickPost({
               }}
               className="flex flex-col gap-2 sm:gap-4"
             >
-              <h2 className="text-left text-lg font-semibold text-content">
-                New post
-              </h2>
-              <p className="text-center text-[11px] text-muted sm:text-xs">
-                Your privacy is most important and respected.
-              </p>
+              <div className="flex items-center gap-1">
+                {step > 0 ? (
+                  <BackArrow onBack={() => setStep(step - 1)} />
+                ) : null}
+                <h2 className="text-left text-lg font-semibold text-content">
+                  New post
+                </h2>
+              </div>
               <input type="hidden" name="postMode" value={postMode ?? "need"} />
               <input type="hidden" name="timing" value={timing ?? "anytime"} />
               <input type="hidden" name="ride_time" value={rideTime24} />
@@ -624,8 +626,8 @@ export function QuickPost({
 
               {step === 1 ? (
                 <>
-                  <fieldset className="rounded-2xl border border-white/15 px-3 pb-0.5 sm:pb-1.5">
-                    <legend className="px-1 text-[11px] text-muted sm:text-xs">{postMode === "give" ? "From" : "Pick up"}</legend>
+                  <fieldset className="rounded-lg border border-white/15 px-3 pb-0.5 sm:pb-1.5">
+                    <legend className="px-1 text-[8px] text-muted">{postMode === "give" ? "From" : "Pick up"}</legend>
                     {postMode === "give" ? (
                       <PlaceAutocomplete
                         name="from_address"
@@ -633,6 +635,7 @@ export function QuickPost({
                         onValueChange={setFromValue}
                         required
                         minLength={5}
+                        listGapClassName="mt-1"
                         placeholder={addrPlaceholder}
                         ariaLabel="Pickup place"
                         kind="all"
@@ -646,6 +649,7 @@ export function QuickPost({
                         onValueChange={setFromValue}
                         required
                         minLength={5}
+                        listGapClassName="mt-1"
                         placeholder={addrPlaceholder}
                         ariaLabel="Pickup address"
                         source="address"
@@ -654,8 +658,11 @@ export function QuickPost({
                       />
                     )}
                   </fieldset>
-                  <fieldset className="rounded-2xl border border-white/15 px-3 pb-0.5 sm:pb-1.5">
-                    <legend className="px-1 text-[11px] text-muted sm:text-xs">{postMode === "give" ? "To" : "Drop off"}</legend>
+                  <p className="my-1 text-center text-[11px] text-muted sm:text-xs">
+                    Don&apos;t worry, address information is kept private.
+                  </p>
+                  <fieldset className="rounded-lg border border-white/15 px-3 pb-0.5 sm:pb-1.5">
+                    <legend className="px-1 text-[8px] text-muted">{postMode === "give" ? "To" : "Drop off"}</legend>
                     {postMode === "give" ? (
                       <PlaceAutocomplete
                         name="to_address"
@@ -663,6 +670,7 @@ export function QuickPost({
                         onValueChange={setToValue}
                         required
                         minLength={5}
+                        listGapClassName="mt-1"
                         placeholder={addrPlaceholder}
                         ariaLabel="Drop-off place"
                         kind="all"
@@ -676,6 +684,7 @@ export function QuickPost({
                         onValueChange={setToValue}
                         required
                         minLength={5}
+                        listGapClassName="mt-1"
                         placeholder={addrPlaceholder}
                         ariaLabel="Drop-off address"
                         source="address"
@@ -683,11 +692,6 @@ export function QuickPost({
                       />
                     )}
                   </fieldset>
-                  {postMode === "need" ? (
-                    <p className="-mt-2 text-center text-[11px] text-muted sm:text-xs">
-                      Don&apos;t worry, address information is kept private.
-                    </p>
-                  ) : null}
                   <button
                     type="button"
                     onClick={() => placesReady && setStep(2)}
@@ -696,7 +700,6 @@ export function QuickPost({
                   >
                     Continue →
                   </button>
-                  <BackArrow onBack={() => setStep(0)} />
                 </>
               ) : null}
 
@@ -753,7 +756,6 @@ export function QuickPost({
                       </button>
                     </>
                   ) : null}
-                  <BackArrow onBack={() => setStep(1)} />
                 </>
               ) : null}
 
@@ -847,7 +849,7 @@ export function QuickPost({
                       </div>
                     ) : null}
                   </div>
-                  <BackArrow onBack={() => setStep(2)} />
+                  <PostButton skippable={noteValue.trim().length === 0} />
                 </>
               ) : null}
 
@@ -856,25 +858,39 @@ export function QuickPost({
                   {/* Confirm summary: what is being posted, in one glance. */}
                   <div
                     title={`${fromValue} → ${toValue}`}
-                    className="rounded-2xl border border-white/15 px-3 py-2 text-center text-[13px] text-white/80"
+                    className="rounded-2xl border border-white/15 bg-black/60 px-3 py-2 text-left text-[13px]"
                   >
-                    <p className="text-muted">
-                      {postMode === "give" ? "Ride Available" : "Need Ride"}{" "}
-                      ·{" "}
-                      {dateOption === "today"
-                        ? "Today"
-                        : dateOption === "tomorrow"
-                          ? "Tomorrow"
-                          : customDate || "Pick a date"}{" "}
-                      ·{" "}
-                      {timing === "at"
-                        ? displayTime
-                        : (timing ?? "Anytime")}
+                    <p>
+                      <span
+                        className={
+                          postMode === "give"
+                            ? "font-semibold text-content"
+                            : "font-semibold text-[#34c759]"
+                        }
+                      >
+                        {postMode === "give" ? "Ride Available" : "Need Ride"}
+                      </span>{" "}
+                      <span className="text-white">
+                        ·{" "}
+                        {dateOption === "today"
+                          ? "Today"
+                          : dateOption === "tomorrow"
+                            ? "Tomorrow"
+                            : customDate || "Pick a date"}{" "}
+                        ·{" "}
+                        {timing === "at"
+                          ? displayTime
+                          : timing === "asap"
+                            ? "Now"
+                            : "Anytime"}
+                      </span>
                     </p>
-                    <p className="wrap-anywhere mt-0.5">
-                      {shortAddress(fromValue) || "…"} →{" "}
-                      {shortAddress(toValue) || "…"}
-                    </p>
+                    <div className="mt-1 grid grid-cols-[auto_1fr] gap-x-2 text-[10px] text-muted">
+                      <span className="text-right">Pick Up :</span>
+                      <span className="wrap-anywhere">{shortAddress(fromValue) || "…"}</span>
+                      <span className="text-right">Drop Off :</span>
+                      <span className="wrap-anywhere">{shortAddress(toValue) || "…"}</span>
+                    </div>
                   </div>
                   <fieldset className="rounded-2xl border border-white/15 px-3 pb-0.5 sm:pb-3">
                     <legend className="px-1 text-[11px] text-muted sm:text-xs">Note (optional)</legend>
@@ -908,7 +924,6 @@ export function QuickPost({
                   ) : null}
 
                   <PostButton skippable={noteValue.trim().length === 0} />
-                  <BackArrow onBack={() => setStep(3)} />
                 </>
               ) : null}
             </form>

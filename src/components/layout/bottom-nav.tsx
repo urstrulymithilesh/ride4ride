@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { RESERVED_USERNAMES } from "@/lib/validations/auth";
 import { QuickPost, POST_DRAFT_KEY } from "@/components/rides/quick-post";
 import type { PostDraft } from "@/components/rides/quick-post";
 import { ProfileLink } from "@/components/layout/profile-link";
@@ -199,7 +200,7 @@ function FeedDock() {
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-0 z-[var(--z-chrome)] mx-auto w-full max-w-[480px] px-3 pb-[calc(0.75rem-4px+env(safe-area-inset-bottom))]">
+      <div className="fixed inset-x-0 bottom-0 z-[var(--z-chrome)] mx-auto w-full max-w-[480px] pb-[env(safe-area-inset-bottom)]">
         {(pathname === "/rides" || pathname === "/") ? (
           <span
             data-recenter
@@ -264,7 +265,7 @@ function FeedDock() {
         ) : null}
         <nav
           aria-label="Ride type"
-          className="glass-dark relative flex items-center justify-between rounded-[var(--bar-radius)] px-2 py-1.5 opacity-90"
+          className="glass-dark relative flex items-center justify-between rounded-none border-t border-white/15 px-2 py-1.5 opacity-90"
         >
           {tab("get", <HailPersonIcon />, "Need ride")}
           {tab("offer", <SmileyCarIcon />, "Ride available")}
@@ -322,11 +323,21 @@ function FeedDock() {
 function BottomNavInner() {
   const pathname = usePathname();
 
-  // The dock lives on the two feed routes only. Everywhere else —
-  // chat threads (own composer), profiles (back arrow + menu rows),
-  // settings, legal, auth — the page chrome is a top-left back button
-  // instead (see BackButton usages).
-  if (pathname !== "/" && pathname !== "/rides") {
+  // The dock lives on the two feed routes, the chat list, and profiles.
+  // Everything else — settings, legal, auth, threads — keeps its own
+  // chrome (usually a top-left back button) instead.
+  const isProfile = (() => {
+    const m = /^\/([^/]+)$/.exec(pathname);
+    if (!m) return false;
+    const name = m[1].toLowerCase();
+    return /^[a-z][a-z0-9_]{2,19}$/.test(m[1]) && !RESERVED_USERNAMES.has(name);
+  })();
+  if (
+    pathname !== "/" &&
+    pathname !== "/rides" &&
+    pathname !== "/chat" &&
+    !isProfile
+  ) {
     return null;
   }
 
@@ -334,7 +345,7 @@ function BottomNavInner() {
 }
 
 /**
- * Phone-app bottom chrome. One glass bar on the two feed routes only —
+ * Bottom chrome: one glass bar on the feeds, the chat list, and profiles —
  * hail | car | + | chats | profile — with the + straddling the top
  * edge. Everywhere else the page owns a top-left back button instead.
  */

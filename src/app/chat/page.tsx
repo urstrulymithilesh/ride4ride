@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { BackButton } from "@/components/ui/back-button";
-import { PersonGlyph } from "@/components/places/search-icons";
 import { formatPlace } from "@/lib/utils/format";
 import type { Conversation } from "@/types";
 
@@ -69,13 +68,8 @@ export default async function MessagesPage() {
         <h1 className="flex-1 text-center text-[17px] font-semibold text-content">
           Chats
         </h1>
-        <Link
-          href="/me"
-          aria-label="Profile"
-          className="flex h-11 w-11 items-center justify-center text-white"
-        >
-          <PersonGlyph height={18} />
-        </Link>
+        {/* Spacer balances the back arrow so the title stays centered. */}
+        <span aria-hidden="true" className="block h-11 w-11 shrink-0" />
       </div>
 
       {convosError ? (

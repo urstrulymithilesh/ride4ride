@@ -39,6 +39,7 @@ export function PlaceAutocomplete({
   onSubmit,
   surface = "glass",
   dropdownPortal,
+  listGapClassName = "mt-[2px]",
   disabled = false,
 }: {
   name?: string;
@@ -89,6 +90,8 @@ export function PlaceAutocomplete({
    * the map directly rather than the parent's blurred surface.
    */
   dropdownPortal?: HTMLElement | null;
+  /** Gap between the field and a glass dropdown. Feed keeps 2px. */
+  listGapClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [options, setOptions] = useState<PlaceOption[]>([]);
@@ -490,6 +493,7 @@ export function PlaceAutocomplete({
           variant={variant}
           surface={surface}
           portal={dropdownPortal}
+          listGapClassName={listGapClassName}
         >
           {variant === "panel" ? (
             cleanRows
@@ -514,12 +518,14 @@ const DropdownList = ({
   variant,
   surface,
   portal,
+  listGapClassName,
   children,
 }: {
   ref?: React.Ref<HTMLSpanElement>;
   variant: "default" | "panel";
   surface: "glass" | "soft";
   portal?: HTMLElement | null;
+  listGapClassName: string;
   children: React.ReactNode;
 }) => {
   const portaled = Boolean(portal && surface === "glass" && variant === "default");
@@ -529,8 +535,8 @@ const DropdownList = ({
       : surface === "soft"
         ? "thin-scrollbar absolute top-full z-30 mt-[2px] block max-h-60 overflow-y-auto overscroll-contain rounded-xl border border-white/25 bg-app shadow-[0_18px_40px_-12px_rgba(0,0,0,0.7)]"
         : portaled
-          ? "thin-scrollbar absolute z-30 block max-h-60 overflow-y-auto overscroll-contain rounded-xl glass-dark"
-          : "thin-scrollbar absolute top-full z-30 mt-[2px] block max-h-60 overflow-y-auto overscroll-contain rounded-xl glass-dark";
+          ? "thin-scrollbar absolute z-30 block max-h-60 overflow-y-auto overscroll-contain rounded-xl border border-white/15 glass-dark"
+          : `thin-scrollbar absolute top-full z-30 ${listGapClassName} block max-h-60 overflow-y-auto overscroll-contain rounded-xl border border-white/15 glass-dark`;
   const node = (
     <span ref={ref} className={className}>
       {children}

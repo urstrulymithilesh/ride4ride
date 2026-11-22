@@ -182,7 +182,7 @@ export default async function ProfilePage({
         ) : null}
       </nav>
 
-      <footer className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+10px)] z-30 mx-auto w-full max-w-[480px] px-4">
+      <footer className="mx-auto mt-8 w-full max-w-[480px] px-4 pb-28">
         <nav
           aria-label="Legal"
           className="pointer-events-auto flex items-center justify-center gap-2 text-[11px] text-muted"

@@ -112,7 +112,7 @@ export default async function ProfilePage({
 
       <div className="mt-4 flex items-start gap-4">
         <div className="flex shrink-0 flex-col items-center gap-2">
-          <Avatar gender={profile.gender} size={72} />
+          <Avatar gender={profile.gender} size={48} />
           <p className="wrap-anywhere rounded-lg border-[0.5px] border-white/20 px-2 py-0.5 text-center text-[12px] text-muted">
             <span className="font-normal text-muted">@</span>
             <span className="font-semibold text-content">{profile.username}</span>

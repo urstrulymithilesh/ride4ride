@@ -158,6 +158,37 @@ summary:focus-visible {
   }
 }
 
+/* Route changes: a short crossfade with a gentle rise on the incoming
+   page, so navigation feels like one continuous surface instead of hard
+   cuts. Progressive enhancement — browsers without the View Transitions
+   API ignore it. Gated on no-preference so reduced-motion stays instant. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+  ::view-transition-old(root) {
+    animation: page-out 180ms var(--ease-out) both;
+  }
+  ::view-transition-new(root) {
+    animation: page-in 220ms var(--ease-out) both;
+  }
+  @keyframes page-out {
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes page-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
 /* Drawer slide-in: panel glides from the left on open. Exit is instant
    (unmount); the reduced-motion block above neutralizes this too. */
 @keyframes drawer-in {

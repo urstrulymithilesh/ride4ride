@@ -12,7 +12,6 @@ import {
   formatAge,
   formatJoined,
 } from "@/lib/utils/format";
-import { BackButton } from "@/components/ui/back-button";
 import { ChangeLocationButton } from "@/components/location/change-location";
 import { Avatar } from "@/components/profile/avatar";
 import { ProfileWhere } from "@/components/profile/profile-where";
@@ -82,8 +81,7 @@ export default async function ProfilePage({
   return (
     <main className="mx-auto w-full max-w-xl flex-1 px-5 py-4">
       <div className="flex items-center gap-3">
-        <BackButton fallback="/" />
-        <h1 className="flex-1 text-center text-[17px] font-semibold text-content">
+        <h1 className="flex-1 text-left text-[17px] font-semibold text-content">
           Profile
         </h1>
         {isOwner ? (

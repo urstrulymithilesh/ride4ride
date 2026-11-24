@@ -82,7 +82,7 @@ export default async function AccountPage() {
         <div className="min-w-0 flex-1 pt-0.5">
           <p className="wrap-anywhere truncate text-[24px] font-semibold text-content">
             {profile.display_name}
-            {age !== null ? `, ${age}` : ""}
+            {age !== null ? <span className="text-muted">, {age}</span> : ""}
           </p>
           {joined ? (
             <p className="mt-0.5 text-[13px] text-muted">Joined {joined}</p>

@@ -103,26 +103,29 @@ export function ProfileWhere() {
   }, []);
 
   const ago = fixedAt === null ? null : agoText(fixedAt, now);
-  const line =
-    city && ago ? `${city} • ${ago}` : (city ?? ago);
-  if (!line) return null;
+  if (!city && !ago) return null;
 
   return (
-    <p className="mt-0.5 flex w-fit items-center gap-1 rounded-full border border-white/15 px-2 py-0.5 text-[13px] text-muted">
-      <svg
-        width="12"
-        height="12"
-        viewBox="0 0 24 24"
-        fill="currentColor"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M20.2 2.8Q21.5 2.3 21 3.6L12.9 20.6Q12.4 21.4 12 20.6V12.4Q12 11.9 11.5 11.9H3.4Q2.6 11.9 2.6 11.1V10.9Q2.6 10.4 3.2 10.2Z" />
-      </svg>
-      <span className="wrap-anywhere truncate">{line}</span>
+    <p className="mt-0.5 flex w-fit flex-col items-center rounded-2xl border border-white/15 px-3 py-1 text-[13px] text-muted">
+      {city ? (
+        <span className="wrap-anywhere flex items-center gap-1 text-center">
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M20.2 2.8Q21.5 2.3 21 3.6L12.9 20.6Q12.4 21.4 12 20.6V12.4Q12 11.9 11.5 11.9H3.4Q2.6 11.9 2.6 11.1V10.9Q2.6 10.4 3.2 10.2Z" />
+          </svg>
+          <span className="truncate">{city}</span>
+        </span>
+      ) : null}
+      {ago ? <span className="text-center">{ago}</span> : null}
     </p>
   );
 }

@@ -7,7 +7,6 @@ import {
   formatAge,
   formatJoined,
 } from "@/lib/utils/format";
-import { BackButton } from "@/components/ui/back-button";
 import { ChangeLocationButton } from "@/components/location/change-location";
 import { Avatar } from "@/components/profile/avatar";
 import { ProfileWhere } from "@/components/profile/profile-where";
@@ -50,8 +49,7 @@ export default async function AccountPage() {
   return (
     <main className="mx-auto w-full max-w-xl flex-1 px-5 py-4">
       <div className="flex items-center gap-3">
-        <BackButton fallback="/" />
-        <h1 className="flex-1 text-center text-[17px] font-semibold text-content">
+        <h1 className="flex-1 text-left text-[17px] font-semibold text-content">
           Account
         </h1>
         <Link
@@ -79,6 +77,7 @@ export default async function AccountPage() {
       <div className="mt-4 flex items-start gap-4">
         <div className="flex shrink-0 flex-col items-center gap-2">
           <Avatar gender={profile.gender} size={60} />
+          <ProfileWhere />
         </div>
         <div className="min-w-0 flex-1 pt-0.5">
           <p className="wrap-anywhere truncate text-[24px] font-semibold text-content">
@@ -88,7 +87,6 @@ export default async function AccountPage() {
           {joined ? (
             <p className="mt-0.5 text-[13px] text-muted">Joined {joined}</p>
           ) : null}
-          <ProfileWhere />
         </div>
       </div>
 

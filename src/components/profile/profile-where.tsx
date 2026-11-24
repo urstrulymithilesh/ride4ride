@@ -108,7 +108,7 @@ export function ProfileWhere() {
   if (!line) return null;
 
   return (
-    <p className="mt-0.5 flex items-center gap-1 text-[13px] text-muted">
+    <p className="mt-0.5 flex w-fit items-center gap-1 rounded-full border border-white/15 px-2 py-0.5 text-[13px] text-muted">
       <svg
         width="12"
         height="12"
